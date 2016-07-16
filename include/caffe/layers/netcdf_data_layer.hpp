@@ -1,3 +1,4 @@
+#ifdef USE_NETCDF
 #ifndef CAFFE_NETCDF_DATA_LAYER_HPP_
 #define CAFFE_NETCDF_DATA_LAYER_HPP_
 
@@ -60,3 +61,4 @@ class NetCDFDataLayer : public Layer<Dtype> {
 }  // namespace caffe
 
 #endif  // CAFFE_NETCDF_DATA_LAYER_HPP_
+#endif  // USE_NETCDF

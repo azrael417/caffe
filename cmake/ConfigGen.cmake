@@ -60,6 +60,10 @@ function(caffe_generate_export_configs)
     list(APPEND Caffe_DEFINITIONS -DUSE_OPENCV)
   endif()
 
+  if(USE_NETCDF)
+    list(APPEND Caffe_DEFINITIONS -DUSE_NETCDF)
+  endif()
+
   if(USE_LMDB)
     list(APPEND Caffe_DEFINITIONS -DUSE_LMDB)
     if (ALLOW_LMDB_NOLOCK)

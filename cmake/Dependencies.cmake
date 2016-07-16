@@ -38,6 +38,13 @@ find_package(HDF5 COMPONENTS HL REQUIRED)
 include_directories(SYSTEM ${HDF5_INCLUDE_DIRS} ${HDF5_HL_INCLUDE_DIR})
 list(APPEND Caffe_LINKER_LIBS ${HDF5_LIBRARIES})
 
+# ---[ netCDF
+if(USE_NETCDF)
+	find_package(NETCDF REQUIRED)
+	include_directories(SYSTEM ${NETCDF_INCLUDE_DIRS})
+	list(APPEND Caffe_LINKER_LIBS ${NETCDF_LIBRARIES})
+endif()
+
 # ---[ LMDB
 if(USE_LMDB)
   find_package(LMDB REQUIRED)
