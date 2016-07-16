@@ -5,10 +5,11 @@
 
 namespace caffe {
 
-	// Verifies format of data stored in HDF5 file and reshapes blob accordingly.
+	// Verifies format of data stored in NetCDF file and reshapes blob accordingly.
 	template <typename Dtype>
 	void netcdf_load_nd_dataset_helper(
-	int file_id, const char* variable_name_, int& dset_id, int min_dim, int max_dim, Blob<Dtype>* blob) {
+	int file_id, const char* variable_name_, int& dset_id, int min_dim, int max_dim, 
+	std::vector<size_t>& dims, Blob<Dtype>* blob) {
 		
 		// Verify that the dataset exists.
 		CHECK(nc_inq_varid(file_id, variable_name_, &dset_id)) << "Failed to find NetCDF variable " << variable_name_;
@@ -25,15 +26,15 @@ namespace caffe {
 		std::vector<int> dimids(ndims);
 		status = nc_inq_varndims(file_id, dset_id, dimids.data());
 
-		//check if there are unlimited dimensions: we should not support these
-		int ndimsunlim=0;
-		status = nc_inq_unlimdims(file_id, &ndimsunlim, NULL);
-		CHECK_EQ(status, NC_ENOTNC4) << "netCDF-4 operation on netCDF-3 file performed for variable " << variable_name_;
-		CHECK_GT(status,1) << "An error occured for variable " << variable_name_;
-		CHECK_GT(ndimsunlim,0) << "Unlimited dimensions are not supported yet!";
+		////check if there are unlimited dimensions: we should not support these
+		//int ndimsunlim=0;
+		//status = nc_inq_unlimdims(file_id, &ndimsunlim, NULL);
+		//CHECK_EQ(status, NC_ENOTNC4) << "netCDF-4 operation on netCDF-3 file performed for variable " << variable_name_;
+		//CHECK_GT(status,1) << "An error occured for variable " << variable_name_;
+		//CHECK_GT(ndimsunlim,0) << "Unlimited dimensions are not supported yet!";
 		
 		//get size of dimensions
-		std::vector<size_t> dims(ndims);
+		dims.resize(ndims);
 		for(unsigned int i=0; i<ndims; ++i){
 			status = nc_inq_dimlen(file_id, dimids(i), &dims[i]);
 			CHECK_EQ(status, NC_EBADDIM) << "Invalid dimension " << i << " for " << variable_name_;
@@ -68,20 +69,38 @@ namespace caffe {
 
 	template <>
 	void netcdf_load_nd_dataset<float>(int file_id, const char* variable_name_, int min_dim, int max_dim, Blob<float>* blob) {
-		netcdf_load_nd_dataset_helper(file_id, variable_name_, dset_id, min_dim, max_dim, blob);
-		int status = nc_get_var_float(file_id, dset_id, blob->mutable_cpu_data());
+		//query the data and get some dimensions
+		int dset_id;
+		std::vector<size_t> dims;
+		netcdf_load_nd_dataset_helper(file_id, variable_name_, dset_id, min_dim, max_dim, dims, blob);
+		
+		//create start vector for Hyperslab-IO:
+		std::vector<size_t> start(dims.size())
+		for(unsigned int i=0; i<dims.size(); i++) start[i]=0;
+		
+		//read the data
+		int status = nc_get_vara_float(file_id, dset_id, start, dims, blob->mutable_cpu_data());
 		CHECK_GT(status, 0) << "Failed to read float variable " << variable_name_;
 	}
 
 	template <>
 	void netcdf_load_nd_dataset<double>(int file_id, const char* variable_name_, int min_dim, int max_dim, Blob<double>* blob) {
-		netcdf_load_nd_dataset_helper(file_id, variable_name_, dset_id, min_dim, max_dim, blob);
-		int status = nc_get_var_double(file_id, dset_id, blob->mutable_cpu_data());
+		//query the data and get some dimensions
+		int dset_id;
+		std::vector<size_t> dims;
+		netcdf_load_nd_dataset_helper(file_id, variable_name_, dset_id, min_dim, max_dim, dims, blob);
+		
+		//create start vector for Hyperslab-IO:
+		std::vector<size_t> start(dims.size())
+		for(unsigned int i=0; i<dims.size(); i++) start[i]=0;
+		
+		//read the data
+		int status = nc_get_vara_double(file_id, dset_id, start, dims, blob->mutable_cpu_data());
 		CHECK_GT(status, 0) << "Failed to read double variable " << variable_name_;
 	}
 
 	//template <>
-	//void hdf5_save_nd_dataset<float>(
+	//void netcdf_save_nd_dataset<float>(
 	//	const hid_t file_id, const string& dataset_name, const Blob<float>& blob,
 	//bool write_diff) {
 	//	int num_axes = blob.num_axes();
@@ -102,7 +121,7 @@ namespace caffe {
 	//}
     //
 	//template <>
-	//void hdf5_save_nd_dataset<double>(
+	//void netcdf_save_nd_dataset<double>(
 	//	hid_t file_id, const string& dataset_name, const Blob<double>& blob,
 	//bool write_diff) {
 	//	int num_axes = blob.num_axes();
@@ -135,7 +154,7 @@ namespace caffe {
 		return val;
 	}
 
-	//void hdf5_save_string(hid_t loc_id, const string& dataset_name,
+	//void netcdf_save_string(hid_t loc_id, const string& dataset_name,
 	//const string& s) {
 	//	herr_t status = \
 	//		H5LTmake_dataset_string(loc_id, dataset_name.c_str(), s.c_str());
@@ -153,7 +172,7 @@ namespace caffe {
 		return val;
 	}
 
-	//void hdf5_save_int(hid_t loc_id, const string& dataset_name, int i) {
+	//void netcdf_save_int(hid_t loc_id, const string& dataset_name, int i) {
 	//	hsize_t one = 1;
 	//	herr_t status = \
 	//		H5LTmake_dataset_int(loc_id, dataset_name.c_str(), 1, &one, &i);
@@ -161,14 +180,14 @@ namespace caffe {
 	//		<< "Failed to save int dataset with name " << dataset_name;
 	//}
 
-	//int hdf5_get_num_links(hid_t loc_id) {
+	//int netcdf_get_num_links(hid_t loc_id) {
 	//	H5G_info_t info;
 	//	herr_t status = H5Gget_info(loc_id, &info);
 	//	CHECK_GE(status, 0) << "Error while counting HDF5 links.";
 	//	return info.nlinks;
 	//}
 
-	//string hdf5_get_name_by_idx(hid_t loc_id, int idx) {
+	//string netcdf_get_name_by_idx(hid_t loc_id, int idx) {
 	//	ssize_t str_size = H5Lget_name_by_idx(
 	//		loc_id, ".", H5_INDEX_NAME, H5_ITER_NATIVE, idx, NULL, 0, H5P_DEFAULT);
 	//	CHECK_GE(str_size, 0) << "Error retrieving HDF5 dataset at index " << idx;
