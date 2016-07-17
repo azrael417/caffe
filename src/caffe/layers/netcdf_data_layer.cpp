@@ -1,3 +1,4 @@
+#ifdef USE_NETCDF
 /*
 TODO:
 - load file in a separate thread ("prefetch")
@@ -167,3 +168,4 @@ INSTANTIATE_CLASS(NetCDFDataLayer);
 REGISTER_LAYER_CLASS(NetCDFData);
 
 }  // namespace caffe
+#endif

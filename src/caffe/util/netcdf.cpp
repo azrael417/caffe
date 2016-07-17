@@ -1,3 +1,4 @@
+#ifdef USE_NETCDF
 #include "caffe/util/netcdf.hpp"
 
 #include <string>
@@ -202,3 +203,4 @@ namespace caffe {
 	//}
 
 }  // namespace caffe
+#endif
