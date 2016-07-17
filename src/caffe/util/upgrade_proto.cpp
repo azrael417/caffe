@@ -378,9 +378,11 @@ namespace caffe {
 				} else if (type == "hdf5_data") {
 					layer_param->mutable_hdf5_data_param()->set_source(
 						v0_layer_param.source());
+#ifdef USE_NETCDF
 				} else if (type == "netcdf_data") {
 					layer_param->mutable_netcdf_data_param()->set_source(
 						v0_layer_param.source());
+#endif
 				} else if (type == "images") {
 					layer_param->mutable_image_data_param()->set_source(
 						v0_layer_param.source());
@@ -410,9 +412,11 @@ namespace caffe {
 				} else if (type == "hdf5_data") {
 					layer_param->mutable_hdf5_data_param()->set_batch_size(
 						v0_layer_param.batchsize());
+#ifdef USE_NETCDF
 				} else if (type == "netcdf_data") {
 					layer_param->mutable_netcdf_data_param()->set_batch_size(
 						v0_layer_param.batchsize());
+#endif
 				} else if (type == "images") {
 					layer_param->mutable_image_data_param()->set_batch_size(
 						v0_layer_param.batchsize());
@@ -563,8 +567,10 @@ namespace caffe {
 			return V1LayerParameter_LayerType_FLATTEN;
 		} else if (type == "hdf5_data") {
 			return V1LayerParameter_LayerType_HDF5_DATA;
+#ifdef USE_NETCDF
 		} else if (type == "netcdf_data") {
 			return V1LayerParameter_LayerType_NETCDF_DATA;
+#endif
 		} else if (type == "hdf5_output") {
 			return V1LayerParameter_LayerType_HDF5_OUTPUT;
 		} else if (type == "im2col") {
@@ -784,10 +790,12 @@ namespace caffe {
 			layer_param->mutable_hdf5_data_param()->CopyFrom(
 				v1_layer_param.hdf5_data_param());
 		}
+#ifdef USE_NETCDF
 		if (v1_layer_param.has_netcdf_data_param()) {
 			layer_param->mutable_netcdf_data_param()->CopyFrom(
 				v1_layer_param.netcdf_data_param());
 		}
+#endif
 		if (v1_layer_param.has_hdf5_output_param()) {
 			layer_param->mutable_hdf5_output_param()->CopyFrom(
 				v1_layer_param.hdf5_output_param());
@@ -907,8 +915,10 @@ namespace caffe {
 			return "Flatten";
 			case V1LayerParameter_LayerType_HDF5_DATA:
 			return "HDF5Data";
+#ifdef USE_NETCDF
 			case V1LayerParameter_LayerType_NETCDF_DATA:
 			return "NetCDFData";
+#endif
 			case V1LayerParameter_LayerType_HDF5_OUTPUT:
 			return "HDF5Output";
 			case V1LayerParameter_LayerType_HINGE_LOSS:
