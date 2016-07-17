@@ -184,19 +184,19 @@ namespace caffe {
 	//int netcdf_get_num_links(hid_t loc_id) {
 	//	H5G_info_t info;
 	//	herr_t status = H5Gget_info(loc_id, &info);
-	//	CHECK_GE(status, 0) << "Error while counting HDF5 links.";
+	//	CHECK_GE(status, 0) << "Error while counting NetCDF links.";
 	//	return info.nlinks;
 	//}
 
 	//string netcdf_get_name_by_idx(hid_t loc_id, int idx) {
 	//	ssize_t str_size = H5Lget_name_by_idx(
 	//		loc_id, ".", H5_INDEX_NAME, H5_ITER_NATIVE, idx, NULL, 0, H5P_DEFAULT);
-	//	CHECK_GE(str_size, 0) << "Error retrieving HDF5 dataset at index " << idx;
+	//	CHECK_GE(str_size, 0) << "Error retrieving NetCDF variable at index " << idx;
 	//	char *c_str = new char[str_size+1];
 	//	ssize_t status = H5Lget_name_by_idx(
 	//		loc_id, ".", H5_INDEX_NAME, H5_ITER_NATIVE, idx, c_str, str_size+1,
 	//	H5P_DEFAULT);
-	//	CHECK_GE(status, 0) << "Error retrieving HDF5 dataset at index " << idx;
+	//	CHECK_GE(status, 0) << "Error retrieving NetCDF variable at index " << idx;
 	//	string result(c_str);
 	//	delete[] c_str;
 	//	return result;
