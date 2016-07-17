@@ -455,6 +455,7 @@ message LayerParameter {
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
   optional RemoteDataParameter remote_data_param = 145;
+  optional NETCDFDataParameter netcdf_data_param = 200;
 }
 
 // Message that stores parameters used to apply transformation
@@ -830,6 +831,21 @@ message HDF5DataParameter {
   // Specify whether to shuffle the data.
   // If shuffle == true, the ordering of the HDF5 files is shuffled,
   // and the ordering of data within any given HDF5 file is shuffled,
+  // but data between different files are not interleaved; all of a file's
+  // data are output (in a random order) before moving onto another file.
+  optional bool shuffle = 3 [default = false];
+}
+
+// Message that stores parameters used by NETCDFDataLayer
+message NETCDFDataParameter {
+  // Specify the data source.
+  optional string source = 1;
+  // Specify the batch size.
+  optional uint32 batch_size = 2;
+
+  // Specify whether to shuffle the data.
+  // If shuffle == true, the ordering of the NETCDF files is shuffled,
+  // and the ordering of data within any given NETCDF file is shuffled,
   // but data between different files are not interleaved; all of a file's
   // data are output (in a random order) before moving onto another file.
   optional bool shuffle = 3 [default = false];
@@ -1310,6 +1326,7 @@ message V1LayerParameter {
     TANH = 23;
     WINDOW_DATA = 24;
     THRESHOLD = 31;
+	NETCDF = 200;
   }
   optional LayerType type = 5;
   repeated BlobProto blobs = 6;
