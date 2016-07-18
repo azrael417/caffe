@@ -77,8 +77,7 @@ namespace caffe {
 	void NetCDFDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 	const vector<Blob<Dtype>*>& top) {
 		// Refuse transformation parameters since HDF5 is totally generic.
-		CHECK(!this->layer_param_.has_transform_param()) <<
-			this->type() << " does not transform data.";
+		CHECK(!this->layer_param_.has_transform_param()) << this->type() << " does not transform data.";
 		// Read the source to parse the filenames.
 		const string& source = this->layer_param_.netcdf_data_param().filelist();
 		LOG(INFO) << "Loading list of NetCDF filenames from: " << source;

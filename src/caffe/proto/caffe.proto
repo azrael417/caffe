@@ -839,7 +839,7 @@ message HDF5DataParameter {
 // Message that stores parameters used by NETCDFDataLayer
 message NETCDFDataParameter {
   // Specify the data source.
-  repeated string filelist = 1;
+  optional string filelist = 1;
   repeated string variables = 2;
   // Specify the batch size.
   optional uint32 batch_size = 3;
