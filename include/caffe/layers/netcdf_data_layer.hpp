@@ -49,7 +49,8 @@ class NetCDFDataLayer : public Layer<Dtype> {
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
   virtual void LoadNetCDFFileData(const char* filename);
 
-  std::vector<std::string> netcdf_filenames_;
+  std::vector<std::string> netcdf_filenames_, netcdf_variables_;
+  unsigned int num_variables_;
   unsigned int num_files_;
   unsigned int current_file_;
   hsize_t current_row_;
