@@ -43,6 +43,7 @@ if(USE_NETCDF)
 	find_package(NETCDF REQUIRED)
 	include_directories(SYSTEM ${NETCDF_INCLUDE_DIR})
 	list(APPEND Caffe_LINKER_LIBS ${NETCDF_LIBRARIES})
+	list(APPEND Caffe_LINKER_LIBS -lcurl)
 	add_definitions(-DUSE_NETCDF)
 endif()
 
