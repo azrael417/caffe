@@ -43,6 +43,7 @@ if(USE_NETCDF)
 	find_package(NETCDF REQUIRED)
 	include_directories(SYSTEM ${NETCDF_INCLUDE_DIRS})
 	list(APPEND Caffe_LINKER_LIBS ${NETCDF_LIBRARIES})
+	add_definitions(-DUSE_NETCDF)
 endif()
 
 # ---[ LMDB

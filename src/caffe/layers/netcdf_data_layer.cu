@@ -3,10 +3,10 @@ TODO:
 - only load parts of the file, in accordance with a prototxt param "max_mem"
 */
 
+#ifdef USE_NETCDF
+
 #include <stdint.h>
 #include <vector>
-
-#include <netcdf.h>
 
 #include "caffe/layers/netcdf_data_layer.hpp"
 
@@ -47,3 +47,5 @@ void NetCDFDataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 INSTANTIATE_LAYER_GPU_FUNCS(NetCDFDataLayer);
 
 }  // namespace caffe
+
+#endif //USE_NETCDF

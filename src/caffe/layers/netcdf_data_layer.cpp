@@ -1,4 +1,3 @@
-//#ifdef USE_NETCDF
 /*
 TODO:
 - load file in a separate thread ("prefetch")
@@ -7,6 +6,8 @@ TODO:
 :: don't forget to update netcdf_daa_layer.cu accordingly
 - add ability to shuffle filenames if flag is set
 */
+#ifdef USE_NETCDF
+
 #include <fstream>  // NOLINT(readability/streams)
 #include <string>
 #include <vector>
@@ -180,4 +181,4 @@ INSTANTIATE_CLASS(NetCDFDataLayer);
 REGISTER_LAYER_CLASS(NetCDFData);
 
 }  // namespace caffe
-//#endif //USE_NETCDF
+#endif //USE_NETCDF

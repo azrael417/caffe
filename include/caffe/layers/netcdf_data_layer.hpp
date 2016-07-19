@@ -2,7 +2,7 @@
 #ifndef CAFFE_NETCDF_DATA_LAYER_HPP_
 #define CAFFE_NETCDF_DATA_LAYER_HPP_
 
-#include "<netcdf>"
+#include <netcdf>
 
 #include <string>
 #include <vector>
