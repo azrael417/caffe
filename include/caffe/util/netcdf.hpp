@@ -16,7 +16,7 @@ void netcdf_load_nd_dataset_helper(
 	std::vector<size_t>& dims, Blob<Dtype>* blob);
 
 template <typename Dtype>
-void netcdf_load_nd_dataset<Dtype>(int file_id, const char* variable_name_, int min_dim, int max_dim, Blob<Dtype>* blob);
+void netcdf_load_nd_dataset(int file_id, const char* variable_name_, int min_dim, int max_dim, Blob<Dtype>* blob);
 
 //template <typename Dtype>
 //void netcdf_save_nd_dataset(
