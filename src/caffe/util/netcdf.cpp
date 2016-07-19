@@ -37,7 +37,7 @@ namespace caffe {
 		//get size of dimensions
 		dims.resize(ndims);
 		for(unsigned int i=0; i<ndims; ++i){
-			status = nc_inq_dimlen(file_id, dimids(i), &dims[i]);
+			status = nc_inq_dimlen(file_id, dimids[i], &dims[i]);
 			CHECK_EQ(status, NC_EBADDIM) << "Invalid dimension " << i << " for " << variable_name_;
 		}
   
@@ -48,10 +48,7 @@ namespace caffe {
 				LOG_FIRST_N(INFO, 1) << "Datatype class: NC_FLOAT";
 				break;
 			case NC_INT:
-				LOG_FIRST_N(INFO, 1) << "Datatype class: NC_INT";
-				break;
-			case NC_LONG:
-				LOG_FIRST_N(INFO, 1) << "Datatype class: NC_LONG";
+				LOG_FIRST_N(INFO, 1) << "Datatype class: NC_INT or NC_LONG";
 				break;
 			case NC_DOUBLE:
 				LOG_FIRST_N(INFO, 1) << "Datatype class: NC_DOUBLE";
@@ -76,11 +73,11 @@ namespace caffe {
 		netcdf_load_nd_dataset_helper(file_id, variable_name_, dset_id, min_dim, max_dim, dims, blob);
 		
 		//create start vector for Hyperslab-IO:
-		std::vector<size_t> start(dims.size())
+		std::vector<size_t> start(dims.size());
 		for(unsigned int i=0; i<dims.size(); i++) start[i]=0;
 		
 		//read the data
-		int status = nc_get_vara_float(file_id, dset_id, start, dims, blob->mutable_cpu_data());
+		int status = nc_get_vara_float(file_id, dset_id, start.data(), dims.data(), blob->mutable_cpu_data());
 		CHECK_GT(status, 0) << "Failed to read float variable " << variable_name_;
 	}
 
@@ -92,11 +89,11 @@ namespace caffe {
 		netcdf_load_nd_dataset_helper(file_id, variable_name_, dset_id, min_dim, max_dim, dims, blob);
 		
 		//create start vector for Hyperslab-IO:
-		std::vector<size_t> start(dims.size())
+		std::vector<size_t> start(dims.size());
 		for(unsigned int i=0; i<dims.size(); i++) start[i]=0;
 		
 		//read the data
-		int status = nc_get_vara_double(file_id, dset_id, start, dims, blob->mutable_cpu_data());
+		int status = nc_get_vara_double(file_id, dset_id, start.data(), dims.data(), blob->mutable_cpu_data());
 		CHECK_GT(status, 0) << "Failed to read double variable " << variable_name_;
 	}
 
@@ -145,11 +142,11 @@ namespace caffe {
 	string netcdf_load_string(int loc_id, const string& variable_name_) {
 		// Verify that the dataset exists.
 		int dset_id;
-		CHECK(nc_inq_varid(loc_id, variable_name_, &dset_id)) << "Failed to find NetCDF variable " << variable_name_;
+		CHECK_GT(nc_inq_varid(loc_id, variable_name_.c_str(), &dset_id),0) << "Failed to find NetCDF variable " << variable_name_;
 		
 		// Get size of dataset
 		char* buffer;
-		int status = nc_get_var_string(loc_id, dset_id, &buffer)
+		int status = nc_get_var_string(loc_id, dset_id, &buffer);
 		string val(buffer);
 		delete [] buffer;
 		return val;
@@ -165,9 +162,9 @@ namespace caffe {
 
 	int netcdf_load_int(int loc_id, const string& variable_name_) {
 		int dset_id;
-		CHECK(nc_inq_varid(loc_id, variable_name_, &dset_id)) << "Failed to find NetCDF variable " << variable_name_;
+		CHECK_GT(nc_inq_varid(loc_id, variable_name_.c_str(), &dset_id),0) << "Failed to find NetCDF variable " << variable_name_;
 		
-		int val
+		int val;
 		int status = nc_get_var_int(loc_id, dset_id, &val);
 		CHECK_GT(status, 0) << "Failed to load int variable " << variable_name_;
 		return val;
