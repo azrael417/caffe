@@ -100,7 +100,7 @@ namespace caffe {
 		for(unsigned int i=0; i< num_variables_; i++){
 			netcdf_variables_.push_back(this->layer_param_.netcdf_data_param().variables()[i]);
 		}
-		LOG(INFO) << "Number of NetCDF variables: " << num_variables;
+		LOG(INFO) << "Number of NetCDF variables: " << num_variables_;
 		CHECK_GE(num_variables_, 1) << "Must have at least 1 NetCDF variable listed in " << source;
 		
 		file_permutation_.clear();
@@ -138,7 +138,7 @@ namespace caffe {
 		for(unsigned int i=0; i<netcdf_variables_.size(); i++){
 			std::cout << netcdf_variables_[i] << std::endl;
 		}
-		exit EXIT_FAILURE;
+		exit(1);
 	}
 
 	template <typename Dtype>

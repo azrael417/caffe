@@ -455,7 +455,7 @@ message LayerParameter {
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
   optional RemoteDataParameter remote_data_param = 145;
-  optional NETCDFDataParameter netcdf_data_param = 200;
+  optional NetCDFDataParameter netcdf_data_param = 200;
 }
 
 // Message that stores parameters used to apply transformation
@@ -836,8 +836,8 @@ message HDF5DataParameter {
   optional bool shuffle = 3 [default = false];
 }
 
-// Message that stores parameters used by NETCDFDataLayer
-message NETCDFDataParameter {
+// Message that stores parameters used by NetCDFDataLayer
+message NetCDFDataParameter {
   // Specify the data source.
   optional string filelist = 1;
   repeated string variables = 2;
