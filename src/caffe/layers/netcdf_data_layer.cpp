@@ -1,4 +1,4 @@
-#ifdef USE_NETCDF
+//#ifdef USE_NETCDF
 /*
 TODO:
 - load file in a separate thread ("prefetch")
@@ -76,7 +76,7 @@ namespace caffe {
 	template <typename Dtype>
 	void NetCDFDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 	const vector<Blob<Dtype>*>& top) {
-		// Refuse transformation parameters since HDF5 is totally generic.
+		// Refuse transformation parameters since NetCDF is totally generic.
 		CHECK(!this->layer_param_.has_transform_param()) << this->type() << " does not transform data.";
 		// Read the source to parse the filenames.
 		const string& source = this->layer_param_.netcdf_data_param().filelist();
@@ -117,8 +117,8 @@ namespace caffe {
 			std::random_shuffle(file_permutation_.begin(), file_permutation_.end());
 		}
 
-		// Load the first HDF5 file and initialize the line counter.
-		LoadNetCDFFileData(hdf_filenames_[file_permutation_[current_file_]].c_str());
+		// Load the first NetCDF file and initialize the line counter.
+		LoadNetCDFFileData(netcdf_filenames_[file_permutation_[current_file_]].c_str());
 		current_row_ = 0;
 
 		// Reshape blobs.
@@ -176,11 +176,11 @@ namespace caffe {
 	}
 
 #ifdef CPU_ONLY
-	STUB_GPU_FORWARD(NetCDFDataLayer, Forward);
+STUB_GPU_FORWARD(NetCDFDataLayer, Forward);
 #endif
 
-	INSTANTIATE_CLASS(NetCDFDataLayer);
-	REGISTER_LAYER_CLASS(NetCDFData);
+INSTANTIATE_CLASS(NetCDFDataLayer);
+REGISTER_LAYER_CLASS(NetCDFData);
 
 }  // namespace caffe
-#endif
+//#endif //USE_NETCDF
