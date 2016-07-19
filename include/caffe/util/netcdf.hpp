@@ -4,7 +4,7 @@
 
 #include <string>
 
-#include <netcdf>
+#include <netcdf.h>
 
 #include "caffe/blob.hpp"
 
