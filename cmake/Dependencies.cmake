@@ -41,7 +41,7 @@ list(APPEND Caffe_LINKER_LIBS ${HDF5_LIBRARIES})
 # ---[ netCDF
 if(USE_NETCDF)
 	find_package(NETCDF REQUIRED)
-	include_directories(SYSTEM ${NETCDF_INCLUDE_DIRS})
+	include_directories(SYSTEM ${NETCDF_INCLUDE_DIR})
 	list(APPEND Caffe_LINKER_LIBS ${NETCDF_LIBRARIES})
 	add_definitions(-DUSE_NETCDF)
 endif()
