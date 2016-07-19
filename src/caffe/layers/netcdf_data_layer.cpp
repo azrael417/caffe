@@ -11,9 +11,6 @@ TODO:
 #include <string>
 #include <vector>
 
-#include <netcdf.h>
-
-
 #include "caffe/layers/netcdf_data_layer.hpp"
 #include "caffe/util/netcdf.hpp"
 
