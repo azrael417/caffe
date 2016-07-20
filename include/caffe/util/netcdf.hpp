@@ -3,6 +3,8 @@
 #define CAFFE_UTIL_NETCDF_H_
 
 #include <string>
+#include <vector>
+#include <map>
 
 #include <netcdf.h>
 
@@ -10,13 +12,13 @@
 
 namespace caffe {
 
-template <typename Dtype>
-void netcdf_load_nd_dataset_helper(
-	int file_id, const char* variable_name_, int& dset_id, int min_dim, int max_dim, 
-	std::vector<size_t>& dims, Blob<Dtype>* blob);
+  void netcdf_check_variable_helper(const int& file_id, const string& variable_name_, int& dset_id, const int& min_dim, const int& max_dim, std::vector<size_t>& dims);
 
-template <typename Dtype>
-void netcdf_load_nd_dataset(int file_id, const char* variable_name_, int min_dim, int max_dim, Blob<Dtype>* blob);
+  template <typename Dtype>
+  void netcdf_load_nd_dataset_helper(const int& file_id, const std::vector<string>& netcdf_variables_, std::vector<int>& dset_ids, const int& min_dim, const int& max_dim, std::vector<size_t>& dims, Blob<Dtype>* blob);
+
+  template <typename Dtype>
+  void netcdf_load_nd_dataset(const int& file_id, const std::vector<string>& netcdf_variables_, const int& min_dim, const int& max_dim, Blob<Dtype>* blob);
 
 //template <typename Dtype>
 //void netcdf_save_nd_dataset(

@@ -36,11 +36,10 @@ namespace caffe {
 
 		const int MIN_DATA_DIM = 1;
 		const int MAX_DATA_DIM = INT_MAX;
-
+		
 		for (int i = 0; i < top_size; ++i) {
 			netcdf_blobs_[i] = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
-			netcdf_load_nd_dataset(file_id, this->layer_param_.top(i).c_str(),
-			MIN_DATA_DIM, MAX_DATA_DIM, netcdf_blobs_[i].get());
+			netcdf_load_nd_dataset(file_id, netcdf_variables_[this->layer_param_.top(i)], MIN_DATA_DIM, MAX_DATA_DIM, netcdf_blobs_[i].get());
 		}
 		
 		//close the file
@@ -96,27 +95,18 @@ namespace caffe {
 		CHECK_GE(num_files_, 1) << "Must have at least 1 NetCDF filename listed in " << file_list;
 		
 		//read list of netcdf variables which should be read from the file
-		num_variables_ = this->layer_param_.netcdf_data_param().variables_size();
-		for(unsigned int i=0; i< num_variables_; i++){
-			netcdf_variables_.push_back(this->layer_param_.netcdf_data_param().variables(i));
+		num_variables_["data"] = this->layer_param_.netcdf_data_param().variable_size();
+		for(unsigned int i=0; i< num_variables_["data"]; i++){
+			netcdf_variables_["data"].push_back(this->layer_param_.netcdf_data_param().variable(i));
 		}
-		LOG(INFO) << "Number of NetCDF variables: " << num_variables_;
-		CHECK_GE(num_variables_, 1) << "Must have at least 1 NetCDF variable listed.";
-		
-		
-		
-		//DEBUG
-		for(unsigned int i=0; i<netcdf_filenames_.size(); i++){
-			std::cout << netcdf_filenames_[i] << std::endl;
-		}
-		for(unsigned int i=0; i<netcdf_variables_.size(); i++){
-			std::cout << netcdf_variables_[i] << std::endl;
-		}
+		LOG(INFO) << "Number of NetCDF data variables: " << num_variables_["data"];
+		CHECK_GE(num_variables_["data"], 1) << "Must have at least 1 NetCDF data variable listed.";
+
+
+		std::cout << this->layer_param_.top_size() << " " << netcdf_variables_["data"].size() << " " << this->layer_param_.top(0) << std::endl;
 		exit(1);
-		//DEBUG
 		
-		
-		
+		//do permutation if necessary
 		file_permutation_.clear();
 		file_permutation_.resize(num_files_);
 		// Default to identity permutation.
@@ -136,6 +126,10 @@ namespace caffe {
 		// Reshape blobs.
 		const int batch_size = this->layer_param_.netcdf_data_param().batch_size();
 		const int top_size = this->layer_param_.top_size();
+		
+		std::cout << top_size << " " << netcdf_variables_.size() << std::endl;
+		exit(1);
+		
 		vector<int> top_shape;
 		for (int i = 0; i < top_size; ++i) {
 			top_shape.resize(netcdf_blobs_[i]->num_axes());

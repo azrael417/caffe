@@ -840,7 +840,7 @@ message HDF5DataParameter {
 message NetCDFDataParameter {
   // Specify the data source.
   optional string source = 1;
-  repeated string variables = 2;
+  repeated string variable = 2;
   // Specify the batch size.
   optional uint32 batch_size = 3;
 

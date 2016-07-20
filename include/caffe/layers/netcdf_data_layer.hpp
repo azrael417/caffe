@@ -6,6 +6,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "caffe/blob.hpp"
 #include "caffe/layer.hpp"
@@ -49,8 +50,9 @@ class NetCDFDataLayer : public Layer<Dtype> {
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
   virtual void LoadNetCDFFileData(const char* filename);
 
-  std::vector<std::string> netcdf_filenames_, netcdf_variables_;
-  unsigned int num_variables_;
+  std::vector<std::string> netcdf_filenames_;
+  std::map < string, std::vector<std::string> > netcdf_variables_;
+  std::map < string, unsigned int >  num_variables_;
   unsigned int num_files_;
   unsigned int current_file_;
   unsigned int current_row_;

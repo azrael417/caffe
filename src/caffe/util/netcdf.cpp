@@ -6,15 +6,9 @@
 
 namespace caffe {
 
-	// Verifies format of data stored in NetCDF file and reshapes blob accordingly.
-	template <typename Dtype>
-	void netcdf_load_nd_dataset_helper(
-	int file_id, const char* variable_name_, int& dset_id, int min_dim, int max_dim, 
-	std::vector<size_t>& dims, Blob<Dtype>* blob) {
-		
-		// Verify that the dataset exists.
-		CHECK(nc_inq_varid(file_id, variable_name_, &dset_id)) << "Failed to find NetCDF variable " << variable_name_;
-		// Verify that the number of dimensions is in the accepted range.
+	void netcdf_check_variable_helper(const int& file_id, const string& variable_name_, int& dset_id, const int& min_dim, const int& max_dim, std::vector<size_t>& dims){
+		CHECK(nc_inq_varid(file_id, variable_name_.c_str(), &dset_id)) << "Failed to find NetCDF variable " << variable_name_;
+		// Verify that the number of dimensions is in the accepted range.                                             
 		int status;
 		int ndims;
 		status = nc_inq_varndims(file_id, dset_id, &ndims);
@@ -33,68 +27,88 @@ namespace caffe {
 		//CHECK_EQ(status, NC_ENOTNC4) << "netCDF-4 operation on netCDF-3 file performed for variable " << variable_name_;
 		//CHECK_GT(status,1) << "An error occured for variable " << variable_name_;
 		//CHECK_GT(ndimsunlim,0) << "Unlimited dimensions are not supported yet!";
-		
+
 		//get size of dimensions
 		dims.resize(ndims);
 		for(unsigned int i=0; i<ndims; ++i){
 			status = nc_inq_dimlen(file_id, dimids[i], &dims[i]);
 			CHECK_EQ(status, NC_EBADDIM) << "Invalid dimension " << i << " for " << variable_name_;
 		}
-  
+
 		nc_type typep_;
 		status = nc_inq_vartype(file_id, dset_id, &typep_);
 		switch (typep_) {
 			case NC_FLOAT:
-				LOG_FIRST_N(INFO, 1) << "Datatype class: NC_FLOAT";
-				break;
+			LOG_FIRST_N(INFO, 1) << "Datatype class: NC_FLOAT";
+			break;
 			case NC_INT:
-				LOG_FIRST_N(INFO, 1) << "Datatype class: NC_INT or NC_LONG";
-				break;
+			LOG_FIRST_N(INFO, 1) << "Datatype class: NC_INT or NC_LONG";
+			break;
 			case NC_DOUBLE:
-				LOG_FIRST_N(INFO, 1) << "Datatype class: NC_DOUBLE";
-				break;
+			LOG_FIRST_N(INFO, 1) << "Datatype class: NC_DOUBLE";
+			break;
 			default:
-				LOG(FATAL) << "Unsupported Datatype " << typep_;
+			LOG(FATAL) << "Unsupported Datatype " << typep_;
 		}
-
-		vector<int> blob_dims(dims.size());
+	}
+  
+	// Verifies format of data stored in NetCDF file and reshapes blob accordingly.
+	template <typename Dtype>
+	void netcdf_load_nd_dataset_helper(const int& file_id, const std::vector<string>& netcdf_variables_, std::vector<int>& dset_ids, const int& min_dim, const int& max_dim, std::vector<size_t>& dims, Blob<Dtype>* blob) {
+    
+		// Obtain all sizes for variable 0:
+		string variable_name_=netcdf_variables_[0];
+		netcdf_check_variable_helper(file_id, variable_name_, dset_ids[0], min_dim, max_dim, dims);
+    
+		//make sure that all other dimensions for the other variables fit as well:
+		for(unsigned int i=1; i<netcdf_variables_[field_type_].size(); i++){
+			std::vector<size_t> tmpdims;
+			variable_name_=netcdf_variables_[i];
+			netcdf_check_variable_helper(file_id, variable_name_, dset_ids[i], min_dim, max_dim, tmpdims);
+			CHECK(tmpdims.size(),dims.size()) << "Number of dimensions of variable " << netcdf_variables_[0] << " and " << variable_name_ << " do not agree!";
+			for(unsigned int d=0; d<tmpdims.size(); d++){
+				CHECK(tmpdims[d],dims[d]) << "Dimension " << d << " does not agree for " << netcdf_variables_[0] << " and " << variable_name_;
+			}
+		}
+    
+		vector<int> blob_dims(dims.size()+1);
 		for (int i = 0; i < dims.size(); ++i) {
 			blob_dims[i] = dims[i];
 		}
+		blob_dims[dims.size()]=netcdf_variables_.size();
 		blob->Reshape(blob_dims);
-	}
-	
+	} 
 
 	template <>
-	void netcdf_load_nd_dataset<float>(int file_id, const char* variable_name_, int min_dim, int max_dim, Blob<float>* blob) {
+	void netcdf_load_nd_dataset<float>(const int& file_id, const std::vector<string>& netcdf_variables_, const int& min_dim, const int& max_dim, Blob<float>* blob) {
 		//query the data and get some dimensions
-		int dset_id;
+		std::vector<int> dset_ids(netcdf_variables_.size());
 		std::vector<size_t> dims;
-		netcdf_load_nd_dataset_helper(file_id, variable_name_, dset_id, min_dim, max_dim, dims, blob);
+		netcdf_load_nd_dataset_helper(file_id, netcdf_variables_, dset_ids, min_dim, max_dim, dims, blob);
 		
 		//create start vector for Hyperslab-IO:
 		std::vector<size_t> start(dims.size());
 		for(unsigned int i=0; i<dims.size(); i++) start[i]=0;
 		
 		//read the data
-		int status = nc_get_vara_float(file_id, dset_id, start.data(), dims.data(), blob->mutable_cpu_data());
-		CHECK_GT(status, 0) << "Failed to read float variable " << variable_name_;
+		//int status = nc_get_vara_float(file_id, dset_id, start.data(), dims.data(), blob->mutable_cpu_data());
+		//CHECK_GT(status, 0) << "Failed to read float variable " << variable_name_;
 	}
 
 	template <>
-	void netcdf_load_nd_dataset<double>(int file_id, const char* variable_name_, int min_dim, int max_dim, Blob<double>* blob) {
+	void netcdf_load_nd_dataset<double>(const int& file_id, const std::vector<string>& netcdf_variables_, const int& min_dim, const int& max_dim, Blob<double>* blob) {
 		//query the data and get some dimensions
-		int dset_id;
+		std::vector<int> dset_ids(netcdf_variables_.size());
 		std::vector<size_t> dims;
-		netcdf_load_nd_dataset_helper(file_id, variable_name_, dset_id, min_dim, max_dim, dims, blob);
+		netcdf_load_nd_dataset_helper(file_id, netcdf_variables_, dset_ids, min_dim, max_dim, dims, blob);
 		
 		//create start vector for Hyperslab-IO:
 		std::vector<size_t> start(dims.size());
 		for(unsigned int i=0; i<dims.size(); i++) start[i]=0;
 		
 		//read the data
-		int status = nc_get_vara_double(file_id, dset_id, start.data(), dims.data(), blob->mutable_cpu_data());
-		CHECK_GT(status, 0) << "Failed to read double variable " << variable_name_;
+		//int status = nc_get_vara_double(file_id, dset_id, start.data(), dims.data(), blob->mutable_cpu_data());
+		//CHECK_GT(status, 0) << "Failed to read double variable " << variable_name_;
 	}
 
 	//template <>
@@ -117,7 +131,7 @@ namespace caffe {
 	//	CHECK_GE(status, 0) << "Failed to make float dataset " << dataset_name;
 	//	delete[] dims;
 	//}
-    //
+	//
 	//template <>
 	//void netcdf_save_nd_dataset<double>(
 	//	hid_t file_id, const string& dataset_name, const Blob<double>& blob,
