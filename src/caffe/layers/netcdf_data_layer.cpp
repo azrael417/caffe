@@ -103,6 +103,20 @@ namespace caffe {
 		LOG(INFO) << "Number of NetCDF variables: " << num_variables_;
 		CHECK_GE(num_variables_, 1) << "Must have at least 1 NetCDF variable listed.";
 		
+		
+		
+		//DEBUG
+		for(unsigned int i=0; i<netcdf_filenames_.size(); i++){
+			std::cout << netcdf_filenames_[i] << std::endl;
+		}
+		for(unsigned int i=0; i<netcdf_variables_.size(); i++){
+			std::cout << netcdf_variables_[i] << std::endl;
+		}
+		exit(1);
+		//DEBUG
+		
+		
+		
 		file_permutation_.clear();
 		file_permutation_.resize(num_files_);
 		// Default to identity permutation.
@@ -131,14 +145,6 @@ namespace caffe {
 			}
 			top[i]->Reshape(top_shape);
 		}
-		
-		for(unsigned int i=0; i<netcdf_filenames_.size(); i++){
-			std::cout << netcdf_filenames_[i] << std::endl;
-		}
-		for(unsigned int i=0; i<netcdf_variables_.size(); i++){
-			std::cout << netcdf_variables_[i] << std::endl;
-		}
-		exit(1);
 	}
 
 	template <typename Dtype>

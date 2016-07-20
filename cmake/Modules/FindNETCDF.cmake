@@ -14,8 +14,8 @@
 
 find_path(NETCDF_INCLUDE_DIR NAMES  netcdf.h PATHS "$ENV{NETCDF_DIR}/include" DOC "Path in which the file netcdf/netcdf.h is located.")
 find_library(NETCDF_LIBRARIES NAMES netcdf   PATHS "$ENV{NETCDF_DIR}/lib" DOC "Path in which the netcdf library is located.")
-find_library(CURL_LIBRARIES NAMES curl   PATHS "$ENV{CURL_DIR}/lib" DOC "Path in which the curl library is located, needed by netcdf.")
-find_library(OPENSSL_LIBRARIES NAMES ssl   PATHS "$ENV{CURL_DIR}/lib" DOC "Path in which the openssl library is located, needed by netcdf.")
+#find_library(CURL_LIBRARIES NAMES curl   PATHS "$ENV{CURL_DIR}/lib" DOC "Path in which the curl library is located, needed by netcdf.")
+#find_library(OPENSSL_LIBRARIES NAMES ssl   PATHS "$ENV{CURL_DIR}/lib" DOC "Path in which the openssl library is located, needed by netcdf.")
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(NETCDF DEFAULT_MSG NETCDF_INCLUDE_DIR NETCDF_LIBRARIES)
