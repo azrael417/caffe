@@ -101,10 +101,6 @@ namespace caffe {
 		}
 		LOG(INFO) << "Number of NetCDF data variables: " << num_variables_["data"];
 		CHECK_GE(num_variables_["data"], 1) << "Must have at least 1 NetCDF data variable listed.";
-
-
-		std::cout << this->layer_param_.top_size() << " " << netcdf_variables_["data"].size() << " " << this->layer_param_.top(0) << std::endl;
-		exit(1);
 		
 		//do permutation if necessary
 		file_permutation_.clear();
@@ -126,9 +122,6 @@ namespace caffe {
 		// Reshape blobs.
 		const int batch_size = this->layer_param_.netcdf_data_param().batch_size();
 		const int top_size = this->layer_param_.top_size();
-		
-		std::cout << top_size << " " << netcdf_variables_.size() << std::endl;
-		exit(1);
 		
 		vector<int> top_shape;
 		for (int i = 0; i < top_size; ++i) {

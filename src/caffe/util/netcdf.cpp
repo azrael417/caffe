@@ -61,13 +61,13 @@ namespace caffe {
 		netcdf_check_variable_helper(file_id, variable_name_, dset_ids[0], min_dim, max_dim, dims);
     
 		//make sure that all other dimensions for the other variables fit as well:
-		for(unsigned int i=1; i<netcdf_variables_[field_type_].size(); i++){
+		for(unsigned int i=1; i<netcdf_variables_.size(); i++){
 			std::vector<size_t> tmpdims;
 			variable_name_=netcdf_variables_[i];
 			netcdf_check_variable_helper(file_id, variable_name_, dset_ids[i], min_dim, max_dim, tmpdims);
-			CHECK(tmpdims.size(),dims.size()) << "Number of dimensions of variable " << netcdf_variables_[0] << " and " << variable_name_ << " do not agree!";
+			CHECK_EQ(tmpdims.size(),dims.size()) << "Number of dimensions of variable " << netcdf_variables_[0] << " and " << variable_name_ << " do not agree!";
 			for(unsigned int d=0; d<tmpdims.size(); d++){
-				CHECK(tmpdims[d],dims[d]) << "Dimension " << d << " does not agree for " << netcdf_variables_[0] << " and " << variable_name_;
+				CHECK_EQ(tmpdims[d],dims[d]) << "Dimension " << d << " does not agree for " << netcdf_variables_[0] << " and " << variable_name_;
 			}
 		}
     
@@ -88,11 +88,17 @@ namespace caffe {
 		
 		//create start vector for Hyperslab-IO:
 		std::vector<size_t> start(dims.size());
-		for(unsigned int i=0; i<dims.size(); i++) start[i]=0;
+		unsigned long offset=1;
+		for(unsigned int i=0; i<dims.size(); i++){
+			offset*=dims[i];
+			start[i]=0;
+		}
 		
 		//read the data
-		//int status = nc_get_vara_float(file_id, dset_id, start.data(), dims.data(), blob->mutable_cpu_data());
-		//CHECK_GT(status, 0) << "Failed to read float variable " << variable_name_;
+		for(unsigned int i=0; i<netcdf_variables_.size(); i++){	
+			int status = nc_get_vara_float(file_id, dset_ids[i], start.data(), dims.data(), &(blob_bottom_->mutable_cpu_data()[i*offset]));
+			CHECK_GT(status, 0) << "Failed to read float variable " << netcdf_variables_[i];
+		}
 	}
 
 	template <>
@@ -104,11 +110,17 @@ namespace caffe {
 		
 		//create start vector for Hyperslab-IO:
 		std::vector<size_t> start(dims.size());
-		for(unsigned int i=0; i<dims.size(); i++) start[i]=0;
+		unsigned long offset=1;
+		for(unsigned int i=0; i<dims.size(); i++){
+			offset*=dims[i];
+			start[i]=0;
+		}
 		
 		//read the data
-		//int status = nc_get_vara_double(file_id, dset_id, start.data(), dims.data(), blob->mutable_cpu_data());
-		//CHECK_GT(status, 0) << "Failed to read double variable " << variable_name_;
+		for(unsigned int i=0; i<netcdf_variables_.size(); i++){	
+			int status = nc_get_vara_float(file_id, dset_ids[i], start.data(), dims.data(), &(blob_bottom_->mutable_cpu_data()[i*offset]));
+			CHECK_GT(status, 0) << "Failed to read double variable " << netcdf_variables_[i];
+		}
 	}
 
 	//template <>
