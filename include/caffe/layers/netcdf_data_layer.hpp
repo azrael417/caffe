@@ -52,7 +52,7 @@ namespace caffe {
 
 		std::vector<std::string> netcdf_filenames_;
 		std::map < string, std::vector<std::string> > netcdf_variables_;
-		std::map < string, unsigned int >  num_variables_;
+		std::map < string, unsigned int > num_dimensions_, num_variables_;
 		unsigned int num_files_;
 		unsigned int current_file_;
 		unsigned int current_row_;

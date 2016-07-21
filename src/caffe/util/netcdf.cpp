@@ -24,15 +24,21 @@ namespace caffe {
 		CHECK_LE(ndims, max_dim);
 
 		// Verify that the data format is what we expect: float or double.
+		std::cout << "Number of dimensions: " << ndims << std::endl;
 		std::vector<int> dimids(ndims);
-		status = nc_inq_varndims(file_id, dset_id, dimids.data());
+		status = nc_inq_vardimid(file_id, dset_id, dimids.data());
 
-		////check if there are unlimited dimensions: we should not support these
-		//int ndimsunlim=0;
-		//status = nc_inq_unlimdims(file_id, &ndimsunlim, NULL);
-		//CHECK(status == NC_ENOTNC4) << "netCDF-4 operation on netCDF-3 file performed for variable " << variable_name_;
-		//CHECK_GT(status,1) << "An error occured for variable " << variable_name_;
-		//CHECK_GT(ndimsunlim,0) << "Unlimited dimensions are not supported yet!";
+		//query unlimited dimensions
+		//int ndims_unlimited;
+		//std::vector<int> dimids_unlimited;
+		//status = nc_inq_unlimdims(file_id, &ndims_unlimited, dimids_unlimited.data());
+		//CHECK(status != NC_ENOTNC4) << "netCDF-4 operation on netCDF-3 file performed for variable " << variable_name_;
+		//for(unsigned int i=0; i<dimids_unlimited.size(); i++){
+		//	std::cout << i << " " << dimids_unlimited[i] << std::endl;
+		//}
+		//for(unsigned int i=0; i<dimids.size(); i++){
+		//	std::cout << i << " " << dimids[i] << std::endl;
+		//}
 
 		//get size of dimensions
 		dims.resize(ndims);
@@ -76,12 +82,17 @@ namespace caffe {
 				CHECK_EQ(tmpdims[d],dims[d]) << "Dimension " << d << " does not agree for " << netcdf_variables_[0] << " and " << variable_name_;
 			}
 		}
-    
+
 		vector<int> blob_dims(dims.size()+1);
 		for (int i = 0; i < dims.size(); ++i) {
 			blob_dims[i] = dims[i];
 		}
 		blob_dims[dims.size()]=netcdf_variables_.size();
+		
+		//DEBUG
+		for (int i = 0; i < dims.size()+1; ++i) std::cout << "blob_dims[" << i << "] = " << blob_dims[i] << std::endl;
+		//DEBUG
+		
 		blob->Reshape(blob_dims);
 	} 
 
