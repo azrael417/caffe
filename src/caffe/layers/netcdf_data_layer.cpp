@@ -46,7 +46,8 @@ namespace caffe {
 		
 		for (int i = 0; i < top_size; ++i) {
 			netcdf_blobs_[i] = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
-			netcdf_load_nd_dataset(file_id, netcdf_variables_[this->layer_param_.top(i)], MIN_DATA_DIM, MAX_DATA_DIM, netcdf_blobs_[i].get());
+			netcdf_load_nd_dataset(file_id, netcdf_variables_[this->layer_param_.top(i)], 
+									MIN_DATA_DIM, MAX_DATA_DIM, netcdf_blobs_[i].get());
 		}
 		
 		//close the file
@@ -70,8 +71,7 @@ namespace caffe {
 		// Shuffle if needed.
 		if (this->layer_param_.netcdf_data_param().shuffle()) {
 			std::random_shuffle(data_permutation_.begin(), data_permutation_.end());
-			DLOG(INFO) << "Successully loaded " << netcdf_blobs_[0]->shape(0)
-				<< " rows (shuffled)";
+			DLOG(INFO) << "Successully loaded " << netcdf_blobs_[0]->shape(0) << " rows (shuffled)";
 		} else {
 			DLOG(INFO) << "Successully loaded " << netcdf_blobs_[0]->shape(0) << " rows";
 		}
@@ -124,7 +124,7 @@ namespace caffe {
 
 		// Load the first NetCDF file and initialize the line counter.
 		LoadNetCDFFileData(netcdf_filenames_[file_permutation_[current_file_]].c_str());
-		current_row_ = 0;
+		current_row_ = 0;		
 
 		// Reshape blobs.
 		const int batch_size = this->layer_param_.netcdf_data_param().batch_size();

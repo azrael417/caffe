@@ -6,7 +6,7 @@
 
 namespace caffe {
 
-	void netcdf_check_variable_helper(const int& file_id, const string& variable_name_, int& dset_id, const int& min_dim, const int& max_dim, std::vector<size_t>& dims){
+	void netcdf_check_variable_helper(const int& file_id, const string& variable_name_, int& dset_id, const int& min_dim, const int& max_dim, std::vector<size_t>& dims, nc_type& vtype_){
 		//look up variable
 		int status;
 		status=nc_inq_varid(file_id, variable_name_.c_str(), &dset_id);
@@ -24,7 +24,6 @@ namespace caffe {
 		CHECK_LE(ndims, max_dim);
 
 		// Verify that the data format is what we expect: float or double.
-		std::cout << "Number of dimensions: " << ndims << std::endl;
 		std::vector<int> dimids(ndims);
 		status = nc_inq_vardimid(file_id, dset_id, dimids.data());
 
@@ -47,61 +46,62 @@ namespace caffe {
 			CHECK(status != NC_EBADDIM) << "Invalid dimension " << i << " for " << variable_name_;
 		}
 
-		nc_type typep_;
-		status = nc_inq_vartype(file_id, dset_id, &typep_);
-		switch (typep_) {
+		status = nc_inq_vartype(file_id, dset_id, &vtype_);
+		switch (vtype_) {
 			case NC_FLOAT:
-			LOG_FIRST_N(INFO, 1) << "Datatype class: NC_FLOAT";
+			LOG_FIRST_N(INFO, 1) << "Datatype class for variable " << variable_name_ << ": NC_FLOAT";
 			break;
 			case NC_INT:
-			LOG_FIRST_N(INFO, 1) << "Datatype class: NC_INT or NC_LONG";
+			LOG_FIRST_N(INFO, 1) << "Datatype class for variable " << variable_name_ << ": NC_INT or NC_LONG";
 			break;
 			case NC_DOUBLE:
-			LOG_FIRST_N(INFO, 1) << "Datatype class: NC_DOUBLE";
+			LOG_FIRST_N(INFO, 1) << "Datatype class for variable " << variable_name_ << ": NC_DOUBLE";
 			break;
 			default:
-			LOG(FATAL) << "Unsupported Datatype " << typep_;
+			LOG(FATAL) << "Unsupported Datatype " << vtype_ << " for variable " << variable_name_;
 		}
 	}
   
 	// Verifies format of data stored in NetCDF file and reshapes blob accordingly.
 	template <typename Dtype>
-	void netcdf_load_nd_dataset_helper(const int& file_id, const std::vector<string>& netcdf_variables_, std::vector<int>& dset_ids, const int& min_dim, const int& max_dim, std::vector<size_t>& dims, Blob<Dtype>* blob) {
+	void netcdf_load_nd_dataset_helper(const int& file_id, const std::vector<string>& netcdf_variables_, std::vector<int>& dset_ids, 
+										const int& min_dim, const int& max_dim, std::vector<size_t>& dims, nc_type& vtype, Blob<Dtype>* blob) {
     
 		// Obtain all sizes for variable 0:
 		string variable_name_=netcdf_variables_[0];
-		netcdf_check_variable_helper(file_id, variable_name_, dset_ids[0], min_dim, max_dim, dims);
+		netcdf_check_variable_helper(file_id, variable_name_, dset_ids[0], min_dim, max_dim, dims, vtype);
     
 		//make sure that all other dimensions for the other variables fit as well:
 		for(unsigned int i=1; i<netcdf_variables_.size(); i++){
 			std::vector<size_t> tmpdims;
+			nc_type tmpvtype;
 			variable_name_=netcdf_variables_[i];
-			netcdf_check_variable_helper(file_id, variable_name_, dset_ids[i], min_dim, max_dim, tmpdims);
+			netcdf_check_variable_helper(file_id, variable_name_, dset_ids[i], min_dim, max_dim, tmpdims, tmpvtype);
 			CHECK_EQ(tmpdims.size(),dims.size()) << "Number of dimensions of variable " << netcdf_variables_[0] << " and " << variable_name_ << " do not agree!";
 			for(unsigned int d=0; d<tmpdims.size(); d++){
 				CHECK_EQ(tmpdims[d],dims[d]) << "Dimension " << d << " does not agree for " << netcdf_variables_[0] << " and " << variable_name_;
 			}
+			CHECK_EQ(vtype,tmpvtype) << "Datatypes of variable " << netcdf_variables_[0] << " and " << variable_name_ << " do not agree!";
 		}
-
+		
+		//set blob dimensions and reshape
 		vector<int> blob_dims(dims.size()+1);
 		for (int i = 0; i < dims.size(); ++i) {
 			blob_dims[i] = dims[i];
 		}
 		blob_dims[dims.size()]=netcdf_variables_.size();
-		
-		//DEBUG
-		for (int i = 0; i < dims.size()+1; ++i) std::cout << "blob_dims[" << i << "] = " << blob_dims[i] << std::endl;
-		//DEBUG
-		
 		blob->Reshape(blob_dims);
 	} 
 
 	template <>
-	void netcdf_load_nd_dataset<float>(const int& file_id, const std::vector<string>& netcdf_variables_, const int& min_dim, const int& max_dim, Blob<float>* blob) {
+	void netcdf_load_nd_dataset<float>(const int& file_id, const std::vector<string>& netcdf_variables_, 
+										const int& min_dim, const int& max_dim, Blob<float>* blob) {
+		
 		//query the data and get some dimensions
 		std::vector<int> dset_ids(netcdf_variables_.size());
 		std::vector<size_t> dims;
-		netcdf_load_nd_dataset_helper(file_id, netcdf_variables_, dset_ids, min_dim, max_dim, dims, blob);
+		nc_type vtype;
+		netcdf_load_nd_dataset_helper(file_id, netcdf_variables_, dset_ids, min_dim, max_dim, dims, vtype, blob);
 		
 		//create start vector for Hyperslab-IO:
 		std::vector<size_t> start(dims.size());
@@ -112,18 +112,51 @@ namespace caffe {
 		}
 		
 		//read the data
-		for(unsigned int i=0; i<netcdf_variables_.size(); i++){	
-			int status = nc_get_vara_float(file_id, dset_ids[i], start.data(), dims.data(), &(blob->mutable_cpu_data()[i*offset]));
-			CHECK_GT(status, 0) << "Failed to read NetCDF float variable " << netcdf_variables_[i];
+		if(vtype == NC_FLOAT){
+			//direct read possible
+			for(unsigned int i=0; i<netcdf_variables_.size(); i++){
+				int status = nc_get_vara_float(file_id, dset_ids[i], start.data(), dims.data(), &(blob->mutable_cpu_data()[i*offset]));
+				if(status != NC_NOERR){
+					if(status == NC_ENOTVAR) std::cerr << "Variable " << netcdf_variables_[i] << " not found";
+					else if(status == NC_EINVALCOORDS) std::cerr << "Index exceeds dimension bound for variable " << netcdf_variables_[i];
+					else if(status == NC_EEDGE) std::cerr << "Start+size exceeds dimension bound for variable " << netcdf_variables_[i];
+					else if(status == NC_ERANGE) std::cerr << "SOme values are out of range for variable " << netcdf_variables_[i];
+					CHECK(status) << "Failed to read double variable " << netcdf_variables_[i];
+				}
+			}
+		}
+		else if(vtype == NC_DOUBLE){
+			//conversion necessary
+			double* buf=new double[offset];
+			for(unsigned int i=0; i<netcdf_variables_.size(); i++){	
+				int status = nc_get_vara_double(file_id, dset_ids[i], start.data(), dims.data(), buf);
+				if(status != NC_NOERR){
+					if(status == NC_ENOTVAR) std::cerr << "Variable " << netcdf_variables_[i] << " not found";
+					else if(status == NC_EINVALCOORDS) std::cerr << "Index exceeds dimension bound for variable " << netcdf_variables_[i];
+					else if(status == NC_EEDGE) std::cerr << "Start+size exceeds dimension bound for variable " << netcdf_variables_[i];
+					else if(status == NC_ERANGE) std::cerr << "SOme values are out of range for variable " << netcdf_variables_[i];
+					CHECK(status) << "Failed to read double variable " << netcdf_variables_[i];
+				}
+#pragma omp parallel for
+				for(unsigned int k=0; k<offset; k++){
+					blob->mutable_cpu_data()[k+i*offset]=static_cast<float>(buf[k]);
+				}
+			}
+			delete [] buf;
+		}
+		else{
+			DLOG(FATAL) << "Unsupported datatype";
 		}
 	}
 
 	template <>
-	void netcdf_load_nd_dataset<double>(const int& file_id, const std::vector<string>& netcdf_variables_, const int& min_dim, const int& max_dim, Blob<double>* blob) {
+	void netcdf_load_nd_dataset<double>(const int& file_id, const std::vector<string>& netcdf_variables_, 
+										const int& min_dim, const int& max_dim, Blob<double>* blob) {
 		//query the data and get some dimensions
 		std::vector<int> dset_ids(netcdf_variables_.size());
 		std::vector<size_t> dims;
-		netcdf_load_nd_dataset_helper(file_id, netcdf_variables_, dset_ids, min_dim, max_dim, dims, blob);
+		nc_type vtype;
+		netcdf_load_nd_dataset_helper(file_id, netcdf_variables_, dset_ids, min_dim, max_dim, dims, vtype, blob);
 		
 		//create start vector for Hyperslab-IO:
 		std::vector<size_t> start(dims.size());
@@ -134,9 +167,39 @@ namespace caffe {
 		}
 		
 		//read the data
-		for(unsigned int i=0; i<netcdf_variables_.size(); i++){	
-			int status = nc_get_vara_double(file_id, dset_ids[i], start.data(), dims.data(), &(blob->mutable_cpu_data()[i*offset]));
-			CHECK_GT(status, 0) << "Failed to read double variable " << netcdf_variables_[i];
+		if(vtype == NC_DOUBLE){
+			for(unsigned int i=0; i<netcdf_variables_.size(); i++){	
+				int status = nc_get_vara_double(file_id, dset_ids[i], start.data(), dims.data(), &(blob->mutable_cpu_data()[i*offset]));
+				if(status != NC_NOERR){
+					if(status == NC_ENOTVAR) std::cerr << "Variable " << netcdf_variables_[i] << " not found";
+					else if(status == NC_EINVALCOORDS) std::cerr << "Index exceeds dimension bound for variable " << netcdf_variables_[i];
+					else if(status == NC_EEDGE) std::cerr << "Start+size exceeds dimension bound for variable " << netcdf_variables_[i];
+					else if(status == NC_ERANGE) std::cerr << "SOme values are out of range for variable " << netcdf_variables_[i];
+					CHECK(status) << "Failed to read double variable " << netcdf_variables_[i];
+				}
+			}
+		}
+		else if(vtype == NC_FLOAT){
+			//conversion necessary
+			float* buf=new float[offset];
+			for(unsigned int i=0; i<netcdf_variables_.size(); i++){	
+				int status = nc_get_vara_float(file_id, dset_ids[i], start.data(), dims.data(), buf);
+				if(status != NC_NOERR){
+					if(status == NC_ENOTVAR) std::cerr << "Variable " << netcdf_variables_[i] << " not found";
+					else if(status == NC_EINVALCOORDS) std::cerr << "Index exceeds dimension bound for variable " << netcdf_variables_[i];
+					else if(status == NC_EEDGE) std::cerr << "Start+size exceeds dimension bound for variable " << netcdf_variables_[i];
+					else if(status == NC_ERANGE) std::cerr << "SOme values are out of range for variable " << netcdf_variables_[i];
+					CHECK(status) << "Failed to read double variable " << netcdf_variables_[i];
+				}
+#pragma omp parallel for
+				for(unsigned int k=0; k<offset; k++){
+					blob->mutable_cpu_data()[k+i*offset]=static_cast<double>(buf[k]);
+				}
+			}
+			delete [] buf;
+		}
+		else{
+			DLOG(FATAL) << "Unsupported datatype";
 		}
 	}
 

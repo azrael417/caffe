@@ -12,10 +12,12 @@
 
 namespace caffe {
 
-	void netcdf_check_variable_helper(const int& file_id, const string& variable_name_, int& dset_id, const int& min_dim, const int& max_dim, std::vector<size_t>& dims);
+	void netcdf_check_variable_helper(const int& file_id, const string& variable_name_, int& dset_id, 
+										const int& min_dim, const int& max_dim, std::vector<size_t>& dims, nc_type& vtype_);
 
 	template <typename Dtype>
-	void netcdf_load_nd_dataset_helper(const int& file_id, const std::vector<string>& netcdf_variables_, std::vector<int>& dset_ids, const int& min_dim, const int& max_dim, std::vector<size_t>& dims, Blob<Dtype>* blob);
+	void netcdf_load_nd_dataset_helper(const int& file_id, const std::vector<string>& netcdf_variables_, std::vector<int>& dset_ids, 
+										const int& min_dim, const int& max_dim, std::vector<size_t>& dims, nc_type& vtype_, Blob<Dtype>* blob);
 
 	template <typename Dtype>
 	void netcdf_load_nd_dataset(const int& file_id, const std::vector<string>& netcdf_variables_, const int& min_dim, const int& max_dim, Blob<Dtype>* blob);
