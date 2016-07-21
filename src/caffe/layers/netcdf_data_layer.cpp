@@ -25,12 +25,19 @@ namespace caffe {
 	void NetCDFDataLayer<Dtype>::LoadNetCDFFileData(const char* filename) {
 		int file_id;
 	
+		//load netcdf file:
 		DLOG(INFO) << "Loading NetCDF file: " << filename;
 		int retval = nc_open(filename, NC_NOWRITE, &file_id);
-		if (retval != 0) {
-			LOG(FATAL) << "Failed opening NetCDF file: " << filename;
+		if(retval != 0){
+			if(retval == NC_ENOMEM) std::cerr << "Error, out of memory while opening file " << filename;
+			if(retval == NC_EHDFERR) std::cerr << "Error, HDF5-error while opening file " << filename;
+			if(retval == NC_EDIMMETA) std::cerr << "Error in NetCDF-4 dimension data in  file " << filename;
+			DLOG(INFO) << "Error while opening NetCDF file " << filename;
+			CHECK(retval) << "Error while opening file " << filename;
 		}
-  
+		DLOG(INFO) << "Opened NetCDF file " << filename;
+
+		//determine layer size
 		int top_size = this->layer_param_.top_size();
 		netcdf_blobs_.resize(top_size);
 

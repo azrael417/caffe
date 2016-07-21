@@ -7,13 +7,19 @@
 namespace caffe {
 
 	void netcdf_check_variable_helper(const int& file_id, const string& variable_name_, int& dset_id, const int& min_dim, const int& max_dim, std::vector<size_t>& dims){
-		CHECK(nc_inq_varid(file_id, variable_name_.c_str(), &dset_id)) << "Failed to find NetCDF variable " << variable_name_;
-		// Verify that the number of dimensions is in the accepted range.                                             
+		//look up variable
 		int status;
+		status=nc_inq_varid(file_id, variable_name_.c_str(), &dset_id);
+		CHECK(status != NC_EBADID) << "Bad NetCDF File-ID specified";
+		
+		//CHECK() << "Failed to find NetCDF variable " << variable_name_;
+		// Verify that the number of dimensions is in the accepted range.
 		int ndims;
 		status = nc_inq_varndims(file_id, dset_id, &ndims);
-		CHECK_EQ(status, NC_EBADID) << "Failed to get variable ndims for " << variable_name_;
-		CHECK_EQ(status, NC_ENOTVAR) << "Invalid path " << variable_name_;
+		if(status != 0){
+			CHECK(status != NC_EBADID) << "Failed to get variable ndims for " << variable_name_;
+			CHECK(status != NC_ENOTVAR) << "Invalid path " << variable_name_;
+		}
 		CHECK_GE(ndims, min_dim);
 		CHECK_LE(ndims, max_dim);
 
@@ -24,7 +30,7 @@ namespace caffe {
 		////check if there are unlimited dimensions: we should not support these
 		//int ndimsunlim=0;
 		//status = nc_inq_unlimdims(file_id, &ndimsunlim, NULL);
-		//CHECK_EQ(status, NC_ENOTNC4) << "netCDF-4 operation on netCDF-3 file performed for variable " << variable_name_;
+		//CHECK(status == NC_ENOTNC4) << "netCDF-4 operation on netCDF-3 file performed for variable " << variable_name_;
 		//CHECK_GT(status,1) << "An error occured for variable " << variable_name_;
 		//CHECK_GT(ndimsunlim,0) << "Unlimited dimensions are not supported yet!";
 
@@ -32,7 +38,7 @@ namespace caffe {
 		dims.resize(ndims);
 		for(unsigned int i=0; i<ndims; ++i){
 			status = nc_inq_dimlen(file_id, dimids[i], &dims[i]);
-			CHECK_EQ(status, NC_EBADDIM) << "Invalid dimension " << i << " for " << variable_name_;
+			CHECK(status != NC_EBADDIM) << "Invalid dimension " << i << " for " << variable_name_;
 		}
 
 		nc_type typep_;
@@ -96,8 +102,8 @@ namespace caffe {
 		
 		//read the data
 		for(unsigned int i=0; i<netcdf_variables_.size(); i++){	
-			int status = nc_get_vara_float(file_id, dset_ids[i], start.data(), dims.data(), &(blob_bottom_->mutable_cpu_data()[i*offset]));
-			CHECK_GT(status, 0) << "Failed to read float variable " << netcdf_variables_[i];
+			int status = nc_get_vara_float(file_id, dset_ids[i], start.data(), dims.data(), &(blob->mutable_cpu_data()[i*offset]));
+			CHECK_GT(status, 0) << "Failed to read NetCDF float variable " << netcdf_variables_[i];
 		}
 	}
 
@@ -118,7 +124,7 @@ namespace caffe {
 		
 		//read the data
 		for(unsigned int i=0; i<netcdf_variables_.size(); i++){	
-			int status = nc_get_vara_float(file_id, dset_ids[i], start.data(), dims.data(), &(blob_bottom_->mutable_cpu_data()[i*offset]));
+			int status = nc_get_vara_double(file_id, dset_ids[i], start.data(), dims.data(), &(blob->mutable_cpu_data()[i*offset]));
 			CHECK_GT(status, 0) << "Failed to read double variable " << netcdf_variables_[i];
 		}
 	}
