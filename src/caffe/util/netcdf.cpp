@@ -86,10 +86,11 @@ namespace caffe {
 		
 		//set blob dimensions and reshape
 		vector<int> blob_dims(dims.size()+1);
-		for (int i = 0; i < dims.size(); ++i) {
-			blob_dims[i] = dims[i];
+		//first dimension is channel dimension
+		blob_dims[0]=static_cast<int>(netcdf_variables_.size());
+		for (int i = 1; i <= dims.size(); ++i) {
+			blob_dims[i] = dims[i-1];
 		}
-		blob_dims[dims.size()]=netcdf_variables_.size();
 		blob->Reshape(blob_dims);
 	} 
 

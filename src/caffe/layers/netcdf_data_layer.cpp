@@ -55,7 +55,7 @@ namespace caffe {
 		if (retval != 0) {
 			LOG(FATAL) << "Failed to close NetCDF file: " << filename;
 		}
-
+		
 		// MinTopBlobs==1 guarantees at least one top blob
 		CHECK_GE(netcdf_blobs_[0]->num_axes(), 1) << "Input must have at least 1 axis.";
 		const int num = netcdf_blobs_[0]->shape(0);
