@@ -456,7 +456,7 @@ message LayerParameter {
   optional WindowDataParameter window_data_param = 129;
   optional RemoteDataParameter remote_data_param = 145;
   optional NetCDFDataParameter netcdf_data_param = 200;
-  optional BoxToYoloParameter boxtoyolo_param = 210;
+  optional BoxToYoloParameter box_to_yolo_param = 210;
 }
 
 // Message that stores parameters used to apply transformation
@@ -841,30 +841,31 @@ message HDF5DataParameter {
 message NetCDFDataParameter {
   // Specify the data source.
   optional string source = 1;
-  repeated string variable = 2;
+  repeated string variable_data = 2;
+  repeated string variable_label = 3;
   // Specify the batch size.
-  optional uint32 batch_size = 3;
+  optional uint32 batch_size = 4;
 
   // Specify whether to shuffle the data.
   // If shuffle == true, the ordering of the NETCDF files is shuffled,
   // and the ordering of data within any given NETCDF file is shuffled,
   // but data between different files are not interleaved; all of a file's
   // data are output (in a random order) before moving onto another file.
-  optional bool shuffle = 4 [default = false];
+  optional bool shuffle = 5 [default = false];
 }
 
 // Message that stores parameters used by box->YOLO label converter
 message BoxToYoloParameter {
 	//number of images, as a label batch can have more than one image (for sequences)
-	optional int num_images = 1 [default = 1];
-	optional bool mask =  2 [default = false];
-	required int orig_dimx = 3;
-	required orig_dimy = 4;
-	required reduced_dimx = 5;
-	required reduced_dimy = 6;
-	optional int max_labels_per_segment = 7 [default = 1];
+	optional int32 num_images = 1 [default = 1];
+	optional bool masked =  2 [default = false];
+	required int32 orig_dimx = 3;
+	required int32 orig_dimy = 4;
+	required int32 reduced_dimx = 5;
+	required int32 reduced_dimy = 6;
+	optional int32 max_labels_per_segment = 7 [default = 1];
 	optional bool one_hot = 8 [default = false];
-	optional int classlabel = 9;
+	repeated int32 class_label = 9;
 }
 
 message HDF5OutputParameter {
@@ -1343,6 +1344,7 @@ message V1LayerParameter {
     WINDOW_DATA = 24;
     THRESHOLD = 31;
 	NETCDF_DATA = 200;
+	BOXTOYOLO = 210;
   }
   optional LayerType type = 5;
   repeated BlobProto blobs = 6;
@@ -1387,7 +1389,7 @@ message V1LayerParameter {
   optional LossParameter loss_param = 42;
   optional V0LayerParameter layer = 1;
   optional NetCDFDataParameter netcdf_data_param = 100;
-  optional BoxToYoloParameter boxtoyolo_param = 110;
+  optional BoxToYoloParameter box_to_yolo_param = 110;
 }
 
 // DEPRECATED: V0LayerParameter is the old way of specifying layer parameters

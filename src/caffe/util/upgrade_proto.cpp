@@ -571,6 +571,8 @@ namespace caffe {
 		} else if (type == "netcdf_data") {
 			return V1LayerParameter_LayerType_NETCDF_DATA;
 #endif
+		} else if (type == "boxtoyolo") {
+			return V1LayerParameter_LayerType_BOXTOYOLO;
 		} else if (type == "hdf5_output") {
 			return V1LayerParameter_LayerType_HDF5_OUTPUT;
 		} else if (type == "im2col") {
@@ -793,9 +795,13 @@ namespace caffe {
 #ifdef USE_NETCDF
 		if (v1_layer_param.has_netcdf_data_param()) {
 			layer_param->mutable_netcdf_data_param()->CopyFrom(
-				v1_layer_param.netcdf_data_param());
+			v1_layer_param.netcdf_data_param());
 		}
 #endif
+		if (v1_layer_param.has_box_to_yolo_param()) {
+			layer_param->mutable_box_to_yolo_param()->CopyFrom(
+			v1_layer_param.box_to_yolo_param());
+		}
 		if (v1_layer_param.has_hdf5_output_param()) {
 			layer_param->mutable_hdf5_output_param()->CopyFrom(
 				v1_layer_param.hdf5_output_param());
@@ -919,6 +925,8 @@ namespace caffe {
 			case V1LayerParameter_LayerType_NETCDF_DATA:
 			return "NetCDFData";
 #endif
+			case V1LayerParameter_LayerType_BOXTOYOLO:
+			return "BoxToYolo";
 			case V1LayerParameter_LayerType_HDF5_OUTPUT:
 			return "HDF5Output";
 			case V1LayerParameter_LayerType_HINGE_LOSS:

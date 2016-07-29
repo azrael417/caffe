@@ -58,10 +58,11 @@ namespace caffe {
 		
 		// MinTopBlobs==1 guarantees at least one top blob
 		CHECK_GE(netcdf_blobs_[0]->num_axes(), 1) << "Input must have at least 1 axis.";
-		const int num = netcdf_blobs_[0]->shape(0);
-		for (int i = 1; i < top_size; ++i) {
-			CHECK_EQ(netcdf_blobs_[i]->shape(0), num);
-		}
+		//const int num = netcdf_blobs_[0]->shape(0);
+		//for (int i = 1; i < top_size; ++i) {
+		//	CHECK_EQ(netcdf_blobs_[i]->shape(0), num);
+		//}
+		
 		// Default to identity permutation.
 		data_permutation_.clear();
 		data_permutation_.resize(netcdf_blobs_[0]->shape(0));
@@ -101,13 +102,27 @@ namespace caffe {
 		LOG(INFO) << "Number of NetCDF files: " << num_files_;
 		CHECK_GE(num_files_, 1) << "Must have at least 1 NetCDF filename listed in " << file_list;
 		
+		//get the top size
+		const int top_size = this->layer_param_.top_size();
+		
 		//read list of netcdf variables which should be read from the file
-		num_variables_["data"] = this->layer_param_.netcdf_data_param().variable_size();
-		for(unsigned int i=0; i< num_variables_["data"]; i++){
-			netcdf_variables_["data"].push_back(this->layer_param_.netcdf_data_param().variable(i));
+		for(unsigned int i=0; i<top_size; i++){
+			string topname=this->layer_param_.top(i);
+			if(topname=="data"){
+				num_variables_[topname] = this->layer_param_.netcdf_data_param().variable_data_size();
+				for(unsigned int j=0; j<num_variables_[topname]; j++){
+					netcdf_variables_[topname].push_back(this->layer_param_.netcdf_data_param().variable_data(j));
+				}
+			}
+			else if(topname=="label"){
+				num_variables_[topname] = this->layer_param_.netcdf_data_param().variable_label_size();
+				for(unsigned int j=0; j<num_variables_[topname]; j++){
+					netcdf_variables_[topname].push_back(this->layer_param_.netcdf_data_param().variable_label(j));
+				}
+			}
+			LOG(INFO) << "Number of NetCDF " << topname << " variables: " << num_variables_[topname];
+			CHECK_GE(num_variables_[topname], 1) << "Must have at least 1 NetCDF variable for " << topname << " listed.";
 		}
-		LOG(INFO) << "Number of NetCDF data variables: " << num_variables_["data"];
-		CHECK_GE(num_variables_["data"], 1) << "Must have at least 1 NetCDF data variable listed.";
 		
 		//do permutation if necessary
 		file_permutation_.clear();
@@ -117,27 +132,28 @@ namespace caffe {
 			file_permutation_[i] = i;
 		}
 
-		// Shuffle if needed.
+		// Shuffle if needed. Only first data param is parsed
 		if (this->layer_param_.netcdf_data_param().shuffle()) {
 			std::random_shuffle(file_permutation_.begin(), file_permutation_.end());
 		}
 
 		// Load the first NetCDF file and initialize the line counter.
 		LoadNetCDFFileData(netcdf_filenames_[file_permutation_[current_file_]].c_str());
-		current_row_ = 0;		
-
-		// Reshape blobs.
-		const int batch_size = this->layer_param_.netcdf_data_param().batch_size();
-		const int top_size = this->layer_param_.top_size();
+		//current_row_ = 0;
 		
+		// Reshape blobs. Only first data param is parsed
+		const int batch_size = this->layer_param_.netcdf_data_param().batch_size();
+		
+		//reshape the top-blobs:
 		vector<int> top_shape;
 		for (int i = 0; i < top_size; ++i) {
-			top_shape.resize(netcdf_blobs_[i]->num_axes());
+			top_shape.resize(1+netcdf_blobs_[i]->num_axes());
 			top_shape[0] = batch_size;
-			for (int j = 1; j < top_shape.size(); ++j) {
-				top_shape[j] = netcdf_blobs_[i]->shape(j);
+			for (int j = 0; j < (top_shape.size()-1); ++j) {
+				top_shape[j+1] = netcdf_blobs_[i]->shape(j);
 			}
 			top[i]->Reshape(top_shape);
+			top_shape.clear();
 		}
 	}
 
@@ -145,32 +161,24 @@ namespace caffe {
 	void NetCDFDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 	const vector<Blob<Dtype>*>& top) {
 		const int batch_size = this->layer_param_.netcdf_data_param().batch_size();
-		for (int i = 0; i < batch_size; ++i, ++current_row_) {
-			if (current_row_ == netcdf_blobs_[0]->shape(0)) {
-				if (num_files_ > 1) {
-					++current_file_;
-					if (current_file_ == num_files_) {
-						current_file_ = 0;
-						if (this->layer_param_.netcdf_data_param().shuffle()) {
-							std::random_shuffle(file_permutation_.begin(),
-							file_permutation_.end());
-						}
-						DLOG(INFO) << "Looping around to first file.";
-					}
-					LoadNetCDFFileData(
-						netcdf_filenames_[file_permutation_[current_file_]].c_str());
-				}
-				current_row_ = 0;
-				if (this->layer_param_.netcdf_data_param().shuffle())
-					std::random_shuffle(data_permutation_.begin(), data_permutation_.end());
+		
+		//check if we need to shuffle:
+		if( (current_file_+batch_size) > num_files_ ){
+			current_file_ = 0;
+			if (this->layer_param_.netcdf_data_param().shuffle()) {
+				std::random_shuffle(file_permutation_.begin(), file_permutation_.end());
 			}
+			DLOG(INFO) << "Looping around to first file.";
+		}
+		
+		for (int i = 0; i < batch_size; ++i) {
+			LoadNetCDFFileData(netcdf_filenames_[file_permutation_[current_file_]].c_str());
 			for (int j = 0; j < this->layer_param_.top_size(); ++j) {
 				int data_dim = top[j]->count() / top[j]->shape(0);
-				caffe_copy(data_dim,
-				&netcdf_blobs_[j]->cpu_data()[data_permutation_[current_row_]
-					* data_dim], &top[j]->mutable_cpu_data()[i * data_dim]);
+				caffe_copy(data_dim, netcdf_blobs_[j]->cpu_data(), &top[j]->mutable_cpu_data()[i * data_dim]);
 			}
 		}
+		current_file_+=batch_size;
 	}
 
 #ifdef CPU_ONLY
