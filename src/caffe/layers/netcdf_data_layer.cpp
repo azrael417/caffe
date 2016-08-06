@@ -159,11 +159,9 @@ namespace caffe {
 
 	template <typename Dtype>
 	void NetCDFDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-		const int batch_size = this->layer_param_.netcdf_data_param().batch_size();
 		
-		for (int j = 0; j < this->layer_param_.top_size(); ++j) {
-			std::cout << "top[" << j << "] shape: " << top[j]->shape_string() << std::endl;
-		}
+		//batch size
+		const int batch_size = this->layer_param_.netcdf_data_param().batch_size();
 		
 		//check if we need to shuffle:
 		if( (current_file_+batch_size) > num_files_ ){
@@ -175,49 +173,12 @@ namespace caffe {
 		}
 		
 		for (int i = 0; i < batch_size; ++i) {
-			
-			std::cout << "reading: " << netcdf_filenames_[file_permutation_[current_file_+i]] << std::endl;
-			
 			LoadNetCDFFileData(netcdf_filenames_[file_permutation_[current_file_+i]].c_str());
 			for (int j = 0; j < this->layer_param_.top_size(); ++j) {
 				int data_dim = top[j]->count() / top[j]->shape(0);
-				
-				//DEBUG
-				unsigned int count=netcdf_blobs_[j]->count();
-				double norm=0.;
-				std::cout << "input " << j << " batch " << i << std::endl;
-				std::cout << "COUNT BEFORE : " << count << " data-dim: " << data_dim << std::endl;
-				for(unsigned int k=0; k<count; k++){
-					norm+=netcdf_blobs_[j]->cpu_data()[k];
-				}
-				std::cout << "NORM BEFORE: " << norm << std::endl;
-				//DEBUG
-				
 				caffe_copy(data_dim, netcdf_blobs_[j]->cpu_data(), &(top[j]->mutable_cpu_data()[i * data_dim]));
-				
-				//DEBUG
-				count=netcdf_blobs_[j]->count();
-				norm=0.;
-				std::cout << "COUNT AFTER: " << count << " data-dim: " << data_dim << std::endl;
-				for(unsigned int k=0; k<count; k++){
-					norm+=netcdf_blobs_[j]->cpu_data()[k];
-				}
-				std::cout << "NORM AFTER: " << norm << std::endl;
-				//DEBUG
 			}
-			
-			//DEBUG
-			//std::cout << "Obtained: " << std::endl;
-			//unsigned int datacount=top[0]->count()/batch_size;
-			//for(unsigned int l=0; l<datacount; l++){
-			//	std::cout << top[0]->cpu_data()[l*datacount] << std::endl;
-			//}
-			//DEBUG
-			
 		}
-		exit(1);
-		
-		
 		current_file_+=batch_size;
 	}
 

@@ -21,6 +21,8 @@ void BoxToYoloLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 	unsigned int odimy = this->layer_param_.box_to_yolo_param().orig_dimy();
 	unsigned int rdimx = this->layer_param_.box_to_yolo_param().reduced_dimx();
 	unsigned int rdimy = this->layer_param_.box_to_yolo_param().reduced_dimy();
+	unsigned int rbx = static_cast<int>(floor(static_cast<double>(odimx/rdimx)));
+	unsigned int rby = static_cast<int>(floor(static_cast<double>(odimy/rdimy)));
 	unsigned int mlps = this->layer_param_.box_to_yolo_param().max_labels_per_segment();
 	
 	//class related stuff
@@ -80,34 +82,107 @@ void BoxToYoloLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		for(unsigned int d=0; d<data_size; d++) top[0]->mutable_cpu_data()[d]=0.;
 	
 		//perform the actual conversion
-		//#ifdef _OPENMP
-		//#pragma omp parallel for schedule(dynamic)
-		//#endif	
+#ifdef _OPENMP
+#pragma omp parallel for firstprivate(classmap) schedule(dynamic)
+#endif	
 		for(unsigned int b=0; b<batch_size; b++){
 			std::vector<int> bindex(3);
 			bindex[0]=b;
 			
-			unsigned int datacount=bottom[0]->count()/batch_size;
-			for(unsigned int l=0; l<datacount; l++){
-				std::cout << bottom[0]->cpu_data()[datacount*b+l] << std::endl;
+			//hashmap to determine if cell was filled
+			std::map<int, int> fillcount;
+			
+			for(unsigned int l=0; l<mlpi; l++){
+				bindex[2]=l;
+				
+				//skip if masked and maskis zero
+				if(masked){
+					//get mask
+					bindex[1]=0;
+					if(bottom[0]->data_at(bindex)<1.e-8) break;
+				}
+				
+				//temporal index
+				bindex[1]=bstart;
+				int image_number=static_cast<int>(bottom[0]->data_at(bindex));
+				
+				//get xmin, ymin, xmax, ymax
+				bindex[1]=bstart+1;
+				Dtype xmin=bottom[0]->data_at(bindex);
+				bindex[1]=bstart+2;
+				Dtype xmax=bottom[0]->data_at(bindex);
+				bindex[1]=bstart+3;
+				Dtype ymin=bottom[0]->data_at(bindex);
+				bindex[1]=bstart+4;
+				Dtype ymax=bottom[0]->data_at(bindex);
+				
+				//class:
+				bindex[1]=bstart+5;
+				int classid=static_cast<int>(bottom[0]->data_at(bindex));
+				
+				//compute center and box size:
+				Dtype xcenter=0.5*(xmin+xmax);
+				Dtype ycenter=0.5*(ymin+ymax);
+				Dtype dx=(xmax-xmin);
+				Dtype dy=(ymax-ymin);
+				
+				//determine quadrant, i.e. reduced center and offset:
+				Dtype orx=static_cast<Dtype>(static_cast<int>(xcenter)%rbx);
+				Dtype crx=static_cast<Dtype>(static_cast<int>(xcenter-orx)/rbx);
+				Dtype ory=static_cast<Dtype>(static_cast<int>(ycenter)%rby);
+				Dtype cry=static_cast<Dtype>(static_cast<int>(ycenter-ory)/rby);
+				
+				//determine box size in relation to big image
+				Dtype drx=dx/static_cast<Dtype>(odimx);
+				Dtype dry=dy/static_cast<Dtype>(odimy);
+				
+				//construct unique key:
+				int key=image_number+num_images*(static_cast<int>(crx)+rdimx*static_cast<int>(cry));
+				if( fillcount.find(key)==fillcount.end() ){
+					fillcount[key]=0;
+				}
+				else{
+					fillcount[key]++;
+					if(fillcount[key]>mlps){
+						DLOG(FATAL) << "Expected maximally " << mlps << " labels per segment but got " << fillcount[key] << ". Increase the number of labels you expect by increasing the max_labels_per_segment variable.";
+					}
+				}
+				
+				//insert into tensor:
+				std::vector<int> tindex(6);
+				tindex[0]=b;
+				tindex[1]=image_number;
+				tindex[2]=static_cast<int>(crx);
+				tindex[3]=static_cast<int>(cry);
+				tindex[4]=fillcount[key];
+				
+				//write the components
+				int offset;
+				//offset x:
+				tindex[5]=0;
+				offset=top[0]->offset(tindex);
+				top[0]->mutable_cpu_data()[offset]=orx;
+				//offset y
+				tindex[5]=1;
+				offset=top[0]->offset(tindex);
+				top[0]->mutable_cpu_data()[offset]=ory;
+				//width
+				tindex[5]=2;
+				offset=top[0]->offset(tindex);
+				top[0]->mutable_cpu_data()[offset]=drx;
+				//height
+				tindex[5]=3;
+				offset=top[0]->offset(tindex);
+				top[0]->mutable_cpu_data()[offset]=dry;
+				//confidence:
+				tindex[5]=4;
+				offset=top[0]->offset(tindex);
+				top[0]->mutable_cpu_data()[offset]=1.;
+				//class, one-hot encoded:
+				tindex[5]=5+classmap[classid];
+				offset=top[0]->offset(tindex);
+				top[0]->mutable_cpu_data()[offset]=1.;
 			}
-			exit(EXIT_FAILURE);
-			//for(unsigned int l=0; l<mlpi; l++){
-			//	bindex[2]=l;
-			//	
-			//	//skip if masked and maskis zero
-			//	if(masked){
-			//		//get mask
-			//		bindex[1]=0;
-			//		std::cout << "HERE: " << bottom[0]->data_at(bindex) << std::endl;
-			//		if(bottom[0]->data_at(bindex)<1.e-8) break;
-			//	}
-			//	
-			//	bindex[1]=bstart;
-			//	std::cout << bottom[0]->data_at(bindex) << std::endl;
-			//	
-			//	//get xmin, ymin, xmax, ymax
-			//}
 		}
 	}
 }
