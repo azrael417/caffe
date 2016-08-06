@@ -16,6 +16,7 @@ void BoxToYoloLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 	//some layer parameters
 	unsigned int num_images = this->layer_param_.box_to_yolo_param().num_images();
 	bool masked = this->layer_param_.box_to_yolo_param().masked();
+	unsigned int bstart=(masked ? 1 : 0);
 	unsigned int odimx = this->layer_param_.box_to_yolo_param().orig_dimx();
 	unsigned int odimy = this->layer_param_.box_to_yolo_param().orig_dimy();
 	unsigned int rdimx = this->layer_param_.box_to_yolo_param().reduced_dimx();
@@ -79,15 +80,35 @@ void BoxToYoloLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		for(unsigned int d=0; d<data_size; d++) top[0]->mutable_cpu_data()[d]=0.;
 	
 		//perform the actual conversion
-//#ifdef _OPENMP
-//#pragma omp parallel for
-//#endif	
-//		for(unsigned int b=0; b<batch_size; b++){
-//			std::vector<int> index(numvars+1);
-//			index[0]=b;
-//			index[1]=1;
-//			
-//		}
+		//#ifdef _OPENMP
+		//#pragma omp parallel for schedule(dynamic)
+		//#endif	
+		for(unsigned int b=0; b<batch_size; b++){
+			std::vector<int> bindex(3);
+			bindex[0]=b;
+			
+			unsigned int datacount=bottom[0]->count()/batch_size;
+			for(unsigned int l=0; l<datacount; l++){
+				std::cout << bottom[0]->cpu_data()[datacount*b+l] << std::endl;
+			}
+			exit(EXIT_FAILURE);
+			//for(unsigned int l=0; l<mlpi; l++){
+			//	bindex[2]=l;
+			//	
+			//	//skip if masked and maskis zero
+			//	if(masked){
+			//		//get mask
+			//		bindex[1]=0;
+			//		std::cout << "HERE: " << bottom[0]->data_at(bindex) << std::endl;
+			//		if(bottom[0]->data_at(bindex)<1.e-8) break;
+			//	}
+			//	
+			//	bindex[1]=bstart;
+			//	std::cout << bottom[0]->data_at(bindex) << std::endl;
+			//	
+			//	//get xmin, ymin, xmax, ymax
+			//}
+		}
 	}
 }
 
