@@ -18,7 +18,7 @@ TODO:
 namespace caffe {
 
 	template <typename Dtype>
-	NetCDFDataLayer<Dtype>::~NetCDFDataLayer<Dtype>() { }
+	NetCDFDataLayer<Dtype>::~NetCDFDataLayer<Dtype>() {}
 
 	// Load data and label from netcdf filename into the class property blobs.
 	template <typename Dtype>
@@ -44,10 +44,19 @@ namespace caffe {
 		const int MIN_DATA_DIM = 1;
 		const int MAX_DATA_DIM = INT_MAX;
 		
-		for (int i = 0; i < top_size; ++i) {
-			netcdf_blobs_[i] = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
-			netcdf_load_nd_dataset(file_id, netcdf_variables_[this->layer_param_.top(i)], 
-									MIN_DATA_DIM, MAX_DATA_DIM, netcdf_blobs_[i].get());
+		if(!first_dim_is_batched_){
+			for (int i = 0; i < top_size; ++i) {
+				netcdf_blobs_[i] = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
+				netcdf_load_nd_dataset(file_id, netcdf_variables_[this->layer_param_.top(i)],
+										MIN_DATA_DIM, MAX_DATA_DIM, netcdf_blobs_[i].get());
+			}
+		}
+		else{
+			for (int i = 0; i < top_size; ++i) {
+				netcdf_blobs_[i] = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
+				netcdf_load_nd_dataset_transposed(file_id, netcdf_variables_[this->layer_param_.top(i)],
+										MIN_DATA_DIM, MAX_DATA_DIM, netcdf_blobs_[i].get());
+			}
 		}
 		
 		//close the file
@@ -63,11 +72,12 @@ namespace caffe {
 		//	CHECK_EQ(netcdf_blobs_[i]->shape(0), num);
 		//}
 		
-		// Default to identity permutation.
+		// Default to identity permutation. note, only relevant if first dim is batched, otherwise it won't be used.
 		data_permutation_.clear();
 		data_permutation_.resize(netcdf_blobs_[0]->shape(0));
-		for (int i = 0; i < netcdf_blobs_[0]->shape(0); i++)
+		for (int i = 0; i < netcdf_blobs_[0]->shape(0); i++){
 			data_permutation_[i] = i;
+		}
 
 		// Shuffle if needed.
 		if (this->layer_param_.netcdf_data_param().shuffle()) {
@@ -124,6 +134,10 @@ namespace caffe {
 			CHECK_GE(num_variables_[topname], 1) << "Must have at least 1 NetCDF variable for " << topname << " listed.";
 		}
 		
+		//determine if the first dimension is batch dimension. if set to false, we assume that each file contains a single batch
+		//for performance reasons, we will not permute this dimension between files, but within a file it is possible
+		first_dim_is_batched_ = this->layer_param_.netcdf_data_param().first_dim_is_batched();
+		
 		//do permutation if necessary
 		file_permutation_.clear();
 		file_permutation_.resize(num_files_);
@@ -139,18 +153,22 @@ namespace caffe {
 
 		// Load the first NetCDF file and initialize the line counter.
 		LoadNetCDFFileData(netcdf_filenames_[file_permutation_[current_file_]].c_str());
-		//current_row_ = 0;
+		
+		//current-row-counter
+		current_row_ = 0;
 		
 		// Reshape blobs. Only first data param is parsed
 		const int batch_size = this->layer_param_.netcdf_data_param().batch_size();
 		
 		//reshape the top-blobs:
 		vector<int> top_shape;
+		//if the first dim is batched, then the first dimension of netcdf_blobs has to be skipped, since this will be the batch_index
+		int startid=(first_dim_is_batched_ ? 1 : 0);
 		for (int i = 0; i < top_size; ++i) {
-			top_shape.resize(1+netcdf_blobs_[i]->num_axes());
+			top_shape.resize(1+netcdf_blobs_[i]->num_axes()-startid);
 			top_shape[0] = batch_size;
-			for (int j = 0; j < (top_shape.size()-1); ++j) {
-				top_shape[j+1] = netcdf_blobs_[i]->shape(j);
+			for (int j = startid, k=1; j < (top_shape.size()-1); ++j, ++k) {
+				top_shape[k] = netcdf_blobs_[i]->shape(j);
 			}
 			top[i]->Reshape(top_shape);
 			top_shape.clear();
@@ -163,23 +181,49 @@ namespace caffe {
 		//batch size
 		const int batch_size = this->layer_param_.netcdf_data_param().batch_size();
 		
-		//check if we need to shuffle:
-		if( (current_file_+batch_size) > num_files_ ){
-			current_file_ = 0;
-			if (this->layer_param_.netcdf_data_param().shuffle()) {
-				std::random_shuffle(file_permutation_.begin(), file_permutation_.end());
+		if(!first_dim_is_batched_){
+			//check if we need to shuffle:
+			if( (current_file_+batch_size) > num_files_ ){
+				current_file_ = 0;
+				if (this->layer_param_.netcdf_data_param().shuffle()) {
+					std::random_shuffle(file_permutation_.begin(), file_permutation_.end());
+				}
+				DLOG(INFO) << "Looping around to first file.";
 			}
-			DLOG(INFO) << "Looping around to first file.";
-		}
 		
-		for (int i = 0; i < batch_size; ++i) {
-			LoadNetCDFFileData(netcdf_filenames_[file_permutation_[current_file_+i]].c_str());
-			for (int j = 0; j < this->layer_param_.top_size(); ++j) {
-				int data_dim = top[j]->count() / top[j]->shape(0);
-				caffe_copy(data_dim, netcdf_blobs_[j]->cpu_data(), &(top[j]->mutable_cpu_data()[i * data_dim]));
+			for (int i = 0; i < batch_size; ++i) {
+				LoadNetCDFFileData(netcdf_filenames_[file_permutation_[current_file_+i]].c_str());
+				for (int j = 0; j < this->layer_param_.top_size(); ++j) {
+					int data_dim = top[j]->count() / top[j]->shape(0);
+					caffe_copy(data_dim, netcdf_blobs_[j]->cpu_data(), &(top[j]->mutable_cpu_data()[i * data_dim]));
+				}
+			}
+			current_file_+=batch_size;
+		}
+		else{
+			for (int i = 0; i < batch_size; ++i, ++current_row_) {
+				if (current_row_ == netcdf_blobs_[0]->shape(0)) {
+					if (num_files_ > 1) {
+						++current_file_;
+						if (current_file_ == num_files_) {
+							current_file_ = 0;
+							if (this->layer_param_.netcdf_data_param().shuffle()) {
+								std::random_shuffle(file_permutation_.begin(),
+								file_permutation_.end());
+							}
+							DLOG(INFO) << "Looping around to first file.";
+						}
+						LoadNetCDFFileData(netcdf_filenames_[file_permutation_[current_file_]].c_str());
+					}
+					current_row_ = 0;
+					if (this->layer_param_.netcdf_data_param().shuffle()) std::random_shuffle(data_permutation_.begin(), data_permutation_.end());
+				}
+				for (int j = 0; j < this->layer_param_.top_size(); ++j) {
+					int data_dim = top[j]->count() / top[j]->shape(0);
+					caffe_copy(data_dim, &netcdf_blobs_[j]->cpu_data()[data_permutation_[current_row_] * data_dim], &top[j]->mutable_cpu_data()[i * data_dim]);
+				}
 			}
 		}
-		current_file_+=batch_size;
 	}
 
 #ifdef CPU_ONLY

@@ -57,6 +57,7 @@ namespace caffe {
 		unsigned int current_file_;
 		unsigned int current_row_;
 		std::vector<shared_ptr<Blob<Dtype> > > netcdf_blobs_;
+		bool first_dim_is_batched_;
 		std::vector<unsigned int> data_permutation_;
 		std::vector<unsigned int> file_permutation_;
 	};

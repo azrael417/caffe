@@ -65,7 +65,7 @@ namespace caffe {
 	// Verifies format of data stored in NetCDF file and reshapes blob accordingly.
 	template <typename Dtype>
 	void netcdf_load_nd_dataset_helper(const int& file_id, const std::vector<string>& netcdf_variables_, std::vector<int>& dset_ids, 
-	const int& min_dim, const int& max_dim, std::vector<size_t>& dims, nc_type& vtype, Blob<Dtype>* blob) {
+	const int& min_dim, const int& max_dim, std::vector<size_t>& dims, nc_type& vtype, Blob<Dtype>* blob, const bool& transpose) {
     
 		// Obtain all sizes for variable 0:
 		string variable_name_=netcdf_variables_[0];
@@ -87,12 +87,31 @@ namespace caffe {
 		//set blob dimensions and reshape
 		vector<int> blob_dims(dims.size()+1);
 		//first dimension is channel dimension
-		blob_dims[0]=static_cast<int>(netcdf_variables_.size());
-		for (int i = 1; i <= dims.size(); ++i) {
-			blob_dims[i] = dims[i-1];
+		if(!transpose){
+			blob_dims[0]=static_cast<int>(netcdf_variables_.size());
+			for (int i = 1; i <= dims.size(); ++i) {
+				blob_dims[i] = dims[i-1];
+			}
+			blob->Reshape(blob_dims);
 		}
-		blob->Reshape(blob_dims);
-	} 
+		else{
+			blob_dims[0]=dims[0];
+			blob_dims[1]=static_cast<int>(netcdf_variables_.size());
+			for (int i = 2; i <= dims.size(); ++i) {
+				blob_dims[i] = dims[i-1];
+			}
+		}
+	}
+	
+	inline void check_var_status(const int& status, const std::string& varname){
+		if(status != NC_NOERR){
+			if(status == NC_ENOTVAR) std::cerr << "Variable " << varname << " not found";
+			else if(status == NC_EINVALCOORDS) std::cerr << "Index exceeds dimension bound for variable " << varname;
+			else if(status == NC_EEDGE) std::cerr << "Start+size exceeds dimension bound for variable " << varname;
+			else if(status == NC_ERANGE) std::cerr << "SOme values are out of range for variable " << varname;
+			CHECK(status) << "Failed to read double variable " << varname;
+		}
+	}
 
 	template <>
 	void netcdf_load_nd_dataset<float>(const int& file_id, const std::vector<string>& netcdf_variables_, 
@@ -117,13 +136,7 @@ namespace caffe {
 			//direct read possible
 			for(unsigned int i=0; i<netcdf_variables_.size(); i++){
 				int status = nc_get_vara_float(file_id, dset_ids[i], start.data(), dims.data(), &(blob->mutable_cpu_data()[i*offset]));
-				if(status != NC_NOERR){
-					if(status == NC_ENOTVAR) std::cerr << "Variable " << netcdf_variables_[i] << " not found";
-					else if(status == NC_EINVALCOORDS) std::cerr << "Index exceeds dimension bound for variable " << netcdf_variables_[i];
-					else if(status == NC_EEDGE) std::cerr << "Start+size exceeds dimension bound for variable " << netcdf_variables_[i];
-					else if(status == NC_ERANGE) std::cerr << "SOme values are out of range for variable " << netcdf_variables_[i];
-					CHECK(status) << "Failed to read double variable " << netcdf_variables_[i];
-				}
+				check_var_status(status,netcdf_variables_[i]);
 			}
 		}
 		else if(vtype == NC_DOUBLE){
@@ -131,13 +144,7 @@ namespace caffe {
 			double* buf=new double[offset];
 			for(unsigned int i=0; i<netcdf_variables_.size(); i++){	
 				int status = nc_get_vara_double(file_id, dset_ids[i], start.data(), dims.data(), buf);
-				if(status != NC_NOERR){
-					if(status == NC_ENOTVAR) std::cerr << "Variable " << netcdf_variables_[i] << " not found";
-					else if(status == NC_EINVALCOORDS) std::cerr << "Index exceeds dimension bound for variable " << netcdf_variables_[i];
-					else if(status == NC_EEDGE) std::cerr << "Start+size exceeds dimension bound for variable " << netcdf_variables_[i];
-					else if(status == NC_ERANGE) std::cerr << "SOme values are out of range for variable " << netcdf_variables_[i];
-					CHECK(status) << "Failed to read double variable " << netcdf_variables_[i];
-				}
+				check_var_status(status,netcdf_variables_[i]);
 #pragma omp parallel for
 				for(unsigned int k=0; k<offset; k++){
 					blob->mutable_cpu_data()[k+i*offset]=static_cast<float>(buf[k]);
@@ -146,20 +153,84 @@ namespace caffe {
 			delete [] buf;
 		}
 		else if( (vtype == NC_INT) || (vtype == NC_LONG) ){
-			//conversion necessary                                                                                                                                                      
+			//conversion necessary
 			int* buf=new int[offset];
 			for(unsigned int i=0; i<netcdf_variables_.size(); i++){
 				int status = nc_get_vara_int(file_id, dset_ids[i], start.data(), dims.data(), buf);
-				if(status != NC_NOERR){
-					if(status == NC_ENOTVAR) std::cerr << "Variable " << netcdf_variables_[i] << " not found";
-					else if(status == NC_EINVALCOORDS) std::cerr << "Index exceeds dimension bound for variable " << netcdf_variables_[i];
-					else if(status == NC_EEDGE) std::cerr << "Start+size exceeds dimension bound for variable " << netcdf_variables_[i];
-					else if(status == NC_ERANGE) std::cerr << "SOme values are out of range for variable " << netcdf_variables_[i];
-					CHECK(status) << "Failed to read double variable " << netcdf_variables_[i];
-				}
+				check_var_status(status,netcdf_variables_[i]);
 #pragma omp parallel for
 				for(unsigned int k=0; k<offset; k++){
 					blob->mutable_cpu_data()[k+i*offset]=static_cast<float>(buf[k]);
+				}
+			}
+			delete [] buf;
+		}
+		else{
+			DLOG(FATAL) << "Unsupported datatype";
+		}
+	}
+	
+	//this one transposes dims 0 and 1, important if the 1st dimension shouldbe batched as well.
+	template <>
+	void netcdf_load_nd_dataset_transposed<float>(const int& file_id, const std::vector<string>& netcdf_variables_, 
+	const int& min_dim, const int& max_dim, Blob<float>* blob) {
+		
+		//query the data and get some dimensions
+		unsigned int numvars=netcdf_variables_.size();
+		std::vector<int> dset_ids(numvars);
+		std::vector<size_t> dims;
+		nc_type vtype;
+		netcdf_load_nd_dataset_helper(file_id, netcdf_variables_, dset_ids, min_dim, max_dim, dims, vtype, blob, true);
+		
+		//create start vector for Hyperslab-IO:
+		std::vector<size_t> start(dims.size()), count(dims);
+		unsigned long offset=1;
+		//starts at dim1, because dim0 will be considered singleton
+		for(unsigned int i=1; i<dims.size(); i++){
+			offset*=dims[i];
+			start[i]=0;
+		}
+		count[0]=1;
+		
+		//read the data
+		if(vtype == NC_FLOAT){
+			//direct read possible
+			for(unsigned int d=0; d<dims[0]; d++){
+				start[0]=d;
+				for(unsigned int i=0; i<numvars; i++){
+					int status = nc_get_vara_float(file_id, dset_ids[i], start.data(), count.data(), &(blob->mutable_cpu_data()[offset*(i+numvars*d)]));
+					check_var_status(status,netcdf_variables_[i]);
+				}
+			}
+		}
+		else if(vtype == NC_DOUBLE){
+			//conversion necessary
+			double* buf=new double[offset];
+			for(unsigned int d=0; d<dims[0]; d++){
+				start[0]=d;
+				for(unsigned int i=0; i<numvars; i++){	
+					int status = nc_get_vara_double(file_id, dset_ids[i], start.data(), count.data(), buf);
+					check_var_status(status,netcdf_variables_[i]);
+#pragma omp parallel for
+					for(unsigned int k=0; k<offset; k++){
+						blob->mutable_cpu_data()[k+offset*(i+numvars*d)]=static_cast<float>(buf[k]);
+					}
+				}
+			}
+			delete [] buf;
+		}
+		else if( (vtype == NC_INT) || (vtype == NC_LONG) ){
+			//conversion necessary
+			int* buf=new int[offset];
+			for(unsigned int d=0; d<dims[0]; d++){
+				start[0]=d;
+				for(unsigned int i=0; i<numvars; i++){
+					int status = nc_get_vara_int(file_id, dset_ids[i], start.data(), count.data(), buf);
+					check_var_status(status,netcdf_variables_[i]);
+#pragma omp parallel for
+					for(unsigned int k=0; k<offset; k++){
+						blob->mutable_cpu_data()[k+offset*(i+numvars*d)]=static_cast<float>(buf[k]);
+					}
 				}
 			}
 			delete [] buf;
@@ -190,13 +261,7 @@ namespace caffe {
 		if(vtype == NC_DOUBLE){
 			for(unsigned int i=0; i<netcdf_variables_.size(); i++){	
 				int status = nc_get_vara_double(file_id, dset_ids[i], start.data(), dims.data(), &(blob->mutable_cpu_data()[i*offset]));
-				if(status != NC_NOERR){
-					if(status == NC_ENOTVAR) std::cerr << "Variable " << netcdf_variables_[i] << " not found";
-					else if(status == NC_EINVALCOORDS) std::cerr << "Index exceeds dimension bound for variable " << netcdf_variables_[i];
-					else if(status == NC_EEDGE) std::cerr << "Start+size exceeds dimension bound for variable " << netcdf_variables_[i];
-					else if(status == NC_ERANGE) std::cerr << "SOme values are out of range for variable " << netcdf_variables_[i];
-					CHECK(status) << "Failed to read double variable " << netcdf_variables_[i];
-				}
+				check_var_status(status,netcdf_variables_[i]);
 			}
 		}
 		else if(vtype == NC_FLOAT){
@@ -204,13 +269,7 @@ namespace caffe {
 			float* buf=new float[offset];
 			for(unsigned int i=0; i<netcdf_variables_.size(); i++){	
 				int status = nc_get_vara_float(file_id, dset_ids[i], start.data(), dims.data(), buf);
-				if(status != NC_NOERR){
-					if(status == NC_ENOTVAR) std::cerr << "Variable " << netcdf_variables_[i] << " not found";
-					else if(status == NC_EINVALCOORDS) std::cerr << "Index exceeds dimension bound for variable " << netcdf_variables_[i];
-					else if(status == NC_EEDGE) std::cerr << "Start+size exceeds dimension bound for variable " << netcdf_variables_[i];
-					else if(status == NC_ERANGE) std::cerr << "SOme values are out of range for variable " << netcdf_variables_[i];
-					CHECK(status) << "Failed to read double variable " << netcdf_variables_[i];
-				}
+				check_var_status(status,netcdf_variables_[i]);
 #pragma omp parallel for
 				for(unsigned int k=0; k<offset; k++){
 					blob->mutable_cpu_data()[k+i*offset]=static_cast<double>(buf[k]);
@@ -219,20 +278,82 @@ namespace caffe {
 			delete [] buf;
 		}
 		else if( (vtype == NC_INT) || (vtype == NC_LONG) ){
-			//conversion necessary                                                                                                                                                      
+			//conversion necessary
 			int* buf=new int[offset];
 			for(unsigned int i=0; i<netcdf_variables_.size(); i++){
 				int status = nc_get_vara_int(file_id, dset_ids[i], start.data(), dims.data(), buf);
-				if(status != NC_NOERR){
-					if(status == NC_ENOTVAR) std::cerr << "Variable " << netcdf_variables_[i] << " not found";
-					else if(status == NC_EINVALCOORDS) std::cerr << "Index exceeds dimension bound for variable " << netcdf_variables_[i];
-					else if(status == NC_EEDGE) std::cerr << "Start+size exceeds dimension bound for variable " << netcdf_variables_[i];
-					else if(status == NC_ERANGE) std::cerr << "SOme values are out of range for variable " << netcdf_variables_[i];
-					CHECK(status) << "Failed to read double variable " << netcdf_variables_[i];
-				}
+				check_var_status(status,netcdf_variables_[i]);
 #pragma omp parallel for
 				for(unsigned int k=0; k<offset; k++){
 					blob->mutable_cpu_data()[k+i*offset]=static_cast<double>(buf[k]);
+				}
+			}
+			delete [] buf;
+		}
+		else{
+			DLOG(FATAL) << "Unsupported datatype";
+		}
+	}
+
+
+	template <>
+	void netcdf_load_nd_dataset_transposed<double>(const int& file_id, const std::vector<string>& netcdf_variables_, 
+	const int& min_dim, const int& max_dim, Blob<double>* blob) {
+		//query the data and get some dimensions
+		unsigned int numvars=netcdf_variables_.size();
+		std::vector<int> dset_ids(numvars);
+		std::vector<size_t> dims;
+		nc_type vtype;
+		netcdf_load_nd_dataset_helper(file_id, netcdf_variables_, dset_ids, min_dim, max_dim, dims, vtype, blob, true);
+		
+		//create start vector for Hyperslab-IO:
+		std::vector<size_t> start(dims.size()), count(dims);
+		unsigned long offset=1;
+		//starts at dim1, because dim0 will be considered singleton
+		for(unsigned int i=1; i<dims.size(); i++){
+			offset*=dims[i];
+			start[i]=0;
+		}
+		count[0]=1;
+		
+		//read the data
+		if(vtype == NC_DOUBLE){
+			for(unsigned int d=0; d<dims[0]; d++){
+				start[0]=d;
+				for(unsigned int i=0; i<numvars; i++){	
+					int status = nc_get_vara_double(file_id, dset_ids[i], start.data(), count.data(), &(blob->mutable_cpu_data()[offset*(i+numvars*d)]));
+					check_var_status(status,netcdf_variables_[i]);
+				}
+			}
+		}
+		else if(vtype == NC_FLOAT){
+			//conversion necessary
+			float* buf=new float[offset];
+			for(unsigned int d=0; d<dims[0]; d++){
+				start[0]=d;
+				for(unsigned int i=0; i<numvars; i++){	
+					int status = nc_get_vara_float(file_id, dset_ids[i], start.data(), count.data(), buf);
+					check_var_status(status,netcdf_variables_[i]);
+#pragma omp parallel for
+					for(unsigned int k=0; k<offset; k++){
+						blob->mutable_cpu_data()[k+offset*(i+numvars*d)]=static_cast<double>(buf[k]);
+					}
+				}
+			}
+			delete [] buf;
+		}
+		else if( (vtype == NC_INT) || (vtype == NC_LONG) ){
+			//conversion necessary
+			int* buf=new int[offset];
+			for(unsigned int d=0; d<dims[0]; d++){
+				start[0]=d;
+				for(unsigned int i=0; i<numvars; i++){
+					int status = nc_get_vara_int(file_id, dset_ids[i], start.data(), count.data(), buf);
+					check_var_status(status,netcdf_variables_[i]);
+#pragma omp parallel for
+					for(unsigned int k=0; k<offset; k++){
+						blob->mutable_cpu_data()[k+offset*(i+numvars*d)]=static_cast<double>(buf[k]);
+					}
 				}
 			}
 			delete [] buf;
