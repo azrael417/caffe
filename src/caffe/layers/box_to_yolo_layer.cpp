@@ -14,7 +14,6 @@ void BoxToYoloLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 	unsigned int top_size=bottom.size();
 	
 	//some layer parameters
-	unsigned int num_images = this->layer_param_.box_to_yolo_param().num_images();
 	bool masked = this->layer_param_.box_to_yolo_param().masked();
 	unsigned int bstart=(masked ? 1 : 0);
 	unsigned int odimx = this->layer_param_.box_to_yolo_param().orig_dimx();
@@ -42,31 +41,31 @@ void BoxToYoloLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 	
 	//get some dimensions of the bottom blob:
 	unsigned int batch_size=bottom[0]->shape(0);
-	unsigned int numvars=bottom[0]->shape(1);
 	//max labels per image
-	unsigned int mlpi=bottom[0]->shape(2);
+	unsigned int mlpi=bottom[0]->shape(1);
+	//number of channels
+	unsigned int numvars=bottom[0]->shape(2);
 	
 	//some sanity checks:
-	if( (masked && numvars!=6) || (!masked && numvars<5) ){
-		DLOG(FATAL) << "Please specify 6 columns (image_id, xmin, xmax, ymin, ymax, mask).";
+	if( (masked && numvars!=5) ){
+		DLOG(FATAL) << "Please specify 5 columns (mask, xmin, xmax, ymin, ymax).";
 	}
-	else if( (!masked && numvars!=5) ){
-		DLOG(FATAL) << "Please specify 5 columns (image_id, xmin, xmax, ymin, ymax).";
+	else if( (!masked && numvars!=4) ){
+		DLOG(FATAL) << "Please specify 4 columns (xmin, xmax, ymin, ymax).";
 	}
 	
 	//determine size of output:
-	unsigned int yolosize=batch_size*num_images*rdimx*rdimy*mlps*(5+numclasses);
+	unsigned int yolosize=batch_size*rdimx*rdimy*mlps*(5+numclasses);
 	
 	//create output blob size:
 	vector<int> top_shape;
 	for (int i = 0; i < top_size; ++i) {
-		top_shape.resize(6);
+		top_shape.resize(5);
 		top_shape[0] = batch_size;
-		top_shape[1] = num_images;
-		top_shape[2] = rdimx;
-		top_shape[3] = rdimy;
-		top_shape[4] = mlps;
-		top_shape[5] = (5+numclasses);
+		top_shape[1] = rdimx;
+		top_shape[2] = rdimy;
+		top_shape[3] = mlps;
+		top_shape[4] = (5+numclasses);
 		
 		//reshape output
 		top[i]->Reshape(top_shape);
@@ -84,7 +83,7 @@ void BoxToYoloLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		//perform the actual conversion
 #ifdef _OPENMP
 #pragma omp parallel for firstprivate(classmap) schedule(dynamic)
-#endif	
+#endif
 		for(unsigned int b=0; b<batch_size; b++){
 			std::vector<int> bindex(3);
 			bindex[0]=b;
@@ -93,31 +92,31 @@ void BoxToYoloLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 			std::map<int, int> fillcount;
 			
 			for(unsigned int l=0; l<mlpi; l++){
+				
+				//image label
 				bindex[2]=l;
 				
-				//skip if masked and maskis zero
+				//skip if masked and mask is zero
+				unsigned int bstart=0;
 				if(masked){
 					//get mask
 					bindex[1]=0;
 					if(bottom[0]->data_at(bindex)<1.e-8) break;
+					bstart=1;
 				}
-				
-				//temporal index
-				bindex[1]=bstart;
-				int image_number=static_cast<int>(bottom[0]->data_at(bindex));
-				
+
 				//get xmin, ymin, xmax, ymax
-				bindex[1]=bstart+1;
+				bindex[1]=bstart;
 				Dtype xmin=bottom[0]->data_at(bindex);
-				bindex[1]=bstart+2;
+				bindex[1]=bstart+1;
 				Dtype xmax=bottom[0]->data_at(bindex);
-				bindex[1]=bstart+3;
+				bindex[1]=bstart+2;
 				Dtype ymin=bottom[0]->data_at(bindex);
-				bindex[1]=bstart+4;
+				bindex[1]=bstart+3;
 				Dtype ymax=bottom[0]->data_at(bindex);
 				
 				//class:
-				bindex[1]=bstart+5;
+				bindex[1]=bstart+4;
 				int classid=static_cast<int>(bottom[0]->data_at(bindex));
 				
 				//compute center and box size:
@@ -137,7 +136,7 @@ void BoxToYoloLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 				Dtype dry=dy/static_cast<Dtype>(odimy);
 				
 				//construct unique key:
-				int key=image_number+num_images*(static_cast<int>(crx)+rdimx*static_cast<int>(cry));
+				int key=static_cast<int>(crx)+rdimx*static_cast<int>(cry);
 				if( fillcount.find(key)==fillcount.end() ){
 					fillcount[key]=0;
 				}
@@ -149,37 +148,36 @@ void BoxToYoloLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 				}
 				
 				//insert into tensor:
-				std::vector<int> tindex(6);
+				std::vector<int> tindex(5);
 				tindex[0]=b;
-				tindex[1]=image_number;
-				tindex[2]=static_cast<int>(crx);
-				tindex[3]=static_cast<int>(cry);
-				tindex[4]=fillcount[key];
+				tindex[1]=static_cast<int>(crx);
+				tindex[2]=static_cast<int>(cry);
+				tindex[3]=fillcount[key];
 				
 				//write the components
 				int offset;
 				//offset x:
-				tindex[5]=0;
+				tindex[4]=0;
 				offset=top[0]->offset(tindex);
 				top[0]->mutable_cpu_data()[offset]=orx;
 				//offset y
-				tindex[5]=1;
+				tindex[4]=1;
 				offset=top[0]->offset(tindex);
 				top[0]->mutable_cpu_data()[offset]=ory;
 				//width
-				tindex[5]=2;
+				tindex[4]=2;
 				offset=top[0]->offset(tindex);
 				top[0]->mutable_cpu_data()[offset]=drx;
 				//height
-				tindex[5]=3;
+				tindex[4]=3;
 				offset=top[0]->offset(tindex);
 				top[0]->mutable_cpu_data()[offset]=dry;
 				//confidence:
-				tindex[5]=4;
+				tindex[4]=4;
 				offset=top[0]->offset(tindex);
 				top[0]->mutable_cpu_data()[offset]=1.;
 				//class, one-hot encoded:
-				tindex[5]=5+classmap[classid];
+				tindex[4]=5+classmap[classid];
 				offset=top[0]->offset(tindex);
 				top[0]->mutable_cpu_data()[offset]=1.;
 			}
@@ -201,7 +199,6 @@ void BoxToYoloLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom, const ve
 	unsigned int top_size=bottom.size();
 	
 	//some layer parameters
-	unsigned int num_images = this->layer_param_.box_to_yolo_param().num_images();
 	bool masked = this->layer_param_.box_to_yolo_param().masked();
 	unsigned int rdimx = this->layer_param_.box_to_yolo_param().reduced_dimx();
 	unsigned int rdimy = this->layer_param_.box_to_yolo_param().reduced_dimy();
@@ -222,13 +219,12 @@ void BoxToYoloLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom, const ve
 	//create output blob size:
 	vector<int> top_shape;
 	for (int i = 0; i < top_size; ++i) {
-		top_shape.resize(6);
+		top_shape.resize(5);
 		top_shape[0] = batch_size;
-		top_shape[1] = num_images;
-		top_shape[2] = rdimx;
-		top_shape[3] = rdimy;
-		top_shape[4] = mlps;
-		top_shape[5] = (5+numclasses);
+		top_shape[1] = rdimx;
+		top_shape[2] = rdimy;
+		top_shape[3] = mlps;
+		top_shape[4] = (5+numclasses);
 		
 		//reshape output
 		top[i]->Reshape(top_shape);

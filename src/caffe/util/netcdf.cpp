@@ -92,7 +92,6 @@ namespace caffe {
 			for (int i = 1; i <= dims.size(); ++i) {
 				blob_dims[i] = dims[i-1];
 			}
-			blob->Reshape(blob_dims);
 		}
 		else{
 			blob_dims[0]=dims[0];
@@ -101,6 +100,7 @@ namespace caffe {
 				blob_dims[i] = dims[i-1];
 			}
 		}
+		blob->Reshape(blob_dims);
 	}
 	
 	inline void check_var_status(const int& status, const std::string& varname){

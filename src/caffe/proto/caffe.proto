@@ -858,15 +858,14 @@ message NetCDFDataParameter {
 // Message that stores parameters used by box->YOLO label converter
 message BoxToYoloParameter {
 	//number of images, as a label batch can have more than one image (for sequences)
-	optional int32 num_images = 1 [default = 1];
-	optional bool masked =  2 [default = false];
-	required int32 orig_dimx = 3;
-	required int32 orig_dimy = 4;
-	required int32 reduced_dimx = 5;
-	required int32 reduced_dimy = 6;
-	optional int32 max_labels_per_segment = 7 [default = 1];
-	optional bool one_hot = 8 [default = false];
-	repeated int32 class_label = 9;
+	optional bool masked =  1 [default = false];
+	required int32 orig_dimx = 2;
+	required int32 orig_dimy = 3;
+	required int32 reduced_dimx = 4;
+	required int32 reduced_dimy = 5;
+	optional int32 max_labels_per_segment = 6 [default = 1];
+	optional bool one_hot = 7 [default = false];
+	repeated int32 class_label = 8;
 }
 
 message HDF5OutputParameter {

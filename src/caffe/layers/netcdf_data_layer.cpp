@@ -44,16 +44,15 @@ namespace caffe {
 		const int MIN_DATA_DIM = 1;
 		const int MAX_DATA_DIM = INT_MAX;
 		
+		for (int i = 0; i < top_size; ++i) netcdf_blobs_[i] = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
 		if(!first_dim_is_batched_){
 			for (int i = 0; i < top_size; ++i) {
-				netcdf_blobs_[i] = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
 				netcdf_load_nd_dataset(file_id, netcdf_variables_[this->layer_param_.top(i)],
 										MIN_DATA_DIM, MAX_DATA_DIM, netcdf_blobs_[i].get());
 			}
 		}
 		else{
 			for (int i = 0; i < top_size; ++i) {
-				netcdf_blobs_[i] = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
 				netcdf_load_nd_dataset_transposed(file_id, netcdf_variables_[this->layer_param_.top(i)],
 										MIN_DATA_DIM, MAX_DATA_DIM, netcdf_blobs_[i].get());
 			}
@@ -150,7 +149,7 @@ namespace caffe {
 		if (this->layer_param_.netcdf_data_param().shuffle()) {
 			std::random_shuffle(file_permutation_.begin(), file_permutation_.end());
 		}
-
+		
 		// Load the first NetCDF file and initialize the line counter.
 		LoadNetCDFFileData(netcdf_filenames_[file_permutation_[current_file_]].c_str());
 		
@@ -162,13 +161,22 @@ namespace caffe {
 		
 		//reshape the top-blobs:
 		vector<int> top_shape;
-		//if the first dim is batched, then the first dimension of netcdf_blobs has to be skipped, since this will be the batch_index
-		int startid=(first_dim_is_batched_ ? 1 : 0);
 		for (int i = 0; i < top_size; ++i) {
-			top_shape.resize(1+netcdf_blobs_[i]->num_axes()-startid);
-			top_shape[0] = batch_size;
-			for (int j = startid, k=1; j < (top_shape.size()-1); ++j, ++k) {
-				top_shape[k] = netcdf_blobs_[i]->shape(j);
+			if(!first_dim_is_batched_){
+				//just append the blob-dims to the batch-dim
+				top_shape.resize(1+netcdf_blobs_[i]->num_axes());
+				top_shape[0] = batch_size;
+				for (int j = 0; j < (netcdf_blobs_[i]->num_axes()); ++j){
+					top_shape[j+1] = netcdf_blobs_[i]->shape(j);
+				}
+			}
+			else{
+				//just copy the blob-dims, but set dim0 to the correct batchsize
+				top_shape.resize(netcdf_blobs_[i]->num_axes());
+				top_shape[0]=batch_size;
+				for (int j = 1; j < top_shape.size(); ++j) {
+					top_shape[j] = netcdf_blobs_[i]->shape(j);
+				}
 			}
 			top[i]->Reshape(top_shape);
 			top_shape.clear();
