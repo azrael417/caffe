@@ -457,6 +457,7 @@ message LayerParameter {
   optional RemoteDataParameter remote_data_param = 145;
   optional NetCDFDataParameter netcdf_data_param = 200;
   optional BoxToYoloParameter box_to_yolo_param = 210;
+  optional YoloLossParameter yolo_loss_param = 211;
 }
 
 // Message that stores parameters used to apply transformation
@@ -867,6 +868,18 @@ message BoxToYoloParameter {
 	optional bool one_hot = 7 [default = false];
 	repeated int32 class_label = 8;
 }
+
+// Message that stores parameters used by Yolo Loss
+message YoloLossParameter {
+	//number of images, as a label batch can have more than one image (for sequences)
+	required int32 ground_truth_id = 1;
+	optional float weight_center_loss = 2 [default = 1.];
+	optional float weight_size_loss = 3 [default = 1.];
+	optional float weight_confidence_loss = 4 [default = 1.];
+	optional float weight_classification_loss = 5 [default = 1.];
+	optional float box_regularization = 6 [default = 0.0001];
+}
+
 
 message HDF5OutputParameter {
   optional string file_name = 1;
@@ -1345,6 +1358,7 @@ message V1LayerParameter {
     THRESHOLD = 31;
 	NETCDF_DATA = 200;
 	BOXTOYOLO = 210;
+	YOLOLOSS = 211;
   }
   optional LayerType type = 5;
   repeated BlobProto blobs = 6;
@@ -1390,6 +1404,7 @@ message V1LayerParameter {
   optional V0LayerParameter layer = 1;
   optional NetCDFDataParameter netcdf_data_param = 100;
   optional BoxToYoloParameter box_to_yolo_param = 110;
+  optional YoloLossParameter yolo_loss_param = 111;
 }
 
 // DEPRECATED: V0LayerParameter is the old way of specifying layer parameters

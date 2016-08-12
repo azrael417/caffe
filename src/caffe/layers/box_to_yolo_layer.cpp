@@ -6,6 +6,7 @@
 
 namespace caffe {
 
+	//output will be: num, (numclasses+5), mlps,ry, rx, and the filters: offset_x, offset_y, dim_x, dim_y, conf, class_0, class_1, ..., class_k
 template <typename Dtype>
 void BoxToYoloLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 										const vector<Blob<Dtype>*>& top) 
@@ -62,10 +63,10 @@ void BoxToYoloLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 	for (int i = 0; i < top_size; ++i) {
 		top_shape.resize(5);
 		top_shape[0] = batch_size;
-		top_shape[1] = rdimx;
-		top_shape[2] = rdimy;
-		top_shape[3] = mlps;
-		top_shape[4] = (5+numclasses);
+		top_shape[1] = (5+numclasses);
+		top_shape[2] = mlps;
+		top_shape[3] = rdimy;
+		top_shape[4] = rdimx;
 		
 		//reshape output
 		top[i]->Reshape(top_shape);
@@ -150,38 +151,102 @@ void BoxToYoloLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 				//insert into tensor:
 				std::vector<int> tindex(5);
 				tindex[0]=b;
-				tindex[1]=static_cast<int>(crx);
-				tindex[2]=static_cast<int>(cry);
-				tindex[3]=fillcount[key];
+				int im_id=fillcount[key];
+				tindex[2]=im_id;
+				tindex[3]=static_cast<int>(cry);
+				tindex[4]=static_cast<int>(crx);
 				
 				//write the components
 				int offset;
 				//offset x:
-				tindex[4]=0;
+				tindex[1]=0;
 				offset=top[0]->offset(tindex);
 				top[0]->mutable_cpu_data()[offset]=orx;
 				//offset y
-				tindex[4]=1;
+				tindex[1]=1;
 				offset=top[0]->offset(tindex);
 				top[0]->mutable_cpu_data()[offset]=ory;
 				//width
-				tindex[4]=2;
+				tindex[1]=2;
 				offset=top[0]->offset(tindex);
 				top[0]->mutable_cpu_data()[offset]=drx;
 				//height
-				tindex[4]=3;
+				tindex[1]=3;
 				offset=top[0]->offset(tindex);
 				top[0]->mutable_cpu_data()[offset]=dry;
 				//confidence:
-				tindex[4]=4;
+				tindex[1]=4;
 				offset=top[0]->offset(tindex);
 				top[0]->mutable_cpu_data()[offset]=1.;
 				//class, one-hot encoded:
-				tindex[4]=5+classmap[classid];
+				tindex[1]=5+classmap[classid];
 				offset=top[0]->offset(tindex);
 				top[0]->mutable_cpu_data()[offset]=1.;
 			}
 		}
+		
+		////DEBUG
+		//std::vector<int> tindex(5);
+		//tindex[0]=0;
+		//
+		////xoff
+		//for(unsigned int imid=0; imid<mlps; imid++){
+		//	tindex[2]=imid;
+		//	
+		//	tindex[1]=0;
+		//	for(unsigned int yc=0; yc<rdimy; yc++){
+		//		tindex[3]=yc;
+		//		for(unsigned int xc=0; xc<rdimx; xc++){
+		//			tindex[4]=xc;
+		//			std::cout << "(" << xc << "," << yc << "): " << top[0]->data_at(tindex) << std::endl;
+		//		}
+		//		std::cout << std::endl;
+		//	}
+		//	std::cout << std::endl;
+		//
+		//	//yoff
+		//	tindex[1]=1;
+		//	for(unsigned int yc=0; yc<rdimy; yc++){
+		//		tindex[3]=yc;
+		//		for(unsigned int xc=0; xc<rdimx; xc++){
+		//			tindex[4]=xc;
+		//			std::cout << "(" << xc << "," << yc << "): " << top[0]->data_at(tindex) << std::endl;
+		//		}
+		//		std::cout << std::endl;
+		//	}
+		//	std::cout << std::endl;
+		//
+		//	//confidence
+		//	tindex[1]=4;
+		//	for(unsigned int yc=0; yc<rdimy; yc++){
+		//		tindex[3]=yc;
+		//		for(unsigned int xc=0; xc<rdimx; xc++){
+		//			tindex[4]=xc;
+		//			std::cout << "(" << xc << "," << yc << "): " << top[0]->data_at(tindex) << std::endl;
+		//		}
+		//		std::cout << std::endl;
+		//	}
+		//	std::cout << std::endl;
+		//
+		//	//class
+		//	for(unsigned int yc=0; yc<rdimy; yc++){
+		//		tindex[3]=yc;
+		//		for(unsigned int xc=0; xc<rdimx; xc++){
+		//			tindex[4]=xc;
+		//			std::cout << "(" << xc << "," << yc << "): ";
+		//			tindex[1]=5;
+		//			for(unsigned int i=0; i<numclasses; i++){
+		//				std::cout << top[0]->data_at(tindex);
+		//				tindex[1]+=1;
+		//			}
+		//			std::cout << std::endl;
+		//		}
+		//		std::cout << std::endl;
+		//	}
+		//	std::cout << std::endl;
+		//}
+		//exit(1);
+		////DEBUG
 	}
 }
 
@@ -221,10 +286,10 @@ void BoxToYoloLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom, const ve
 	for (int i = 0; i < top_size; ++i) {
 		top_shape.resize(5);
 		top_shape[0] = batch_size;
-		top_shape[1] = rdimx;
-		top_shape[2] = rdimy;
-		top_shape[3] = mlps;
-		top_shape[4] = (5+numclasses);
+		top_shape[1] = (5+numclasses);
+		top_shape[2] = mlps;
+		top_shape[3] = rdimy;
+		top_shape[4] = rdimx;
 		
 		//reshape output
 		top[i]->Reshape(top_shape);

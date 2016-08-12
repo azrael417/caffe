@@ -117,13 +117,13 @@ namespace caffe {
 		//read list of netcdf variables which should be read from the file
 		for(unsigned int i=0; i<top_size; i++){
 			string topname=this->layer_param_.top(i);
-			if(topname=="data"){
+			if(topname.find("data") != std::string::npos){
 				num_variables_[topname] = this->layer_param_.netcdf_data_param().variable_data_size();
 				for(unsigned int j=0; j<num_variables_[topname]; j++){
 					netcdf_variables_[topname].push_back(this->layer_param_.netcdf_data_param().variable_data(j));
 				}
 			}
-			else if(topname=="label"){
+			else if(topname.find("label") != std::string::npos){
 				num_variables_[topname] = this->layer_param_.netcdf_data_param().variable_label_size();
 				for(unsigned int j=0; j<num_variables_[topname]; j++){
 					netcdf_variables_[topname].push_back(this->layer_param_.netcdf_data_param().variable_label(j));
