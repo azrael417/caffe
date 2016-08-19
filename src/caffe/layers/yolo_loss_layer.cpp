@@ -340,11 +340,11 @@ namespace caffe {
 							&(ratio_.cpu_data()[offset]),
 							&(bottom[i]->mutable_cpu_diff()[offset]));
 					//term2 w/o the additional denominator: sign*(w0-w1) and multiply
-					//the existing data with -1 and sum: sign*(w0-w1)-(w0+w1)*loss(w0,w1)
+					//the existing data with -1 and sum: alpha*(sign*(w0-w1)-(w0+w1)*loss(w0,w1))
 					caffe_cpu_axpby(chunksize,
 									sign*alpha,
 									&(diff_.cpu_data()[offset]),
-									Dtype(-1),
+									Dtype(-alpha),
 									&(bottom[i]->mutable_cpu_diff()[offset]));
 					//divide out the denominator:
 					caffe_div(chunksize,
@@ -365,11 +365,11 @@ namespace caffe {
 							&(ratio_.cpu_data()[offset]),
 							&(bottom[i]->mutable_cpu_diff()[offset]));
 					//term2 w/o the additional denominator: sign*(h0-h1) and multiply
-					//the existing data with -1 and sum: sign*(h0-h1)-(h0+h1)*loss(h0,h1)
+					//the existing data with -1 and sum: alpha*(sign*(h0-h1)-(h0+h1)*loss(h0,h1))
 					caffe_cpu_axpby(chunksize,
 									sign*alpha,
 									&(diff_.cpu_data()[offset]),
-									Dtype(-1),
+									Dtype(-alpha),
 									&(bottom[i]->mutable_cpu_diff()[offset]));
 					//divide out the denominator:
 					caffe_div(chunksize,
@@ -381,6 +381,9 @@ namespace caffe {
 							&(gtblob->cpu_data()[offsetc]),
 							&(bottom[i]->cpu_diff()[offset]), 
 							&(bottom[i]->mutable_cpu_diff()[offset]));
+							
+					
+					//------------------ CLASSIFICATION ------------------
 				}
 			}
 		}
