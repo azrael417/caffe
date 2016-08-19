@@ -51,7 +51,7 @@ namespace caffe {
 		const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
 		//we need some backup blobs for computing the softmax part
-		Blob<Dtype> diff_, prob_, b0tmp_, b1tmp_;
+		Blob<Dtype> diff_, sum_, ratio_, prob_;
 	};
 
 }  // namespace caffe
