@@ -15,6 +15,7 @@ namespace caffe {
 		sum_.ReshapeLike(*bottom[0]);
 		ratio_.ReshapeLike(*bottom[0]);
 		prob_.ReshapeLike(*bottom[0]);
+		tmp_.ReshapeLike(*bottom[0]);
 	}
 
 	template <typename Dtype>
@@ -173,67 +174,68 @@ namespace caffe {
 			sizeloss += caffe_cpu_asum(chunksize,&(ratio_.cpu_data()[offset]));
 			
 			
-			////------------------ CLASSIFICATION ------------------
-			////perform softmax on the two blobs:
-			////offset is universal:
-			//offset0=chunksize*(5+n*numfilters);
-			////first term:
-			//caffe_exp(chunksize,
-			//		&(bottom[0]->cpu_data()[offset0]),
-			//		&(b0tmp_.mutable_cpu_data()[offset0]));
-			//caffe_copy(chunksize, 
-			//		&(b0tmp_.cpu_data()[offset0]), 
-			//		&(prob_.mutable_cpu_data()[offset0]));
-			//for(unsigned int c=1; c<numclasses; c++){
-			//	offset=chunksize*(5+c+n*numfilters);
-			//	caffe_exp(chunksize,
-			//			&(bottom[0]->cpu_data()[offset]),
-			//			&(b0tmp_.mutable_cpu_data()[offset]));
-			//	caffe_add(chunksize,
-			//			&(b0tmp_.cpu_data()[offset]),
-			//			&(prob_.cpu_data()[offset0]),
-			//			&(prob_.mutable_cpu_data()[offset0]));
-			//}
-			////normalize
-			//for(unsigned int c=0; c<numclasses; c++){
-			//	offset=chunksize*(5+c+n*numfilters);
-			//	caffe_div(chunksize,
-			//			&(b0tmp_.cpu_data()[offset]),
-			//			&(prob_.cpu_data()[offset0]),
-			//			&(b0tmp_.mutable_cpu_data()[offset]));
-			//}
-			//
-			////second term:
-			//caffe_exp(chunksize,
-			//		&(bottom[1]->cpu_data()[offset0]),
-			//		&(b1tmp_.mutable_cpu_data()[offset0]));
-			//caffe_copy(chunksize, 
-			//		&(b1tmp_.cpu_data()[offset0]), 
-			//		&(prob_.mutable_cpu_data()[offset0]));
-			//for(unsigned int c=1; c<numclasses; c++){
-			//	offset=chunksize*(5+c+n*numfilters);
-			//	caffe_exp(chunksize,
-			//			&(bottom[1]->cpu_data()[offset]),
-			//			&(b1tmp_.mutable_cpu_data()[offset]));
-			//	caffe_add(chunksize,
-			//			&(b1tmp_.cpu_data()[offset]),
-			//			&(prob_.cpu_data()[offset0]),
-			//			&(prob_.mutable_cpu_data()[offset0]));
-			//}
-			////normalize and log and then sum up:
-			//for(unsigned int c=0; c<numclasses; c++){
-			//	offset=chunksize*(5+c+n*numfilters);
-			//	caffe_div(chunksize,
-			//			&(b1tmp_.cpu_data()[offset]),
-			//			&(prob_.cpu_data()[offset0]),
-			//			&(b1tmp_.mutable_cpu_data()[offset]));
-			//	//take log:
-			//	caffe_log(chunksize, 
-			//			&(b1tmp_.cpu_data()[offset]),
-			//			&(b1tmp_.mutable_cpu_data()[offset]));
-			//	//dotprod and sum up:
-			//	xentloss -= caffe_cpu_dot(chunksize,&(b0tmp_.cpu_data()[offset]),&(b1tmp_.cpu_data()[offset]));
-			//}
+			//------------------ CLASSIFICATION ------------------
+			//perform softmax on the two blobs:
+			//offset is universal:
+			offset0=chunksize*(5+n*numfilters);
+			//first term:
+			caffe_exp(chunksize,
+					&(bottom[0]->cpu_data()[offset0]),
+					&(prob_.mutable_cpu_data()[offset0]));
+			caffe_copy(chunksize, 
+					&(prob_.cpu_data()[offset0]), 
+					&(prob_.mutable_cpu_diff()[offset0]));
+			for(unsigned int c=1; c<numclasses; c++){
+				offset=offset0+c*chunksize;
+				caffe_exp(chunksize,
+						&(bottom[0]->cpu_data()[offset]),
+						&(prob_.mutable_cpu_data()[offset]));
+				caffe_add(chunksize,
+						&(prob_.cpu_data()[offset]),
+						&(prob_.cpu_diff()[offset0]),
+						&(prob_.mutable_cpu_diff()[offset0]));
+			}
+			//normalize
+			for(unsigned int c=0; c<numclasses; c++){
+				offset=offset0+c*chunksize;
+				caffe_div(chunksize,
+						&(prob_.cpu_data()[offset]),
+						&(prob_.cpu_diff()[offset0]),
+						&(prob_.mutable_cpu_data()[offset]));
+			}
+			
+			//second term:
+			offset0=chunksize*(5+n*numfilters);
+			caffe_exp(chunksize,
+					&(bottom[1]->cpu_data()[offset0]),
+					&(tmp_.mutable_cpu_data()[offset0]));
+			caffe_copy(chunksize, 
+					&(tmp_.cpu_data()[offset0]), 
+					&(tmp_.mutable_cpu_diff()[offset0]));
+			for(unsigned int c=1; c<numclasses; c++){
+				offset=offset0+c*chunksize;
+				caffe_exp(chunksize,
+						&(bottom[1]->cpu_data()[offset]),
+						&(tmp_.mutable_cpu_data()[offset]));
+				caffe_add(chunksize,
+						&(tmp_.cpu_data()[offset]),
+						&(tmp_.cpu_diff()[offset0]),
+						&(tmp_.mutable_cpu_diff()[offset0]));
+			}
+			//normalize and log and then sum up:
+			for(unsigned int c=0; c<numclasses; c++){
+				offset=offset0+c*chunksize;
+				caffe_div(chunksize,
+						&(tmp_.cpu_data()[offset]),
+						&(tmp_.cpu_diff()[offset0]),
+						&(tmp_.mutable_cpu_data()[offset]));
+				//take log:
+				caffe_log(chunksize, 
+						&(tmp_.cpu_data()[offset]),
+						&(tmp_.mutable_cpu_data()[offset]));
+				//dotprod and sum up:
+				xentloss -= caffe_cpu_dot(chunksize,&(prob_.cpu_data()[offset]),&(tmp_.cpu_data()[offset]));
+			}
 		}
 		
 		//normalize losses to allow for simplified gradients
@@ -384,6 +386,34 @@ namespace caffe {
 							
 					
 					//------------------ CLASSIFICATION ------------------
+					if(i==0){
+						//for blob 0 the loss is: -log(p_j)
+						for(unsigned int c=0; c<numclasses; c++){
+							offset=chunksize*(5+c+n*numfilters);
+							caffe_cpu_axpby(chunksize,
+											Dtype(-alpha),
+											&(tmp_.mutable_cpu_data()[offset]),
+											Dtype(0),
+											&(bottom[0]->mutable_cpu_diff()[offset]));
+						}
+					}
+					else{
+						//for blob1, the loss is p_j-y_j:
+						for(unsigned int c=0; c<numclasses; c++){
+							offset=chunksize*(5+c+n*numfilters);
+							//store y_j in blob1 diffs:
+							caffe_copy(chunksize,
+									&(bottom[0]->cpu_data()[offset]),
+									&(bottom[1]->mutable_cpu_diff()[offset]));
+							
+							//add alpha*p_j to -alpha*y_j
+							caffe_cpu_axpby(chunksize,
+											Dtype(alpha),
+											&(tmp_.mutable_cpu_data()[offset]),
+											Dtype(-alpha),
+											&(bottom[1]->mutable_cpu_diff()[offset]));
+						}
+					}
 				}
 			}
 		}
