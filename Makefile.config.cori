@@ -31,7 +31,7 @@
 # USE_MPI has to be 1 and CXX has to point to MPI compiler (/usr/bin/mpicxx for Open MPI and MPICH )
  USE_MPI := 1
  CXX := mpiicc
- CXXFLAGS := -openmp
+ CXXFLAGS := -qopenmp
  #CFLAGS := -dynamic
  #LDFLAGS := -dynamic
 # CUDA directory contains bin/ and lib/ directories that we need.
