@@ -12,6 +12,7 @@
 
 # uncomment to disable IO dependencies and corresponding data layers
  USE_OPENCV := 0
+ USE_NETCDF := 1
 #USE_LEVELDB := 0
 #USE_LMDB := 0
 # USE_NETCDF := 1
@@ -31,9 +32,9 @@
 # USE_MPI has to be 1 and CXX has to point to MPI compiler (/usr/bin/mpicxx for Open MPI and MPICH )
  USE_MPI := 1
  CXX := mpiicc
- CXXFLAGS := -qopenmp \
-	     -DUSE_NETCDF
- CFLAGS := -DUSE_NETCDF
+ CXXFLAGS := -qopenmp
+#	     -DUSE_NETCDF
+# CFLAGS := -DUSE_NETCDF
  #LDFLAGS := -dynamic
 # CUDA directory contains bin/ and lib/ directories that we need.
 #CUDA_DIR := /usr/local/cuda
