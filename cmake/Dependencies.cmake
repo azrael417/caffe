@@ -235,6 +235,9 @@ if(BUILD_matlab)
   endif()
 endif()
 
+# ---[ additional libs
+list(APPEND Caffe_LINKER_LIBS ${Misc_LIBRARIES})
+
 # ---[ Doxygen
 if(BUILD_docs)
   find_package(Doxygen)
