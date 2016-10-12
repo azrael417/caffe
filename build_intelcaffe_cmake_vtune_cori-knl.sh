@@ -19,6 +19,7 @@ module swap craype-haswell craype-mic-knl
 module load PrgEnv-intel
 module load cmake/3.5.2
 module load intel/17.0.0.098
+module load cray-memkind
 #source /opt/intel/impi/5.1.3.210/bin64/mpivars.sh
 
 #load cmake
@@ -27,7 +28,7 @@ module load boost
 module load protobuf/2.4.1
 module load gflags
 module load glog
-module load cray-hdf5-parallel
+module load cray-hdf5-parallel/1.8.16
 module load opencv
 module load lmdb
 module load snappy
@@ -43,9 +44,9 @@ cmp=intel
 #git checkout master
 #cd ..
 
-rm -rf ${cmp}_gerty
-cp -r src ${cmp}_gerty
-cd ${cmp}_gerty
+rm -rf ${cmp}_cori-knl
+cp -r src ${cmp}_cori-knl
+cd ${cmp}_cori-knl
 
 #get directory paths
 boost_dir=$(module show boost/1.61 2>&1 > /dev/null | grep BOOST_DIR | awk '{print $3}' | sed 's|/usr/common/software|/global/common/cori/software|g')
@@ -99,7 +100,7 @@ cmake -G "Unix Makefiles" \
         -DCMAKE_CXX_FLAGS="-g -O3 -std=c++11 -mkl -xMIC-AVX512" \
         -DCMAKE_C_COMPILER="${CC}" \
         -DCMAKE_C_FLAGS="-g -O3 -std=c99 -mkl -xMIC-AVX512" \
-        -DCMAKE_INSTALL_PREFIX="/project/projectdirs/mpccc/tkurth/NESAP/intelcaffe/install_gerty" \
+        -DCMAKE_INSTALL_PREFIX="/project/projectdirs/mpccc/tkurth/NESAP/intelcaffe/install_cori-knl" \
         -DCMAKE_LINKER="${CXX}" \
         -DCMAKE_SHARED_LINKER_FLAGS="${LDFLAGS}" \
         -DCMAKE_MODULE_LINKER_FLAGS="${LDFLAGS}" \
@@ -120,6 +121,10 @@ cmake -G "Unix Makefiles" \
         -DLMDB_INCLUDE_DIR=${lmdb_dir}/include \
         -DLMDB_LIBRARIES=${lmdb_dir}/lib/liblmdb.so \
         -DHDF5_DIR=${HDF5_DIR} \
+        -DHDF5_HL_INCLUDE_DIR=${HDF5_DIR}/include \
+        -DHDF5_hdf5_LIBRARY_RELEASE=${HDF5_DIR}/lib/libhdf5.a \
+        -DHDF5_hdf5_hl_LIBRARY_RELEASE=${HDF5_DIR}/lib/libhdf5_hl.a \
+        -DHDF5_IS_PARALLEL=ON \
         -DUSE_NETCDF=ON \
         -DNETCDF_INCLUDE_DIR=${netcdf_dir}/include \
         -DNETCDF_LIBRARIES=${netcdf_dir}/lib/libnetcdf.so \
@@ -137,6 +142,7 @@ cmake -G "Unix Makefiles" \
         -DUSE_OPENCV=OFF \
         -DUSE_OPENMP=ON \
         .
+
 
     #build
     make -j10
