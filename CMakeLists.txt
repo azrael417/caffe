@@ -10,8 +10,8 @@ endif()
 project(Caffe C CXX)
 
 # ---[ Caffe version
-set(CAFFE_TARGET_VERSION "1.0.0-rc3")
-set(CAFFE_TARGET_SOVERSION "1.0.0-rc3")
+set(CAFFE_TARGET_VERSION "1.0.0-rc3" CACHE STRING "Caffe logical version")
+set(CAFFE_TARGET_SOVERSION "1.0.0-rc3" CACHE STRING "Caffe soname version")
 add_definitions(-DCAFFE_VERSION=${CAFFE_TARGET_VERSION})
 
 # ---[ Using cmake scripts and modules
@@ -30,6 +30,7 @@ caffe_option(CPU_ONLY  "Build Caffe without CUDA support" OFF) # TODO: rename to
 caffe_option(USE_OPENMP "Build Caffe with OpenMP support" ON )
 caffe_option(USE_CUDNN "Build Caffe with cuDNN library support" ON IF NOT CPU_ONLY)
 caffe_option(USE_MKL2017_AS_DEFAULT_ENGINE "Use MKL2017 primitives for supported layers" OFF)
+caffe_option(USE_MKLDNN_AS_DEFAULT_ENGINE "Use MKL-DNN primitives for supported layers" OFF)
 caffe_option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 caffe_option(BUILD_python "Build Python wrapper" ON)
 set(python_version "2" CACHE STRING "Specify which Python version to use")
@@ -79,7 +80,7 @@ if(UNIX OR APPLE)
   endif()
   
   # Generic flags.
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-operator-names -Wformat -Wformat-security -Wall")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC -fno-operator-names -Wformat -Wformat-security -Wall")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -D_FORTIFY_SOURCE=2")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
 endif()

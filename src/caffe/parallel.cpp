@@ -1,3 +1,40 @@
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #ifndef CPU_ONLY
 #include <cuda_runtime.h>
 #endif
@@ -380,7 +417,8 @@ void P2PSync<Dtype>::on_gradients_ready() {
 }
 
 template<typename Dtype>
-void P2PSync<Dtype>::run(const vector<int>& gpus) {
+void P2PSync<Dtype>::Prepare(const vector<int>& gpus,
+            vector<shared_ptr<P2PSync<Dtype> > >* syncs) {
   // Pair devices for map-reduce synchronization
   vector<DevicePair> pairs;
   DevicePair::compute(gpus, &pairs);
@@ -391,15 +429,14 @@ void P2PSync<Dtype>::run(const vector<int>& gpus) {
   LOG(INFO)<< "GPUs pairs " << s.str();
 
   SolverParameter param(solver_->param());
-  vector<shared_ptr<P2PSync<Dtype> > > syncs(gpus.size());
 
   // Build the GPU tree by finding the parent for each solver
   for (int attempts = 0; attempts < pairs.size(); ++attempts) {
     for (int i = 1; i < pairs.size(); ++i) {
-      if (!syncs[i].get()) {
+      if (!syncs->at(i).get()) {
         P2PSync<Dtype>* parent = NULL;
-        for (int j = 0; j < syncs.size(); ++j) {
-          P2PSync<Dtype>* sync = j == 0 ? this : syncs[j].get();
+        for (int j = 0; j < syncs->size(); ++j) {
+          P2PSync<Dtype>* sync = j == 0 ? this : syncs->at(j).get();
           if (sync) {
             const SolverParameter& p = sync->solver()->param();
             if (p.device_id() == pairs[i].parent()) {
@@ -409,12 +446,18 @@ void P2PSync<Dtype>::run(const vector<int>& gpus) {
         }
         if (parent) {
           param.set_device_id(pairs[i].device());
-          syncs[i].reset(new P2PSync<Dtype>(solver_, parent, param));
-          parent->children_.push_back((P2PSync<Dtype>*) syncs[i].get());
+          syncs->at(i).reset(new P2PSync<Dtype>(solver_, parent, param));
+          parent->children_.push_back((P2PSync<Dtype>*) syncs->at(i).get());
         }
       }
     }
   }
+}
+
+template<typename Dtype>
+void P2PSync<Dtype>::Run(const vector<int>& gpus) {
+  vector<shared_ptr<P2PSync<Dtype> > > syncs(gpus.size());
+  Prepare(gpus, &syncs);
 
   LOG(INFO)<< "Starting Optimization";
 

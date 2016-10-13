@@ -1,4 +1,41 @@
-#if defined(MKL2017_SUPPORTED) && defined(USE_MKL2017_NEW_API)
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#if defined(MKL2017_SUPPORTED)
 #include <cfloat>
 #include <vector>
 
@@ -39,9 +76,6 @@ void MKLEltwiseLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
   num_bottoms = bottom.size();
   size_t dim_src = bottom[0]->shape().size();
-
-  dnnError_t e;
-
   size_t sizes_src[dim_src], strides_src[dim_src];
   for (size_t d = 0; d < dim_src; ++d) {
       sizes_src[d] = bottom[0]->shape()[dim_src - d - 1];
@@ -51,15 +85,14 @@ void MKLEltwiseLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   for (size_t i = 0; i < num_bottoms; ++i) {
       fwd_bottom_data.push_back(
         shared_ptr<MKLData<Dtype> >(new MKLData<Dtype>));
+      bwd_bottom_diff.push_back(
+        shared_ptr<MKLDiff<Dtype> >(new MKLDiff<Dtype>));
       CHECK_EQ(dim_src, bottom[i]->shape().size());
-      e = dnnLayoutCreate<Dtype>(&(fwd_bottom_data[i]->layout_usr),
-         dim_src, sizes_src, strides_src);
-      CHECK_EQ(e, E_SUCCESS);
+      fwd_bottom_data[i]->create_user_layout(dim_src, sizes_src, strides_src);
+      bwd_bottom_diff[i]->create_user_layout(dim_src, sizes_src, strides_src);
   }
 
-  e = dnnLayoutCreate<Dtype>(&fwd_top_data->layout_usr,
-    dim_src, sizes_src, strides_src);
-  CHECK_EQ(e, E_SUCCESS);
+  fwd_top_data->create_user_layout(dim_src, sizes_src, strides_src);
 }
 
 template <typename Dtype>
@@ -98,11 +131,11 @@ void MKLEltwiseLayer<Dtype>::Forward_cpu(
       dnnLayout_t int_layout = NULL;
       for (size_t i = 0; i < num_bottoms; ++i) {
         if (bottom[i]->prv_data() != NULL) {
-          CHECK((bottom[i]->get_prv_descriptor_data())->get_descr_type()
+          CHECK((bottom[i]->get_prv_data_descriptor())->get_descr_type()
             == PrvMemDescr::PRV_DESCR_MKL2017);
           shared_ptr<MKLData<Dtype> > mem_descr =
               boost::static_pointer_cast<MKLData<Dtype> >(
-                bottom[i]->get_prv_descriptor_data());
+                bottom[i]->get_prv_data_descriptor());
           CHECK(mem_descr != NULL);
           fwd_bottom_data[i] = mem_descr;
           if (int_layout == NULL) {
@@ -114,18 +147,12 @@ void MKLEltwiseLayer<Dtype>::Forward_cpu(
         num_bottoms, int_layout, &coeffs_[0]);
       CHECK_EQ(e, E_SUCCESS);
 
-      e = dnnLayoutCreateFromPrimitive<Dtype>(&fwd_top_data->layout_int,
-        sumPrimitive, dnnResourceDst);
-      CHECK_EQ(e, E_SUCCESS);
-      fwd_top_data->create_conversions();
+      fwd_top_data->create_internal_layout(sumPrimitive, dnnResourceDst);
 
       for (int i = 0; i < num_bottoms; ++i) {
         if (bottom[i]->prv_data() == NULL) {
-          e = dnnLayoutCreateFromPrimitive<Dtype>(
-            &fwd_bottom_data[i]->layout_int, sumPrimitive,
+          fwd_bottom_data[i]->create_internal_layout(sumPrimitive,
               (dnnResourceType_t)(dnnResourceMultipleSrc + i));
-          CHECK_EQ(e, E_SUCCESS);
-          fwd_bottom_data[i]->create_conversions();
         }
       }
     }
@@ -150,10 +177,10 @@ void MKLEltwiseLayer<Dtype>::Forward_cpu(
       }
     }
 
-    if (fwd_top_data->convert_from_int) {
-      top[0]->set_prv_data(fwd_top_data->prv_ptr(), fwd_top_data, false);
+    if (fwd_top_data->conversion_needed()) {
+      top[0]->set_prv_data_descriptor(fwd_top_data);
       eltwise_res[dnnResourceDst] =
-        reinterpret_cast<void*>(const_cast<Dtype*>(fwd_top_data->prv_ptr()));
+        reinterpret_cast<void*>(const_cast<Dtype*>(top[0]->mutable_prv_data()));
     } else {
       eltwise_res[dnnResourceDst] =
         reinterpret_cast<void*>(const_cast<Dtype*>(top[0]->mutable_cpu_data()));
@@ -174,11 +201,41 @@ void MKLEltwiseLayer<Dtype>::Forward_cpu(
 template <typename Dtype>
 void MKLEltwiseLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+
+  const Dtype* top_diff = top[0]->prv_diff();
+  int count = 0;
+  bool is_top_diff_prv = false;
+
+  // If there is no diff in prv layout
+  // then we are given cpu layout
+  // and we will produce bottom at cpu layout as well
+  if (top_diff == NULL) {
+    top_diff = top[0]->cpu_diff();
+    count = top[0]->count();
+  } else {
+    count = top[0]->prv_diff_count();
+    is_top_diff_prv = true;
+  }
+  Dtype* bottom_diff = NULL;
+
   for (int i = 0; i < bottom.size(); ++i) {
     if (propagate_down[i]) {
       switch (op_) {
       case EltwiseParameter_EltwiseOp_SUM:
-        bottom[i]->ShareData(*top[0]);
+        CHECK_EQ(coeffs_[i], Dtype(1)) << "Not supported yet";
+        if (is_top_diff_prv == false) {
+          bottom_diff = bottom[i]->mutable_cpu_diff();
+        } else {
+          if (!bwd_bottom_diff[i]->layout_int) {
+            bwd_bottom_diff[i]->create_internal_layout(sumPrimitive,
+              (dnnResourceType_t)(dnnResourceMultipleSrc + i));
+          }
+          CHECK_EQ(true, bwd_bottom_diff[i]->layout_compare(
+                  top[0]->get_prv_diff_descriptor()));
+          bottom[i]->set_prv_diff_descriptor(bwd_bottom_diff[i]);
+          bottom_diff = bottom[i]->mutable_prv_diff();
+        }
+        caffe_copy(count, top_diff, bottom_diff);
         break;
       case EltwiseParameter_EltwiseOp_MAX:
       case EltwiseParameter_EltwiseOp_PROD:
@@ -204,4 +261,4 @@ void MKLEltwiseLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 
 INSTANTIATE_CLASS(MKLEltwiseLayer);
 }  // namespace caffe
-#endif  // #if defined(MKL2017_SUPPORTED) && defined(USE_MKL2017_NEW_API)
+#endif  // #if defined(MKL2017_SUPPORTED)

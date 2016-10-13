@@ -1,4 +1,40 @@
 #!/usr/bin/env python
+# 
+# All modification made by Intel Corporation: Copyright (c) 2016 Intel Corporation
+# 
+# All contributions by the University of California:
+# Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+# All rights reserved.
+# 
+# All other contributions:
+# Copyright (c) 2014, 2015, the respective contributors
+# All rights reserved.
+# For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+# 
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+#     * Redistributions of source code must retain the above copyright notice,
+#       this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Intel Corporation nor the names of its contributors
+#       may be used to endorse or promote products derived from this software
+#       without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 
 """
 Parse training log
@@ -16,13 +52,10 @@ from collections import OrderedDict
 
 def parse_log(path_to_log):
     """Parse log file
-    Returns (train_dict_list, train_dict_names, test_dict_list, test_dict_names)
+    Returns (train_dict_list, test_dict_list)
 
     train_dict_list and test_dict_list are lists of dicts that define the table
     rows
-
-    train_dict_names and test_dict_names are ordered tuples of the column names
-    for the two dict_lists
     """
 
     regex_iteration = re.compile('Iteration (\d+)')
@@ -148,6 +181,11 @@ def save_csv_files(logfile_path, output_dir, train_dict_list, test_dict_list,
 def write_csv(output_filename, dict_list, delimiter, verbose=False):
     """Write a CSV file
     """
+
+    if not dict_list:
+        if verbose:
+            print('Not writing %s; no lines to write' % output_filename)
+        return
 
     dialect = csv.excel
     dialect.delimiter = delimiter

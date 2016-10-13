@@ -1,4 +1,41 @@
-#if defined(MKL2017_SUPPORTED) && defined(USE_MKL2017_NEW_API)
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#if defined(MKL2017_SUPPORTED)
 #include <vector>
 
 #include "caffe/layer.hpp"
@@ -14,7 +51,6 @@ template <typename Dtype> MKLConcatLayer<Dtype>::~MKLConcatLayer() {
 template <typename Dtype>
 void MKLConcatLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   const vector<Blob<Dtype>*>& top) {
-  dnnError_t e;
   size_t dim_src = bottom[0]->shape().size();
   size_t dim_dst = dim_src;
 
@@ -45,12 +81,8 @@ void MKLConcatLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
     split_channels_[i] = bottom[i]->channels();
     channels_ += split_channels_[i];
-    e = dnnLayoutCreate<Dtype>(&(fwd_bottom_data_[i]->layout_usr),
-      dim_src, sizes_src, strides_src);
-    CHECK_EQ(e, E_SUCCESS);
-    e = dnnLayoutCreate<Dtype>(&(bwd_bottom_diff_[i]->layout_usr),
-      dim_src, sizes_src, strides_src);
-    CHECK_EQ(e, E_SUCCESS);
+    fwd_bottom_data_[i]->create_user_layout(dim_src, sizes_src, strides_src);
+    bwd_bottom_diff_[i]->create_user_layout(dim_src, sizes_src, strides_src);
   }
 
   // XXX: almost the same computations as above for src
@@ -62,12 +94,9 @@ void MKLConcatLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       sizes_dst[d] = bottom[0]->shape()[dim_dst - 1 - d];
     strides_dst[d] = (d == 0) ? 1 : strides_dst[d - 1] * sizes_dst[d - 1];
   }
-  e = dnnLayoutCreate<Dtype>(&bwd_top_diff_->layout_usr,
-    dim_dst, sizes_dst, strides_dst);
-  CHECK_EQ(e, E_SUCCESS);
-  e = dnnLayoutCreate<Dtype>(&fwd_top_data_->layout_usr,
-    dim_dst, sizes_dst, strides_dst);
-  CHECK_EQ(e, E_SUCCESS);
+  bwd_top_diff_->create_user_layout(dim_dst, sizes_dst, strides_dst);
+  fwd_top_data_->create_user_layout(dim_dst, sizes_dst, strides_dst);
+
   concatFwd_ = NULL;
   concatBwd_ = NULL;
 }
@@ -107,11 +136,11 @@ void MKLConcatLayer<Dtype>::Forward_cpu(const vector <Blob<Dtype>*>& bottom,
         isBottomDataFilled[n] = true;
       }
     } else if (isFirstPass) {
-      CHECK((bottom[n]->get_prv_descriptor_data())->get_descr_type() ==
+      CHECK((bottom[n]->get_prv_data_descriptor())->get_descr_type() ==
         PrvMemDescr::PRV_DESCR_MKL2017);
       shared_ptr<MKLData<Dtype> > mem_descr =
         boost::static_pointer_cast<MKLData<Dtype> >(
-          bottom[n]->get_prv_descriptor_data());
+          bottom[n]->get_prv_data_descriptor());
       CHECK(mem_descr != NULL);
 
       fwd_bottom_data_[n] = mem_descr;
@@ -123,15 +152,8 @@ void MKLConcatLayer<Dtype>::Forward_cpu(const vector <Blob<Dtype>*>& bottom,
     e = dnnConcatCreate<Dtype>(&concatFwd_, NULL, num_concats_, layouts);
     CHECK_EQ(e, E_SUCCESS);
 
-    e = dnnLayoutCreateFromPrimitive<Dtype>(&fwd_top_data_->layout_int,
-      concatFwd_, dnnResourceDst);
-    CHECK_EQ(e, E_SUCCESS);
-    fwd_top_data_->create_conversions();
-
-    e = dnnLayoutCreateFromPrimitive<Dtype>(&bwd_top_diff_->layout_int,
-      concatFwd_, dnnResourceDst);
-    CHECK_EQ(e, E_SUCCESS);
-    bwd_top_diff_->create_conversions();
+    fwd_top_data_->create_internal_layout(concatFwd_, dnnResourceDst);
+    bwd_top_diff_->create_internal_layout(concatFwd_, dnnResourceDst);
 
     e = dnnSplitCreate<Dtype>(&concatBwd_, NULL, num_concats_,
       bwd_top_diff_->layout_int, split_channels_);
@@ -140,17 +162,10 @@ void MKLConcatLayer<Dtype>::Forward_cpu(const vector <Blob<Dtype>*>& bottom,
     for (size_t n = 0; n < num_concats_; ++n) {
       if (isBottomDataFilled[n]) continue;
 
-      e = dnnLayoutCreateFromPrimitive<Dtype>(
-        &(fwd_bottom_data_[n]->layout_int), concatFwd_,
+      fwd_bottom_data_[n]->create_internal_layout(concatFwd_,
           (dnnResourceType_t)(dnnResourceMultipleSrc + n));
-      CHECK_EQ(e, E_SUCCESS);
-      fwd_bottom_data_[n]->create_conversions();
-
-      e = dnnLayoutCreateFromPrimitive<Dtype>(
-        &(bwd_bottom_diff_[n]->layout_int), concatBwd_,
+      bwd_bottom_diff_[n]->create_internal_layout(concatBwd_,
           (dnnResourceType_t)(dnnResourceMultipleDst + n));
-      CHECK_EQ(e, E_SUCCESS);
-      bwd_bottom_diff_[n]->create_conversions();
     }
   }
 
@@ -163,10 +178,10 @@ void MKLConcatLayer<Dtype>::Forward_cpu(const vector <Blob<Dtype>*>& bottom,
       = reinterpret_cast<void*>(bottom_data[n]);
   }
 
-  if (fwd_top_data_->convert_from_int) {
-    top[0]->set_prv_data(fwd_top_data_->prv_ptr(), fwd_top_data_, false);
+  if (fwd_top_data_->conversion_needed()) {
+    top[0]->set_prv_data_descriptor(fwd_top_data_);
     concat_res[dnnResourceDst] =
-      reinterpret_cast<void*>(fwd_top_data_->prv_ptr());
+      reinterpret_cast<void*>(top[0]->mutable_prv_data());
   } else {
     concat_res[dnnResourceDst] =
       reinterpret_cast<void*>(top[0]->mutable_cpu_data());
@@ -194,16 +209,12 @@ void MKLConcatLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   concat_res[dnnResourceSrc] = bwd_top_diff_->get_converted_prv(top[0], true);
 
   for (size_t i = 0; i < num_concats_; ++i) {
-    if (bwd_bottom_diff_[i]->convert_from_int) {
-      bottom[i]->set_prv_diff(bwd_bottom_diff_[i]->prv_ptr(),
-        bwd_bottom_diff_[i], false);
-      concat_res[dnnResourceMultipleDst + i] =
-        reinterpret_cast<void*>(bwd_bottom_diff_[i]->prv_ptr());
+    if (bwd_bottom_diff_[i]->conversion_needed()) {
+      bottom[i]->set_prv_diff_descriptor(bwd_bottom_diff_[i]);
+      concat_res[dnnResourceMultipleDst + i] = bottom[i]->mutable_prv_diff();
     } else {
       concat_res[dnnResourceMultipleDst + i] = bottom[i]->mutable_cpu_diff();
     }
-    caffe_set(bottom[i]->count(), Dtype(0),
-      reinterpret_cast<Dtype*>(concat_res[dnnResourceMultipleDst + i]));
   }
 
   e = dnnExecute<Dtype>(concatBwd_, concat_res);
@@ -224,4 +235,4 @@ void MKLConcatLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 
 INSTANTIATE_CLASS(MKLConcatLayer);
 }  // namespace caffe
-#endif  // #if defined(MKL2017_SUPPORTED) && defined(USE_MKL2017_NEW_API)
+#endif  // #if defined(MKL2017_SUPPORTED)

@@ -1,3 +1,40 @@
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include "caffe/common.hpp"
 #include "caffe/syncedmem.hpp"
 #include "caffe/util/math_functions.hpp"
@@ -7,10 +44,6 @@ namespace caffe {
 SyncedMemory::~SyncedMemory() {
   if (cpu_ptr_ && own_cpu_data_) {
     CaffeFreeHost(cpu_ptr_, cpu_malloc_use_cuda_);
-  }
-
-  if (prv_ptr_  && own_prv_data_) {
-    CaffeFreeHost(prv_ptr_, cpu_malloc_use_cuda_);
   }
 
 #ifndef CPU_ONLY
@@ -52,11 +85,17 @@ inline void SyncedMemory::to_cpu() {
       own_cpu_data_ = true;
     }
     CHECK(prv_descriptor_.get());
-    prv_descriptor_->convert_from_prv(prv_ptr_, cpu_ptr_);
+    prv_descriptor_->convert_from_prv(cpu_ptr_);
+    prv_descriptor_->on_to_cpu();
     head_ = SYNCED_PRV;
     break;
   case SYNCED_PRV:
   case HEAD_AT_CPU:
+    if (prv_descriptor_.get()) {
+        if ( prv_descriptor_->on_to_cpu())
+            head_ = SYNCED;
+    }
+    break;
   case SYNCED:
     break;
   }
@@ -176,50 +215,39 @@ void SyncedMemory::async_gpu_push(const cudaStream_t& stream) {
 }
 #endif
 
-/*
-  If data is NULL, then allocate the memory here.
-  same_data - shall be true if data will be the same as in cpu_ptr_
-    but (potentially) with different layout.
-*/
-void SyncedMemory::set_prv_data(void* data, bool same_data) {
-  if (data != NULL) {
-    if (prv_ptr_ && own_prv_data_) {
-      CaffeFreeHost(prv_ptr_, cpu_malloc_use_cuda_);
-    }
-    prv_ptr_ = data;
-    own_prv_data_ = false;
-  } else if (NULL == prv_ptr_) {
-    CaffeMallocHost(&prv_ptr_, size_, &cpu_malloc_use_cuda_);
-    caffe_memset(size_, 0, prv_ptr_);
-    own_prv_data_ = true;
+void SyncedMemory::set_prv_descriptor(shared_ptr<PrvMemDescr> descriptor,
+        bool same_data) {
+  // If it wasn't synced before, it won't be now.
+  if (descriptor == NULL) {
+    if (head_ != UNINITIALIZED)
+      head_ = HEAD_AT_CPU;
+  } else {
+    if ((head_ != HEAD_AT_PRV) && same_data)
+      head_ = SYNCED_PRV;
+    else
+      head_ = HEAD_AT_PRV;
   }
 
-  // If it wasn't synced before, it won't be now.
-  if ((head_ != HEAD_AT_PRV) && same_data)
-    head_ = SYNCED_PRV;
-  else
-    head_ = HEAD_AT_PRV;
+  prv_descriptor_ = descriptor;
 }
 
 const void* SyncedMemory::prv_data() {
   if ((head_ != HEAD_AT_PRV) &&
      (head_ != SYNCED_PRV)) {
-    DLOG(INFO) << "prv_ptr_ is not up-to-date, call set_prv_data() first.";
     return NULL;
   }
 
-  return (const void* )prv_ptr_;
+  CHECK(prv_descriptor_.get());
+  return (const void* ) prv_descriptor_->prv_ptr();
 }
 
 void* SyncedMemory::mutable_prv_data() {
-  head_ = HEAD_AT_PRV;
-
-  if (NULL == prv_ptr_) {
-    CaffeMallocHost(&prv_ptr_, size_, &cpu_malloc_use_cuda_);
-    caffe_memset(size_, 0, prv_ptr_);
+  CHECK(prv_descriptor_.get());
+  if (head_ == HEAD_AT_CPU) {
+    prv_descriptor_->convert_to_prv(cpu_ptr_);
   }
-  return prv_ptr_;
+  head_ = HEAD_AT_PRV;
+  return prv_descriptor_->prv_ptr();
 }
 
 }  // namespace caffe
-

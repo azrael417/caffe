@@ -1,3 +1,39 @@
+# 
+# All modification made by Intel Corporation: Copyright (c) 2016 Intel Corporation
+# 
+# All contributions by the University of California:
+# Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+# All rights reserved.
+# 
+# All other contributions:
+# Copyright (c) 2014, 2015, the respective contributors
+# All rights reserved.
+# For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+# 
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+#     * Redistributions of source code must retain the above copyright notice,
+#       this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Intel Corporation nor the names of its contributors
+#       may be used to endorse or promote products derived from this software
+#       without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 import unittest
 import tempfile
 import os
@@ -44,6 +80,18 @@ class ParameterLayer(caffe.Layer):
     def backward(self, top, propagate_down, bottom):
         self.blobs[0].diff[0] = 1
 
+class PhaseLayer(caffe.Layer):
+    """A layer for checking attribute `phase`"""
+
+    def setup(self, bottom, top):
+        pass
+
+    def reshape(self, bootom, top):
+        top[0].reshape()
+
+    def forward(self, bottom, top):
+        top[0].data[()] = self.phase
+
 def python_net_file():
     with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
         f.write("""name: 'pythonnet' force_backward: true
@@ -73,6 +121,14 @@ def parameter_net_file():
         input: 'data' input_shape { dim: 10 dim: 9 dim: 8 }
         layer { type: 'Python' name: 'layer' bottom: 'data' top: 'top'
           python_param { module: 'test_python_layer' layer: 'ParameterLayer' } }
+          """)
+        return f.name
+
+def phase_net_file():
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
+        f.write("""name: 'pythonnet' force_backward: true
+        layer { type: 'Python' name: 'layer' top: 'phase'
+          python_param { module: 'test_python_layer' layer: 'PhaseLayer' } }
           """)
         return f.name
 
@@ -140,3 +196,9 @@ class TestPythonLayer(unittest.TestCase):
         self.assertEqual(layer.blobs[0].data[0], 1)
 
         os.remove(net_file)
+
+    def test_phase(self):
+        net_file = phase_net_file()
+        for phase in caffe.TRAIN, caffe.TEST:
+            net = caffe.Net(net_file, phase)
+            self.assertEqual(net.forward()['phase'], phase)

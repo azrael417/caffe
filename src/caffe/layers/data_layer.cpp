@@ -1,8 +1,45 @@
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #ifdef USE_OPENCV
 #include <opencv2/core/core.hpp>
 #endif  // USE_OPENCV
 #include <stdint.h>
-
+#include <string>
 #include <vector>
 
 #include "caffe/data_transformer.hpp"
@@ -27,24 +64,14 @@ void DataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   const int batch_size = this->layer_param_.data_param().batch_size();
   // Read a data point, and use it to initialize the top blob.
-  Datum& datum = *(reader_.full().peek());
-
-  // Let know data transformer about data reader used for getting data
-  this->data_transformer_->setDataReader(&reader_);
+  Datum datum;
+  datum.ParseFromString(*(reader_.full().peek()));
 
   // Use data_transformer to infer the expected blob shape from datum.
   vector<int> top_shape = this->data_transformer_->InferBlobShape(datum);
   this->transformed_data_.Reshape(top_shape);
   // Reshape top[0] and prefetch_data according to the batch_size.
-#ifdef _OPENMP
-  previous_batch_size_ = batch_size;
-  this->transformed_datas_.resize(batch_size);
-  for (int i = 0; i < batch_size; ++i) {
-    this->transformed_datas_[i].reset(new Blob<Dtype>(top_shape));
-  }
-#endif
   top_shape[0] = batch_size;
-
 
   top[0]->Reshape(top_shape);
   for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
@@ -74,33 +101,18 @@ void DataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   CPUTimer trans_timer;
   CHECK(batch->data_.count());
 
-// For transformed_datas_ we check only the first one
-#ifdef _OPENMP
-  CHECK(this->transformed_datas_[0].get()->count());
-#else
+#ifndef _OPENMP
   CHECK(this->transformed_data_.count());
 #endif
 
   // Reshape according to the first datum of each batch
   // on single input batches allows for inputs of varying dimension.
   const int batch_size = this->layer_param_.data_param().batch_size();
-  Datum& datum = *(reader_.full().peek());
+  Datum datum;
+  datum.ParseFromString(*(reader_.full().peek()));
   // Use data_transformer to infer the expected blob shape from datum.
   vector<int> top_shape = this->data_transformer_->InferBlobShape(datum);
-#ifdef _OPENMP
-  if (batch_size != this->previous_batch_size_) {
-    this->transformed_datas_.resize(batch_size);
-    // deallocate redundant blobs
-    for (int i = previous_batch_size_; i < batch_size; ++i) {
-      this->transformed_datas_[i].reset(new Blob<Dtype>());
-    }
-    this->previous_batch_size_ = batch_size;
-  }
-
-  for (int i = 0; i< this->transformed_datas_.size(); ++i) {
-    this->transformed_datas_[i]->Reshape(top_shape);  // TODO: investigate
-  }
-#else
+#ifndef _OPENMP
   this->transformed_data_.Reshape(top_shape);
 #endif
   // Reshape batch according to the batch_size.
@@ -122,25 +134,36 @@ void DataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   for (int item_id = 0; item_id < batch_size; ++item_id) {
     timer.Start();
     // get a datum
-    Datum& datum = *(reader_.full().pop("Waiting for data"));
+    string* data = (reader_.full().pop("Waiting for data"));
     timer.Stop();
     read_time += timer.MicroSeconds();
     // Apply data transformations (mirror, scale, crop...)
     int offset = batch->data_.offset(item_id);
 
-    // Copy label. We need to copy it before we release datum
-    // which happens in transform threads
-    if (this->output_labels_) {
-      top_label[item_id] = datum.label();
-    }
 #ifdef _OPENMP
-    this->transformed_datas_[item_id]->set_cpu_data(top_data + offset);
-    this->data_transformer_->Transform(datum,
-                                       this->transformed_datas_[item_id].get());
-#else
-    this->transformed_data_.set_cpu_data(top_data + offset);
-    this->data_transformer_->Transform(datum, &(this->transformed_data_));
+    PreclcRandomNumbers precalculated_rand_numbers;
+    this->data_transformer_->GenerateRandNumbers(precalculated_rand_numbers);
+    #pragma omp task firstprivate(offset, precalculated_rand_numbers, data, item_id)
 #endif
+    {
+      Datum datum;
+      datum.ParseFromString(*data);
+      (reader_.free()).push(data);  
+      // Copy label. We need to copy it before we release datum
+      if (this->output_labels_) {
+        top_label[item_id] = datum.label();
+      }
+#ifdef _OPENMP
+      Blob<Dtype> tmp_data;
+      tmp_data.Reshape(top_shape);
+      tmp_data.set_cpu_data(top_data + offset);
+      this->data_transformer_->Transform(datum, &tmp_data,
+                                              precalculated_rand_numbers);
+#else
+      this->transformed_data_.set_cpu_data(top_data + offset);
+      this->data_transformer_->Transform(datum, &(this->transformed_data_));
+#endif
+    }
   }
   trans_timer.Stop();
   batch_timer.Stop();

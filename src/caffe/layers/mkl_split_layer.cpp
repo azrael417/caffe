@@ -1,4 +1,41 @@
-#if defined(MKL2017_SUPPORTED) && defined(USE_MKL2017_NEW_API)
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#if defined(MKL2017_SUPPORTED)
 #include <vector>
 
 #include "caffe/layers/mkl_layers.hpp"
@@ -17,8 +54,6 @@ void MKLSplitLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   num_tops = top.size();
   size_t dim_src = bottom[0]->shape().size();
 
-  dnnError_t e;
-
   size_t sizes_src[dim_src], strides_src[dim_src];
   for (size_t d = 0; d < dim_src; ++d) {
     sizes_src[d] = bottom[0]->shape()[dim_src - d - 1];
@@ -27,17 +62,13 @@ void MKLSplitLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
   for (size_t i = 0; i < num_tops; ++i) {
     bwd_top_diff.push_back(shared_ptr<MKLDiff<Dtype> >(new MKLDiff<Dtype>));
-    e = dnnLayoutCreate<Dtype>(&(bwd_top_diff[i]->layout_usr), dim_src,
-        sizes_src, strides_src);
-    CHECK_EQ(e, E_SUCCESS);
+    bwd_top_diff[i]->create_user_layout(dim_src, sizes_src, strides_src);
   }
 
   // Blob-wise coefficients for the elementwise operation.
   coeffs_ = vector<Dtype>(top.size(), 1);
 
-  e = dnnLayoutCreate<Dtype>(&bwd_bottom_diff->layout_usr, dim_src,
-    sizes_src, strides_src);
-  CHECK_EQ(e, E_SUCCESS);
+  bwd_bottom_diff->create_user_layout(dim_src, sizes_src, strides_src);
 }
 
 template <typename Dtype>
@@ -88,11 +119,11 @@ void MKLSplitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       dnnLayout_t int_layout = NULL;
       for (size_t i = 0; i < num_tops; ++i) {
         if (top[i]->prv_diff() != NULL) {
-          CHECK((top[i]->get_prv_descriptor_diff())->get_descr_type() ==
+          CHECK((top[i]->get_prv_diff_descriptor())->get_descr_type() ==
             PrvMemDescr::PRV_DESCR_MKL2017);
           shared_ptr<MKLDiff<Dtype> > mem_descr =
             boost::static_pointer_cast<MKLDiff<Dtype> >(
-                top[i]->get_prv_descriptor_diff());
+                top[i]->get_prv_diff_descriptor());
           CHECK(mem_descr != NULL);
           bwd_top_diff[i] = mem_descr;
           if (int_layout == NULL) {
@@ -104,17 +135,12 @@ void MKLSplitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         int_layout, &coeffs_[0]);
       CHECK_EQ(e, E_SUCCESS);
 
-      e = dnnLayoutCreateFromPrimitive<Dtype>(&bwd_bottom_diff->layout_int,
-        sumPrimitive, dnnResourceDst);
-      CHECK_EQ(e, E_SUCCESS);
-      bwd_bottom_diff->create_conversions();
+      bwd_bottom_diff->create_internal_layout(sumPrimitive, dnnResourceDst);
 
       for (size_t i = 0; i < num_tops; ++i) {
         if (top[i]->prv_diff() == NULL) {
-          e = dnnLayoutCreateFromPrimitive<Dtype>(&bwd_top_diff[i]->layout_int,
-            sumPrimitive, (dnnResourceType_t)(dnnResourceMultipleSrc + i));
-          CHECK_EQ(e, E_SUCCESS);
-          bwd_top_diff[i]->create_conversions();
+          bwd_top_diff[i]->create_internal_layout(sumPrimitive,
+                  (dnnResourceType_t)(dnnResourceMultipleSrc + i));
         }
       }
     }
@@ -137,11 +163,10 @@ void MKLSplitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     }
   }
 
-  if (bwd_bottom_diff->convert_from_int) {
-    bottom[0]->set_prv_diff(bwd_bottom_diff->prv_ptr(),
-        bwd_bottom_diff, false);
+  if (bwd_bottom_diff->conversion_needed()) {
+    bottom[0]->set_prv_diff_descriptor(bwd_bottom_diff);
     sum_res[dnnResourceDst] =
-        reinterpret_cast<void*>(bwd_bottom_diff->prv_ptr());
+        reinterpret_cast<void*>(bottom[0]->mutable_prv_diff());
   } else {
     sum_res[dnnResourceDst] =
         reinterpret_cast<void*>(bottom[0]->mutable_cpu_diff());
@@ -165,4 +190,4 @@ void MKLSplitLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 
 INSTANTIATE_CLASS(MKLSplitLayer);
 }  // namespace caffe
-#endif  // #if defined(MKL2017_SUPPORTED) && defined(USE_MKL2017_NEW_API)
+#endif  // #if defined(MKL2017_SUPPORTED)

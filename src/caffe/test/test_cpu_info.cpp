@@ -1,3 +1,40 @@
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include "gtest/gtest.h"
 
 #include "caffe/util/cpu_info.hpp"
@@ -5,8 +42,7 @@
 namespace caffe {
 namespace cpu {
 
-class CpuInfoContent
-{
+class CpuInfoContent {
  public:
   CpuInfoContent(const char *modelName,
     int numberOfSockets, int coresPerSocket, int threadsPerCore) {
@@ -18,9 +54,9 @@ class CpuInfoContent
     char *contentEnd = &content[contentLength];
 
     int processorId = 0;
-    for(int socketId = 0; socketId < numberOfSockets; socketId++) {
-      for(int threadId = 0; threadId < threadsPerCore; threadId++) {
-        for(int coreId = 0; coreId < coresPerSocket; coreId++) {
+    for (int socketId = 0; socketId < numberOfSockets; socketId++) {
+      for (int threadId = 0; threadId < threadsPerCore; threadId++) {
+        for (int coreId = 0; coreId < coresPerSocket; coreId++) {
           contentPosition += snprintf(
             contentPosition,
             contentEnd - contentPosition,
@@ -176,7 +212,10 @@ TEST(CpuInfo, testCollectionForMultipleSocketsMultipleCoresWithMultithreading) {
 }
 
 TEST(CpuInfo, testCollectionForSpeed) {
-  CpuInfoContent cpuInfoContent("Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz", 2, 22, 2);
+  CpuInfoContent cpuInfoContent("Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz",
+                                 2,
+                                 22,
+                                 2);
   CpuInfo cpuInfo(cpuInfoContent.getContent());
   Collection collection(&cpuInfo);
   EXPECT_EQ(collection.getProcessorSpeedMHz(), 2200);

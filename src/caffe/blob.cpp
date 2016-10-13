@@ -1,3 +1,40 @@
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include <climits>
 #include <vector>
 
@@ -24,16 +61,24 @@ void Blob<Dtype>::Reshape(const vector<int>& shape) {
   CHECK_LE(shape.size(), kMaxBlobAxes);
   count_ = 1;
   shape_.resize(shape.size());
+
+#ifndef CPU_ONLY
   if (!shape_data_ || shape_data_->size() < shape.size() * sizeof(int)) {
     shape_data_.reset(new SyncedMemory(shape.size() * sizeof(int)));
   }
   int* shape_data = static_cast<int*>(shape_data_->mutable_cpu_data());
+#endif
+
   for (int i = 0; i < shape.size(); ++i) {
     CHECK_GE(shape[i], 0);
-    CHECK_LE(shape[i], INT_MAX / count_) << "blob size exceeds INT_MAX";
+    if (count_ != 0) {
+      CHECK_LE(shape[i], INT_MAX / count_) << "blob size exceeds INT_MAX";
+    }
     count_ *= shape[i];
     shape_[i] = shape[i];
+#ifndef CPU_ONLY
     shape_data[i] = shape[i];
+#endif
   }
   if (count_ > capacity_) {
     capacity_ = count_;
@@ -72,11 +117,13 @@ Blob<Dtype>::Blob(const vector<int>& shape)
   Reshape(shape);
 }
 
+#ifndef CPU_ONLY
 template <typename Dtype>
 const int* Blob<Dtype>::gpu_shape() const {
   CHECK(shape_data_);
   return (const int*)shape_data_->gpu_data();
 }
+#endif
 
 template <typename Dtype>
 const Dtype* Blob<Dtype>::cpu_data() const {
@@ -145,14 +192,6 @@ Dtype* Blob<Dtype>::mutable_prv_data() {
 }
 
 template <typename Dtype>
-void Blob<Dtype>::set_prv_data(Dtype* data, shared_ptr<PrvMemDescr> descriptor,
-        bool same_data) {
-  CHECK(data_);
-  data_->set_prv_data(data, same_data);
-  data_->prv_descriptor_ = descriptor;
-}
-
-template <typename Dtype>
 const Dtype* Blob<Dtype>::prv_diff() const {
   CHECK(diff_);
   return (const Dtype*)diff_->prv_data();
@@ -164,34 +203,29 @@ Dtype* Blob<Dtype>::mutable_prv_diff() {
   return static_cast<Dtype*>(diff_->mutable_prv_data());
 }
 
-template <typename Dtype>
-void Blob<Dtype>::set_prv_diff(Dtype* diff, shared_ptr<PrvMemDescr> descriptor,
-        bool same_data) {
-  CHECK(diff_);
-  diff_->set_prv_data(diff, same_data);
-  diff_->prv_descriptor_ = descriptor;
-}
 
 template <typename Dtype>
-void Blob<Dtype>::set_prv_descriptor_data(shared_ptr<PrvMemDescr> descriptor) {
+void Blob<Dtype>::set_prv_data_descriptor(shared_ptr<PrvMemDescr> descriptor,
+         bool same_data) {
     CHECK(data_);
-    data_->prv_descriptor_ = descriptor;
+    data_->set_prv_descriptor(descriptor, same_data);
 }
 
 template <typename Dtype>
-void Blob<Dtype>::set_prv_descriptor_diff(shared_ptr<PrvMemDescr> descriptor) {
+void Blob<Dtype>::set_prv_diff_descriptor(shared_ptr<PrvMemDescr> descriptor,
+                 bool same_data) {
   CHECK(diff_);
-  diff_->prv_descriptor_ = descriptor;
+  diff_->set_prv_descriptor(descriptor, same_data);
 }
 
 template <typename Dtype>
-shared_ptr<PrvMemDescr> Blob<Dtype>::get_prv_descriptor_data() {
+shared_ptr<PrvMemDescr> Blob<Dtype>::get_prv_data_descriptor() {
   CHECK(data_);
   return data_->prv_descriptor_;
 }
 
 template <typename Dtype>
-shared_ptr<PrvMemDescr> Blob<Dtype>::get_prv_descriptor_diff() {
+shared_ptr<PrvMemDescr> Blob<Dtype>::get_prv_diff_descriptor() {
   CHECK(diff_);
   return diff_->prv_descriptor_;
 }
@@ -222,6 +256,8 @@ void Blob<Dtype>::Update() {
   case SyncedMemory::HEAD_AT_PRV:
     if ((diff_->head() == SyncedMemory::SYNCED_PRV) ||
         (diff_->head() == SyncedMemory::HEAD_AT_PRV)) {
+      CHECK_EQ(true, get_prv_data_descriptor()->layout_compare(
+                get_prv_diff_descriptor()));
       caffe_axpy<Dtype>(prv_diff_count(), Dtype(-1),
           static_cast<const Dtype*>(diff_->prv_data()),
           static_cast<Dtype*>(data_->mutable_prv_data()));

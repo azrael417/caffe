@@ -1,3 +1,40 @@
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
@@ -12,9 +49,11 @@
 
 namespace caffe {
 
-	bool NetNeedsUpgrade(const NetParameter& net_param) {
-		return NetNeedsV0ToV1Upgrade(net_param) || NetNeedsV1ToV2Upgrade(net_param);
-	}
+
+bool NetNeedsUpgrade(const NetParameter& net_param) {
+  return NetNeedsV0ToV1Upgrade(net_param) || NetNeedsV1ToV2Upgrade(net_param)
+      || NetNeedsDataUpgrade(net_param) || NetNeedsInputUpgrade(net_param);
+}
 
 	bool UpgradeNetAsNeeded(const string& param_file, NetParameter* param) {
 		bool success = true;
@@ -672,25 +711,27 @@ namespace caffe {
 		}
 	}
 
-	bool UpgradeV1Net(const NetParameter& v1_net_param, NetParameter* net_param) {
-		bool is_fully_compatible = true;
-		if (v1_net_param.layer_size() > 0) {
-			LOG(ERROR) << "Input NetParameter to be upgraded already specifies 'layer' "
-				<< "fields; these will be ignored for the upgrade.";
-			is_fully_compatible = false;
-		}
-		net_param->CopyFrom(v1_net_param);
-		net_param->clear_layers();
-		net_param->clear_layer();
-		for (int i = 0; i < v1_net_param.layers_size(); ++i) {
-			if (!UpgradeV1LayerParameter(v1_net_param.layers(i),
-			net_param->add_layer())) {
-				LOG(ERROR) << "Upgrade of input layer " << i << " failed.";
-				is_fully_compatible = false;
-			}
-		}
-		return is_fully_compatible;
-	}
+bool UpgradeV1Net(const NetParameter& v1_net_param, NetParameter* net_param) {
+  if (v1_net_param.layer_size() > 0) {
+    LOG(FATAL) << "Refusing to upgrade inconsistent NetParameter input; "
+        << "the definition includes both 'layer' and 'layers' fields. "
+        << "The current format defines 'layer' fields with string type like "
+        << "layer { type: 'Layer' ... } and not layers { type: LAYER ... }. "
+        << "Manually switch the definition to 'layer' format to continue.";
+  }
+  bool is_fully_compatible = true;
+  net_param->CopyFrom(v1_net_param);
+  net_param->clear_layers();
+  net_param->clear_layer();
+  for (int i = 0; i < v1_net_param.layers_size(); ++i) {
+    if (!UpgradeV1LayerParameter(v1_net_param.layers(i),
+                                 net_param->add_layer())) {
+      LOG(ERROR) << "Upgrade of input layer " << i << " failed.";
+      is_fully_compatible = false;
+    }
+  }
+  return is_fully_compatible;
+}
 
 	bool UpgradeV1LayerParameter(const V1LayerParameter& v1_layer_param,
 	LayerParameter* layer_param) {
@@ -991,36 +1032,43 @@ namespace caffe {
 		return net_param.input_size() > 0;
 	}
 
-	void UpgradeNetInput(NetParameter* net_param) {
-		LayerParameter* layer_param = net_param->add_layer();
-		layer_param->set_name("input");
-		layer_param->set_type("Input");
-		InputParameter* input_param = layer_param->mutable_input_param();
-		bool has_shape = net_param->input_shape_size() > 0;
-		// Convert input fields into a layer.
-		for (int i = 0; i < net_param->input_size(); ++i) {
-			layer_param->add_top(net_param->input(i));
-			if (has_shape) {
-				input_param->add_shape()->CopyFrom(net_param->input_shape(i));
-			} else {
-				// Turn legacy input dimensions into shape.
-				BlobShape* shape = input_param->add_shape();
-				int first_dim = i*4;
-				int last_dim = first_dim + 4;
-				for (int j = first_dim; j < last_dim; j++) {
-					shape->add_dim(net_param->input_dim(j));
-				}
-			}
-		}
-		// Swap input layer to beginning of net to satisfy layer dependencies.
-		for (int i = net_param->layer_size() - 1; i > 0; --i) {
-			net_param->mutable_layer(i-1)->Swap(net_param->mutable_layer(i));
-		}
-		// Clear inputs.
-		net_param->clear_input();
-		net_param->clear_input_shape();
-		net_param->clear_input_dim();
-	}
+void UpgradeNetInput(NetParameter* net_param) {
+  // Collect inputs and convert to Input layer definitions.
+  // If the NetParameter holds an input alone, without shape/dim, then
+  // it's a legacy caffemodel and simply stripping the input field is enough.
+  bool has_shape = net_param->input_shape_size() > 0;
+  bool has_dim = net_param->input_dim_size() > 0;
+  if (has_shape || has_dim) {
+    LayerParameter* layer_param = net_param->add_layer();
+    layer_param->set_name("input");
+    layer_param->set_type("Input");
+    InputParameter* input_param = layer_param->mutable_input_param();
+    // Convert input fields into a layer.
+    for (int i = 0; i < net_param->input_size(); ++i) {
+      layer_param->add_top(net_param->input(i));
+      if (has_shape) {
+        input_param->add_shape()->CopyFrom(net_param->input_shape(i));
+      } else {
+        // Turn legacy input dimensions into shape.
+        BlobShape* shape = input_param->add_shape();
+        int first_dim = i*4;
+        int last_dim = first_dim + 4;
+        for (int j = first_dim; j < last_dim; j++) {
+          shape->add_dim(net_param->input_dim(j));
+        }
+      }
+    }
+    // Swap input layer to beginning of net to satisfy layer dependencies.
+    for (int i = net_param->layer_size() - 1; i > 0; --i) {
+      net_param->mutable_layer(i-1)->Swap(net_param->mutable_layer(i));
+    }
+  }
+  // Clear inputs.
+  net_param->clear_input();
+  net_param->clear_input_shape();
+  net_param->clear_input_dim();
+}
+
 
 	// Return true iff the solver contains any old solver_type specified as enums
 	bool SolverNeedsTypeUpgrade(const SolverParameter& solver_param) {

@@ -1,3 +1,40 @@
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include <string>
 #include <utility>
 #include <vector>
@@ -9,6 +46,7 @@
 #include "caffe/common.hpp"
 #include "caffe/filler.hpp"
 #include "caffe/net.hpp"
+#include "caffe/util/io.hpp"
 #include "caffe/util/math_functions.hpp"
 
 #include "caffe/test/test_caffe_main.hpp"
@@ -27,6 +65,17 @@ class NetTest : public MultiDeviceTest<TypeParam> {
     NetParameter param;
     CHECK(google::protobuf::TextFormat::ParseFromString(proto, &param));
     net_.reset(new Net<Dtype>(param));
+  }
+
+  virtual void InitNetFromProtoFileWithState(const string& proto,
+      Phase phase = caffe::TRAIN, const int level = 0,
+      const vector<string>* stages = NULL) {
+    NetParameter param;
+    CHECK(google::protobuf::TextFormat::ParseFromString(proto, &param));
+    string param_file;
+    MakeTempFilename(&param_file);
+    WriteProtoToTextFile(param, param_file);
+    net_.reset(new Net<Dtype>(param_file, phase, level, stages));
   }
 
   virtual void CopyNetBlobs(const bool copy_diff,
@@ -714,6 +763,117 @@ class NetTest : public MultiDeviceTest<TypeParam> {
       "  loss_weight: 0.1 "
       "} ";
     InitNetFromProtoString(proto);
+  }
+
+  virtual void InitForcePropNet(bool test_force_true) {
+    string proto =
+      "name: 'ForcePropTestNetwork' "
+      "layer { "
+      "  name: 'data' "
+      "  type: 'DummyData' "
+      "  dummy_data_param { "
+      "    shape { "
+      "      dim: 5 "
+      "      dim: 2 "
+      "      dim: 3 "
+      "      dim: 4 "
+      "    } "
+      "    data_filler { "
+      "      type: 'gaussian' "
+      "      std: 0.01 "
+      "    } "
+      "    shape { "
+      "      dim: 5 "
+      "    } "
+      "    data_filler { "
+      "      type: 'constant' "
+      "      value: 0 "
+      "    } "
+      "  } "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layer { "
+      "  name: 'innerproduct' "
+      "  type: 'InnerProduct' "
+      "  inner_product_param { "
+      "    num_output: 1 "
+      "    weight_filler { "
+      "      type: 'gaussian' "
+      "      std: 0.01 "
+      "    } "
+      "  } "
+      "  bottom: 'data' "
+      "  top: 'innerproduct' ";
+    if (test_force_true) {
+      proto += "  propagate_down: true ";
+    }
+    proto +=
+      "} "
+      "layer { "
+      "  name: 'loss' "
+      "  bottom: 'innerproduct' "
+      "  bottom: 'label' "
+      "  top: 'cross_entropy_loss' "
+      "  type: 'SigmoidCrossEntropyLoss' "
+      "} ";
+    InitNetFromProtoString(proto);
+  }
+
+  virtual void InitAllInOneNet(Phase phase = caffe::TRAIN,
+      const int level = 0, const vector<string>* stages = NULL) {
+    string proto =
+      "name: 'All-in-one Network'"
+      "layer { "
+      "  name: 'train-data' "
+      "  type: 'DummyData' "
+      "  top: 'data' "
+      "  top: 'label' "
+      "  dummy_data_param { "
+      "    shape { dim: 1 dim: 10 } "
+      "    shape { dim: 1 dim: 1 } "
+      "  } "
+      "  include { phase: TRAIN stage: 'train' } "
+      "} "
+      "layer { "
+      "  name: 'val-data' "
+      "  type: 'DummyData' "
+      "  top: 'data' "
+      "  top: 'label' "
+      "  dummy_data_param { "
+      "    shape { dim: 1 dim: 10 } "
+      "    shape { dim: 1 dim: 1 } "
+      "  } "
+      "  include { phase: TEST stage: 'val' } "
+      "} "
+      "layer { "
+      "  name: 'deploy-data' "
+      "  type: 'Input' "
+      "  top: 'data' "
+      "  input_param { "
+      "    shape { dim: 1 dim: 10 } "
+      "  } "
+      "  include { phase: TEST stage: 'deploy' } "
+      "} "
+      "layer { "
+      "  name: 'ip' "
+      "  type: 'InnerProduct' "
+      "  bottom: 'data' "
+      "  top: 'ip' "
+      "  inner_product_param { "
+      "    num_output: 2 "
+      "  } "
+      "} "
+      "layer { "
+      "  name: 'loss' "
+      "  type: 'SoftmaxWithLoss' "
+      "  bottom: 'ip' "
+      "  bottom: 'label' "
+      "  top: 'loss' "
+      "  include { phase: TRAIN stage: 'train' } "
+      "  include { phase: TEST stage: 'val' } "
+      "} ";
+    InitNetFromProtoFileWithState(proto, phase, level, stages);
   }
 
   int seed_;
@@ -2251,6 +2411,8 @@ TEST_F(FilterNetTest, TestFilterInOutByExcludeMultiRule) {
   this->RunFilterNetTest(input_proto_test, output_proto_test);
 }
 
+
+
 TYPED_TEST(NetTest, TestReshape) {
   typedef typename TypeParam::Dtype Dtype;
   // We set up bottom blobs of two different sizes, switch between
@@ -2369,6 +2531,239 @@ TYPED_TEST(NetTest, TestSkipPropagateDown) {
           << "layer_need_backward for " << layer_name << " should be False";
     }
   }
+}
+
+TYPED_TEST(NetTest, TestForcePropagateDown) {
+  this->InitForcePropNet(false);
+  vector<bool> layer_need_backward = this->net_->layer_need_backward();
+  for (int layer_id = 0; layer_id < this->net_->layers().size(); ++layer_id) {
+    const string& layer_name = this->net_->layer_names()[layer_id];
+    const vector<bool> need_backward =
+        this->net_->bottom_need_backward()[layer_id];
+    if (layer_name == "data") {
+      ASSERT_EQ(need_backward.size(), 0);
+      EXPECT_FALSE(layer_need_backward[layer_id]);
+    } else if (layer_name == "innerproduct") {
+      ASSERT_EQ(need_backward.size(), 1);
+      EXPECT_FALSE(need_backward[0]);  // data
+      EXPECT_TRUE(layer_need_backward[layer_id]);
+    } else if (layer_name == "loss") {
+      ASSERT_EQ(need_backward.size(), 2);
+      EXPECT_TRUE(need_backward[0]);   // innerproduct
+      EXPECT_FALSE(need_backward[1]);  // label
+      EXPECT_TRUE(layer_need_backward[layer_id]);
+    } else {
+      LOG(FATAL) << "Unknown layer: " << layer_name;
+    }
+  }
+  this->InitForcePropNet(true);
+  layer_need_backward = this->net_->layer_need_backward();
+  for (int layer_id = 0; layer_id < this->net_->layers().size(); ++layer_id) {
+    const string& layer_name = this->net_->layer_names()[layer_id];
+    const vector<bool> need_backward =
+        this->net_->bottom_need_backward()[layer_id];
+    if (layer_name == "data") {
+      ASSERT_EQ(need_backward.size(), 0);
+      EXPECT_FALSE(layer_need_backward[layer_id]);
+    } else if (layer_name == "innerproduct") {
+      ASSERT_EQ(need_backward.size(), 1);
+      EXPECT_TRUE(need_backward[0]);  // data
+      EXPECT_TRUE(layer_need_backward[layer_id]);
+    } else if (layer_name == "loss") {
+      ASSERT_EQ(need_backward.size(), 2);
+      EXPECT_TRUE(need_backward[0]);   // innerproduct
+      EXPECT_FALSE(need_backward[1]);  // label
+      EXPECT_TRUE(layer_need_backward[layer_id]);
+    } else {
+      LOG(FATAL) << "Unknown layer: " << layer_name;
+    }
+  }
+}
+
+TYPED_TEST(NetTest, TestAllInOneNetTrain) {
+  vector<string> stages;
+  stages.push_back("train");
+  this->InitAllInOneNet(caffe::TRAIN, 0, &stages);
+  bool found_data = false;
+  bool found_loss = false;
+  for (int i = 0; i < this->net_->layers().size(); ++i) {
+    const string& layer_name = this->net_->layer_names()[i];
+    if (layer_name == "train-data") {
+      found_data = true;
+    } else if (layer_name == "loss") {
+      found_loss = true;
+    } else {
+      ASSERT_NE(layer_name, "val-data");
+      ASSERT_NE(layer_name, "deploy-data");
+    }
+  }
+  ASSERT_TRUE(found_data);
+  ASSERT_TRUE(found_loss);
+}
+
+TYPED_TEST(NetTest, TestAllInOneNetVal) {
+  vector<string> stages;
+  stages.push_back("val");
+  this->InitAllInOneNet(caffe::TEST, 0, &stages);
+  bool found_data = false;
+  bool found_loss = false;
+  for (int i = 0; i < this->net_->layers().size(); ++i) {
+    const string& layer_name = this->net_->layer_names()[i];
+    if (layer_name == "val-data") {
+      found_data = true;
+    } else if (layer_name == "loss") {
+      found_loss = true;
+    } else {
+      ASSERT_NE(layer_name, "train-data");
+      ASSERT_NE(layer_name, "deploy-data");
+    }
+  }
+  ASSERT_TRUE(found_data);
+  ASSERT_TRUE(found_loss);
+}
+
+TYPED_TEST(NetTest, TestAllInOneNetDeploy) {
+  vector<string> stages;
+  stages.push_back("deploy");
+  this->InitAllInOneNet(caffe::TEST, 0, &stages);
+  bool found_data = false;
+  for (int i = 0; i < this->net_->layers().size(); ++i) {
+    const string& layer_name = this->net_->layer_names()[i];
+    if (layer_name == "deploy-data") {
+      found_data = true;
+    } else {
+      ASSERT_NE(layer_name, "train-data");
+      ASSERT_NE(layer_name, "val-data");
+      ASSERT_NE(layer_name, "loss");
+    }
+  }
+  ASSERT_TRUE(found_data);
+}
+
+class CompileNetTest : public ::testing::Test {
+ protected:
+  void RunCompilerNetTest(
+      const string& input_param_string, const string& compiled_param_string) {
+    NetParameter input_param;
+    CHECK(google::protobuf::TextFormat::ParseFromString(
+        input_param_string, &input_param));
+    NetParameter expected_compiled_param;
+    CHECK(google::protobuf::TextFormat::ParseFromString(
+        compiled_param_string, &expected_compiled_param));
+    NetParameter actual_compiled_param;
+    Net<float>::CompileNet(input_param, &actual_compiled_param);
+    EXPECT_EQ(expected_compiled_param.DebugString(),
+        actual_compiled_param.DebugString());
+    // Also test idempotence.
+    NetParameter double_compiled_param;
+    Net<float>::CompileNet(actual_compiled_param, &double_compiled_param);
+    EXPECT_EQ(actual_compiled_param.DebugString(),
+       double_compiled_param.DebugString());
+  }
+};
+
+#ifdef MKL2017_SUPPORTED
+// If BatchNorm of engine MKL2017
+// produce blob consumed by
+// Scale Layer then Scale Layer can be dropped
+TEST_F(CompileNetTest, TestCompileNet) {
+  const string& input_proto =
+      "name: 'TestNetwork' "
+      "layer { "
+      "  name: 'data' "
+      "  type: 'Data' "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layer { "
+      "  bottom: 'data' "
+      "  name: 'bn' "
+      "  top: 'bn' "
+      "  type: 'BatchNorm' "
+      "  batch_norm_param { "
+      "   engine: MKL2017 "
+      "  } "
+      "} "
+      "layer { "
+      " bottom: 'bn' "
+      " top: 'sc' "
+      " name: 'sc' "
+      " type: 'Scale' "
+      " scale_param { "
+      "   bias_term: true "
+      " }"
+      "}"
+      "layer { "
+      "  name: 'loss' "
+      "  type: 'SoftmaxWithLoss' "
+      "  bottom: 'sc' "
+      "  bottom: 'label' "
+      "} ";
+
+  const string& output_proto =
+      "name: 'TestNetwork' "
+      "layer { "
+      "  name: 'data' "
+      "  type: 'Data' "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layer { "
+      "  bottom: 'data' "
+      "  name: 'bn' "
+      "  top: 'sc' "
+      "  type: 'BatchNorm' "
+      "  batch_norm_param { "
+      "   engine: MKL2017 "
+      "   bias_term: true "
+      "  } "
+      "} "
+      "layer { "
+      "  name: 'loss' "
+      "  type: 'SoftmaxWithLoss' "
+      "  bottom: 'sc' "
+      "  bottom: 'label' "
+      "} ";
+  this->RunCompilerNetTest(input_proto, output_proto);
+}
+#endif
+
+// If There is BatchNorm followed by Scale layer, but BatchNorm
+// is of engine Caffe then no reduction takes place
+TEST_F(CompileNetTest, TestNoCompileNet) {
+  const string& input_proto=
+      "name: 'TestNetwork' "
+      "layer { "
+      "  name: 'data' "
+      "  type: 'Data' "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layer { "
+      "  bottom: 'data' "
+      "  name: 'bn' "
+      "  top: 'bn' "
+      "  type: 'BatchNorm' "
+      "  batch_norm_param { "
+      "   engine: CAFFE "
+      "  } "
+      "} "
+      "layer { "
+      " bottom: 'bn' "
+      " top: 'sc' "
+      " name: 'sc' "
+      " type: 'Scale' "
+      " scale_param { "
+      "   bias_term: true "
+      " }"
+      "}"
+      "layer { "
+      "  name: 'loss' "
+      "  type: 'SoftmaxWithLoss' "
+      "  bottom: 'sc' "
+      "  bottom: 'label' "
+      "} ";
+  this->RunCompilerNetTest(input_proto, input_proto);
 }
 
 }  // namespace caffe

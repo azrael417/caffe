@@ -1,3 +1,39 @@
+# 
+# All modification made by Intel Corporation: © 2016 Intel Corporation
+# 
+# All contributions by the University of California:
+# Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+# All rights reserved.
+# 
+# All other contributions:
+# Copyright (c) 2014, 2015, the respective contributors
+# All rights reserved.
+# For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+# 
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+#     * Redistributions of source code must retain the above copyright notice,
+#       this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Intel Corporation nor the names of its contributors
+#       may be used to endorse or promote products derived from this software
+#       without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 PROJECT := caffe
 CONFIG_FILE := Makefile.config
 # Explicitly check for the config file, otherwise make -k will proceed anyway.
@@ -278,7 +314,7 @@ endif
 ifeq ($(OSX), 1)
 	CXX := /usr/bin/clang++
 	ifneq ($(CPU_ONLY), 1)
-		CUDA_VERSION := $(shell $(CUDA_DIR)/bin/nvcc -V | grep -o 'release \d' | grep -o '\d')
+		CUDA_VERSION := $(shell $(CUDA_DIR)/bin/nvcc -V | grep -o 'release [0-9.]*' | tr -d '[a-z ]')
 		ifeq ($(shell echo | awk '{exit $(CUDA_VERSION) < 7.0;}'), 1)
 			CXXFLAGS += -stdlib=libstdc++
 			LINKFLAGS += -stdlib=libstdc++
@@ -408,20 +444,44 @@ ifeq ($(WITH_PYTHON_LAYER), 1)
 	LIBRARIES += $(PYTHON_LIBRARIES)
 endif
 
-# BLAS configuration (default = ATLAS)
-BLAS ?= atlas
+# MKLDNN configuration
+# detect support for mkl-dnn primitives
+MKLDNN_LDFLAGS=
+MKLDNN_INCLUDE ?= $(MKLDNNROOT)/include
+ifneq ("$(wildcard $(MKLDNN_INCLUDE)/mkldnn.hpp)","")
+	CXXFLAGS += -DMKLDNN_SUPPORTED
+	ifeq ($(USE_MKLDNN_AS_DEFAULT_ENGINE), 1)
+	CXXFLAGS += -DUSE_MKLDNN_AS_DEFAULT_ENGINE
+	endif
+	LIBRARIES += mkldnn
+	MKLDNN_LDFLAGS+=-L$(MKLDNNROOT)/lib -Wl,-rpath,$(MKLDNNROOT)/lib
+endif
+
+# BLAS configuration (default = MKL)
+MKL_LDFLAGS=
+MKL_EXTERNAL := 0
+BLAS ?= mkl
 ifeq ($(BLAS), mkl)
 	# MKL
-	LIBRARIES += mkl_rt
+	ICC_ON=0
+	ifneq (,$(findstring icpc,$(CXX)))
+		ICC_ON=1
+	endif
+	RETURN_STRING=$(shell ./external/mkl/prepare_mkl.sh $(ICC_ON))
+	MKLROOT=$(firstword $(RETURN_STRING))
+	MKL_LDFLAGS=-l$(word 2, $(RETURN_STRING))
+	MKL_EXTERNAL=$(lastword $(RETURN_STRING))
+ifeq ($(MKL_EXTERNAL), 1)
+	MKL_LDFLAGS+=-Wl,-rpath,$(MKLROOT)/lib
+endif
+
 	COMMON_FLAGS += -DUSE_MKL
-	MKLROOT ?= /opt/intel/mkl
 	BLAS_INCLUDE ?= $(MKLROOT)/include
 	BLAS_LIB ?= $(MKLROOT)/lib $(MKLROOT)/lib/intel64
 
 	# detect support for mkl2017 primitives
 	ifneq ("$(wildcard $(BLAS_INCLUDE)/mkl_dnn.h)","")
 	    CXXFLAGS += -DMKL2017_SUPPORTED
-	    COMMON_FLAGS += -DUSE_MKL2017_NEW_API
 	    ifeq ($(USE_MKL2017_AS_DEFAULT_ENGINE), 1)
 		CXXFLAGS += -DUSE_MKL2017_AS_DEFAULT_ENGINE
 	    endif
@@ -454,6 +514,9 @@ endif
 INCLUDE_DIRS += $(BLAS_INCLUDE)
 LIBRARY_DIRS += $(BLAS_LIB)
 
+INCLUDE_DIRS += $(MKLDNN_INCLUDE)
+LIBRARY_DIRS += $(MKLDNN_LIB)
+
 LIBRARY_DIRS += $(LIB_BUILD_DIR)
 
 # Automatic dependency generation (nvcc is handled separately)
@@ -461,11 +524,11 @@ CXXFLAGS += -MMD -MP
 
 # Complete build flags.
 COMMON_FLAGS += $(foreach includedir,$(INCLUDE_DIRS),-I$(includedir))
-CXXFLAGS += -pthread  $(COMMON_FLAGS) $(WARNINGS)
-NVCCFLAGS += -ccbin=$(CXX) -Xcompiler $(COMMON_FLAGS)
+CXXFLAGS += -std=c++11 -pthread -fPIC $(COMMON_FLAGS) $(WARNINGS)
+NVCCFLAGS += -ccbin=$(CXX) -Xcompiler -fPIC $(COMMON_FLAGS)
 # mex may invoke an older gcc that is too liberal with -Wuninitalized
 MATLAB_CXXFLAGS := $(CXXFLAGS) -Wno-uninitialized
-LINKFLAGS += -pthread $(COMMON_FLAGS) $(WARNINGS)
+LINKFLAGS += -pthread -fPIC $(COMMON_FLAGS) $(WARNINGS)
 
 USE_PKG_CONFIG ?= 0
 ifeq ($(USE_PKG_CONFIG), 1)
@@ -474,7 +537,7 @@ else
 	PKG_CONFIG :=
 endif
 LDFLAGS += $(foreach librarydir,$(LIBRARY_DIRS),-L$(librarydir)) $(PKG_CONFIG) \
-		$(foreach library,$(LIBRARIES),-l$(library))
+		$(foreach library,$(LIBRARIES),-l$(library)) -Wl,--as-needed
 PYTHON_LDFLAGS := $(LDFLAGS) $(foreach library,$(PYTHON_LIBRARIES),-l$(library))
 
 # 'superclean' target recursively* deletes all files ending with an extension
@@ -504,16 +567,20 @@ endif
 
 # Following section detects if compiler supports OpenMP and updated compilation/linking flags accordingly
 # if no openmp is supported in compiler then openmp compiler flags are not to be updated 
+# TODO: FIX for ICC?
 USE_OPENMP ?= 1
 ifeq ($(USE_OPENMP), 1)
   DUMMY_OPENMP_BINARY := $(shell mktemp)
   DUMMY_OPENMP_FILE := $(shell mktemp).cpp
+  ifeq ($(MKL_EXTERNAL), 1)
+    INTEL_OMP_DIR ?= $(shell find ${MKLROOT} -readable -name libiomp5.so 2>/dev/null | grep -v mic | xargs dirname)
+  endif
   INTEL_OMP_DIR ?= $(shell find ${MKLROOT}/.. -readable -name libiomp5.so 2>/dev/null | grep -v mic | grep -m 1 intel64 | xargs dirname)
   define OPENMP_VERIFYING_CODE
     "#include<omp.h> \n int main()  { \n #ifdef _OPENMP \n return 0; \n #else \n break_if_openmp_not_supported \n #endif \n }"
   endef
   ifeq ($(BLAS), mkl)
-    OPENMP_VERIFYING_COMPILE_FLAGS = -liomp5 -L$(INTEL_OMP_DIR)
+    OPENMP_VERIFYING_COMPILE_FLAGS = -Wl,--as-needed -liomp5 -L$(INTEL_OMP_DIR)
   endif
   OPENMP_VERIFYING_COMPILE_COMMAND = $(CXX) -fopenmp $(DUMMY_OPENMP_FILE) $(OPENMP_VERIFYING_COMPILE_FLAGS) -o $(DUMMY_OPENMP_BINARY) 2>/dev/null
   OPENMP_VERIFYING_COMMAND = printf $(OPENMP_VERIFYING_CODE) > $(DUMMY_OPENMP_FILE) && $(OPENMP_VERIFYING_COMPILE_COMMAND) && echo 1 || echo 0
@@ -529,7 +596,6 @@ ifeq ($(USE_OPENMP), 1)
   endif
 endif
 
-
 # MPI support
 ifeq ($(USE_MPI), 1)
   COMMON_FLAGS += -DUSE_MPI
@@ -539,7 +605,7 @@ ifeq ($(USE_MPI), 1)
  #endif
 endif
 
-
+# set_env should be at the end
 all: lib tools examples
 
 lib: $(STATIC_NAME) $(DYNAMIC_NAME)
@@ -659,7 +725,7 @@ $(ALL_BUILD_DIRS): | $(BUILD_DIR_LINK)
 
 $(DYNAMIC_NAME): $(OBJS) | $(LIB_BUILD_DIR)
 	@ echo LD -o $@
-	$(Q)$(CXX) -shared -o $@ $(OBJS) $(VERSIONFLAGS) $(LINKFLAGS) $(CXX_HARDENING_FLAGS) $(LINKER_SHARED_HARDENING_FLAGS) $(LDFLAGS)
+	$(Q)$(CXX) -shared -o $@ $(OBJS) $(VERSIONFLAGS) $(LINKFLAGS) $(MKL_LDFLAGS) $(MKLDNN_LDFLAGS) $(CXX_HARDENING_FLAGS) $(LINKER_SHARED_HARDENING_FLAGS) $(LDFLAGS)
 	@ cd $(BUILD_DIR)/lib; rm -f $(DYNAMIC_NAME_SHORT);   ln -s $(DYNAMIC_VERSIONED_NAME_SHORT) $(DYNAMIC_NAME_SHORT)
 
 $(STATIC_NAME): $(OBJS) | $(LIB_BUILD_DIR)
@@ -691,7 +757,7 @@ $(TEST_ALL_BIN): $(TEST_MAIN_SRC) $(TEST_OBJS) $(GTEST_OBJS) \
 		| $(DYNAMIC_NAME) $(TEST_BIN_DIR)
 	@ echo CXX/LD -o $@ $<
 	$(Q)$(CXX) $(TEST_MAIN_SRC) $(TEST_OBJS) $(GTEST_OBJS) \
-		-o $@ $(LINKFLAGS) $(CXX_HARDENING_FLAGS) $(LINKER_EXEC_HARDENING_FLAGS) $(LDFLAGS) -l$(LIBRARY_NAME) -Wl,-rpath,$(ORIGIN)/../lib
+		-o $@ $(LINKFLAGS) $(MKL_LDFLAGS) $(MKLDNN_LDFLAGS) $(CXX_HARDENING_FLAGS) $(LINKER_EXEC_HARDENING_FLAGS) $(LDFLAGS) -l$(LIBRARY_NAME) -Wl,-rpath,$(ORIGIN)/../lib
 
 $(TEST_CU_BINS): $(TEST_BIN_DIR)/%.testbin: $(TEST_CU_BUILD_DIR)/%.o \
 	$(GTEST_OBJS) | $(DYNAMIC_NAME) $(TEST_BIN_DIR)
@@ -703,7 +769,7 @@ $(TEST_CXX_BINS): $(TEST_BIN_DIR)/%.testbin: $(TEST_CXX_BUILD_DIR)/%.o \
 	$(GTEST_OBJS) | $(DYNAMIC_NAME) $(TEST_BIN_DIR)
 	@ echo LD $<
 	$(Q)$(CXX) $(TEST_MAIN_SRC) $< $(GTEST_OBJS) \
-		-o $@ $(LINKFLAGS) $(CXX_HARDENING_FLAGS) $(LINKER_EXEC_HARDENING_FLAGS) $(LDFLAGS) -l$(LIBRARY_NAME) -Wl,-rpath,$(ORIGIN)/../lib
+		-o $@ $(LINKFLAGS) $(MKL_LDFLAGS) $(MKLDNN_LDFLAGS) $(CXX_HARDENING_FLAGS) $(LINKER_EXEC_HARDENING_FLAGS) $(LDFLAGS) -l$(LIBRARY_NAME) -Wl,-rpath,$(ORIGIN)/../lib
 
 # Target for extension-less symlinks to tool binaries with extension '*.bin'.
 $(TOOL_BUILD_DIR)/%: $(TOOL_BUILD_DIR)/%.bin | $(TOOL_BUILD_DIR)
@@ -712,12 +778,12 @@ $(TOOL_BUILD_DIR)/%: $(TOOL_BUILD_DIR)/%.bin | $(TOOL_BUILD_DIR)
 
 $(TOOL_BINS): %.bin : %.o | $(DYNAMIC_NAME)
 	@ echo CXX/LD -o $@
-	$(Q)$(CXX) $< -o $@ $(LINKFLAGS) $(CXX_HARDENING_FLAGS) $(LINKER_EXEC_HARDENING_FLAGS) -l$(LIBRARY_NAME) $(LDFLAGS) \
+	$(Q)$(CXX) $< -o $@ $(LINKFLAGS) $(MKL_LDFLAGS) $(MKLDNN_LDFLAGS) $(CXX_HARDENING_FLAGS) $(LINKER_EXEC_HARDENING_FLAGS) -l$(LIBRARY_NAME) $(LDFLAGS) \
 		-Wl,-rpath,$(ORIGIN)/../lib
 
 $(EXAMPLE_BINS): %.bin : %.o | $(DYNAMIC_NAME)
 	@ echo CXX/LD -o $@
-	$(Q)$(CXX) $< -o $@ $(LINKFLAGS) $(CXX_HARDENING_FLAGS) $(LINKER_EXEC_HARDENING_FLAGS) -l$(LIBRARY_NAME) $(LDFLAGS) \
+	$(Q)$(CXX) $< -o $@ $(LINKFLAGS) $(MKL_LDFLAGS) $(MKLDNN_LDFLAGS) $(CXX_HARDENING_FLAGS) $(LINKER_EXEC_HARDENING_FLAGS) -l$(LIBRARY_NAME) $(LDFLAGS) \
 		-Wl,-rpath,$(ORIGIN)/../../lib
 
 proto: $(PROTO_GEN_CC) $(PROTO_GEN_HEADER)

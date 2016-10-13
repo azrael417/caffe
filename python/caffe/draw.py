@@ -1,3 +1,39 @@
+# 
+# All modification made by Intel Corporation: Copyright (c) 2016 Intel Corporation
+# 
+# All contributions by the University of California:
+# Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+# All rights reserved.
+# 
+# All other contributions:
+# Copyright (c) 2014, 2015, the respective contributors
+# All rights reserved.
+# For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+# 
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+#     * Redistributions of source code must retain the above copyright notice,
+#       this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Intel Corporation nor the names of its contributors
+#       may be used to endorse or promote products derived from this software
+#       without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 """
 Caffe network visualization: draw the NetParameter protobuffer.
 
@@ -127,7 +163,7 @@ def choose_color_by_layertype(layertype):
     return color
 
 
-def get_pydot_graph(caffe_net, rankdir, label_edges=True):
+def get_pydot_graph(caffe_net, rankdir, label_edges=True, phase=None):
     """Create a data structure which represents the `caffe_net`.
 
     Parameters
@@ -137,17 +173,33 @@ def get_pydot_graph(caffe_net, rankdir, label_edges=True):
         Direction of graph layout.
     label_edges : boolean, optional
         Label the edges (default is True).
+    phase : {caffe_pb2.Phase.TRAIN, caffe_pb2.Phase.TEST, None} optional
+        Include layers from this network phase.  If None, include all layers.
+        (the default is None)
 
     Returns
     -------
     pydot graph object
     """
-    pydot_graph = pydot.Dot(caffe_net.name,
+    pydot_graph = pydot.Dot(caffe_net.name if caffe_net.name else 'Net',
                             graph_type='digraph',
                             rankdir=rankdir)
     pydot_nodes = {}
     pydot_edges = []
     for layer in caffe_net.layer:
+        if phase is not None:
+          included = False
+          if len(layer.include) == 0:
+            included = True
+          if len(layer.include) > 0 and len(layer.exclude) > 0:
+            raise ValueError('layer ' + layer.name + ' has both include '
+                             'and exclude specified.')
+          for layer_phase in layer.include:
+            included = included or layer_phase.phase == phase
+          for layer_phase in layer.exclude:
+            included = included and not layer_phase.phase == phase
+          if not included:
+            continue
         node_label = get_layer_label(layer, rankdir)
         node_name = "%s_%s" % (layer.name, layer.type)
         if (len(layer.bottom) == 1 and len(layer.top) == 1 and
@@ -186,7 +238,7 @@ def get_pydot_graph(caffe_net, rankdir, label_edges=True):
     return pydot_graph
 
 
-def draw_net(caffe_net, rankdir, ext='png'):
+def draw_net(caffe_net, rankdir, ext='png', phase=None):
     """Draws a caffe net and returns the image string encoded using the given
     extension.
 
@@ -195,16 +247,19 @@ def draw_net(caffe_net, rankdir, ext='png'):
     caffe_net : a caffe.proto.caffe_pb2.NetParameter protocol buffer.
     ext : string, optional
         The image extension (the default is 'png').
+    phase : {caffe_pb2.Phase.TRAIN, caffe_pb2.Phase.TEST, None} optional
+        Include layers from this network phase.  If None, include all layers.
+        (the default is None)
 
     Returns
     -------
     string :
         Postscript representation of the graph.
     """
-    return get_pydot_graph(caffe_net, rankdir).create(format=ext)
+    return get_pydot_graph(caffe_net, rankdir, phase=phase).create(format=ext)
 
 
-def draw_net_to_file(caffe_net, filename, rankdir='LR'):
+def draw_net_to_file(caffe_net, filename, rankdir='LR', phase=None):
     """Draws a caffe net, and saves it to file using the format given as the
     file extension. Use '.raw' to output raw text that you can manually feed
     to graphviz to draw graphs.
@@ -216,7 +271,10 @@ def draw_net_to_file(caffe_net, filename, rankdir='LR'):
         The path to a file where the networks visualization will be stored.
     rankdir : {'LR', 'TB', 'BT'}
         Direction of graph layout.
+    phase : {caffe_pb2.Phase.TRAIN, caffe_pb2.Phase.TEST, None} optional
+        Include layers from this network phase.  If None, include all layers.
+        (the default is None)
     """
     ext = filename[filename.rfind('.')+1:]
     with open(filename, 'wb') as fid:
-        fid.write(draw_net(caffe_net, rankdir, ext))
+        fid.write(draw_net(caffe_net, rankdir, ext, phase))

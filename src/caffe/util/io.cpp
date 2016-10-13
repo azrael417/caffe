@@ -1,3 +1,40 @@
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include <fcntl.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
@@ -121,25 +158,37 @@ static bool matchExt(const std::string & fn,
 bool ReadImageToDatum(const string& filename, const int label,
     const int height, const int width, const bool is_color,
     const std::string & encoding, Datum* datum) {
-  cv::Mat cv_img = ReadImageToCVMat(filename, height, width, is_color);
-  if (cv_img.data) {
-    if (encoding.size()) {
-      if ( (cv_img.channels() == 3) == is_color && !height && !width &&
-          matchExt(filename, encoding) )
-        return ReadFileToDatum(filename, label, datum);
-      std::vector<uchar> buf;
-      cv::imencode("."+encoding, cv_img, buf);
-      datum->set_data(std::string(reinterpret_cast<char*>(&buf[0]),
-                      buf.size()));
+  if (!encoding.size()) {
+    cv::Mat cv_img = ReadImageToCVMat(filename, height, width, is_color);
+    if (cv_img.data) {
+      CVMatToDatum(cv_img, datum);
       datum->set_label(label);
-      datum->set_encoded(true);
       return true;
+    } else {
+      return false;
     }
-    CVMatToDatum(cv_img, datum);
-    datum->set_label(label);
-    return true;
   } else {
-    return false;
+    cv::Mat cv_img = cv::imread(filename, -1);
+    if (!cv_img.data) {
+      LOG(ERROR) << "Could not open or find file " << filename;
+      return false;
+    }
+    if ( (cv_img.channels() == 3) == is_color && !height && !width &&
+                                                matchExt(filename, encoding) )
+      return ReadFileToDatum(filename, label, datum);
+
+    if (height > 0 && width > 0)
+      cv::resize(cv_img, cv_img, cv::Size(width, height));
+    if ((cv_img.channels() == 3) != is_color)
+      cv::cvtColor(cv_img, cv_img, is_color ?
+                                       cv::COLOR_GRAY2BGR : cv::COLOR_BGR2GRAY);
+    std::vector<uchar> buf;
+    cv::imencode("."+encoding, cv_img, buf);
+    datum->set_data(std::string(reinterpret_cast<char*>(&buf[0]),
+                    buf.size()));
+    datum->set_label(label);
+    datum->set_encoded(true);
+    return true;
   }
 }
 #endif  // USE_OPENCV

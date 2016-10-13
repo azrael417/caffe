@@ -1,5 +1,43 @@
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #if USE_MKL
-#include <mkl.h>
+#include <mkl_vml_functions.h>
+#include <mkl_vsl.h>
 #endif
 
 #ifdef _OPENMP
@@ -16,7 +54,6 @@
 #include "caffe/util/cpu_info.hpp"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/util/rng.hpp"
-
 
 namespace caffe {
 
@@ -73,7 +110,8 @@ void caffe_set(const int N, const Dtype alpha, Dtype* Y) {
 
   int nthr = omp_get_max_threads();
   int threshold = nthr * caffe::cpu::OpenMpManager::getProcessorSpeedMHz() / 3;
-  bool run_parallel = true;
+  bool run_parallel =  // Do not do parallel computation from non major threads
+       caffe::cpu::OpenMpManager::isMajorThread(boost::this_thread::get_id());
 
   // Note: we Assume GPU's CPU path is single threaded
   if (omp_in_parallel() == 0) {
@@ -129,25 +167,24 @@ void caffe_cpu_copy(const int N, const Dtype* X, Dtype* Y) {
   if (X == Y) return;
 
   #ifdef _OPENMP
-
   int nthr = omp_get_max_threads();
   int threshold = nthr * caffe::cpu::OpenMpManager::getProcessorSpeedMHz() / 3;
   const bool run_parallel =
-    (Caffe::mode() != Caffe::GPU) &&
+    (caffe::cpu::OpenMpManager::isMajorThread(boost::this_thread::get_id())) &&
+    (N >= threshold) &&
     (omp_in_parallel() == 0) &&
-    (N >= threshold);
+    (Caffe::mode() != Caffe::GPU);
 
   if (run_parallel) {
-    const int block = 256*1024/sizeof(Dtype), remainder = N%block;
+    const int block_mem_size = 256*1024;
+    const int block_size = block_mem_size / sizeof(Dtype);
     #pragma omp parallel for
-    for (int i = 0; i <= N-block; i += block)
-      memcpy(Y+i, X+i, sizeof(Dtype) * block);  // NOLINT(caffe/alt_fn)
-    if (remainder != 0)
-      memcpy(Y+N-remainder, X+N-remainder,  // NOLINT(caffe/alt_fn)
-          sizeof(Dtype) * remainder);
+    for (int i = 0; i < N; i += block_size)
+      memcpy(Y + i, X + i,
+              (i + block_size > N) ? (N-i)*sizeof(Dtype): block_mem_size);
+
     return;
   }
-
   #endif
 
   memcpy(Y, X, sizeof(Dtype) * N);  // NOLINT(caffe/alt_fn)
@@ -408,12 +445,14 @@ static void bernoulli_generate(int n, double p, int* r) {
     const int my_offset = 0;
 #endif
 
-    VSLStreamStatePtr stream;
-    vslNewStream(&stream, VSL_BRNG_MCG31, seed);
-    vslSkipAheadStream(stream, my_offset);
-    viRngBernoulli(VSL_RNG_METHOD_BERNOULLI_ICDF, stream, my_amount,
-      r + my_offset, p);
-    vslDeleteStream(&stream);
+    if (my_amount > 0) {
+      VSLStreamStatePtr stream;
+      vslNewStream(&stream, VSL_BRNG_MCG31, seed);
+      vslSkipAheadStream(stream, my_offset);
+      viRngBernoulli(VSL_RNG_METHOD_BERNOULLI_ICDF, stream, my_amount,
+        r + my_offset, p);
+      vslDeleteStream(&stream);
+    }
   }
 }
 #endif

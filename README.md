@@ -21,7 +21,7 @@ Framework development discussions and thorough bug reports are collected on [Iss
 Happy brewing!
 
 # Intel Caffe
-This fork is dedicated to improving Caffe performance when running on CPU, in particular Intel® Xeon processors (HSW+)
+This fork is dedicated to improving Caffe performance when running on CPU, in particular Intel® Xeon processors (HSW, BDW, Xeon Phi)
 
 ## Building
 Build procedure is the same as on bvlc-caffe-master branch. Both Make and CMake can be used.
@@ -39,64 +39,32 @@ If some system tool like numactl is used to control CPU affinity, by default caf
 to use more than one thread per core. When less than required cores are specified, caffe will
 limit execution of OpenMP threads to specified cores only.
 
+## Best performance solution
+Please read [release notes](https://github.com/intel/caffe/blob/master/docs/release_notes.md) for our recommendations and configuration to achieve best performance on Intel CPUs. 
+
 ## Multinode Training
-Please see the example how to run in examples/cifar10/train_full_multinode.sh.
-The script will run data server, synchronous parameter server and 4 clients.
-Prepared proto solvers should result in exactly the same behavior as single
-node full cifar training.
-The basic setup is to run parameter server with command like this:
-"$TOOLS/caffe param_server --solver=/path/to/proto --listen_address=tcp://*:port"
-Than run clients on machines you want with:
-"$TOOLS/caffe train --solver=/path/to/proto --param_server=tcp://127.0.0.1:7777"
-The udp protocol can be used as well, for point to point communication
-and with multicast (i.e. "udp://127.0.0.1:7777;239.1.1.1:7778").
-It is also possible to run the scheme with mpi with mpirun command, i.e:
-"mpirun \
-    -host localhost -n 1 \
-    $TOOLS/caffe param_server --solver=/path/to/proto --listen_address=mpi://uid \
-  : \
-    -host localhost -n 1 \
-    $TOOLS/caffe train --solver=/path/to/proto --param_server=mpi://uid"
-You can run relay points, to accumulate/broadcast data in a tree structure:
-"$TOOLS/caffe param_server --solver=/path/to/proto --listen_address=tcp://*:port --param_server=tcp://127.0.0.1:7777"
-It only works with tcp protocol.
+Intel Caffe multinode allows you to execute deep neural network training on multiple machines.
 
-The mpi setup with explicit all reduce is with command like this:
-"mpirun -host 127.0.0.1 -n 5 $TOOLS/caffe train --solver=/path/to/proto --param_server=mpi"
-This will run 5 processes on hosts set with host, and each process will calculate
-it's own gradients, and propagate it up with a tree structure to the root, which
-will apply them and propagate parameters down also in a tree structure.
-This version is less configurable than one with param server, relay and client,
-however it uses less cpu resource per node and can get most of the mpi implementations.
+You should read our Wiki to understand how it works.
+For quick start read [Multinode quickstart guide](https://github.com/intelcaffe/caffe/wiki/Multinode-quickstart-guide), next [Multinode How to ...?](https://github.com/intelcaffe/caffe/wiki/Multinode---How-to-...%3F)
 
-Data server is for convenience. By the default you could use data shard prepared
-on each node separetely, either by shuffling the data uniquely or by creating
-a subset of your training data. The remote data layer can be used to get data
-from data server. It can also be used to cache data from the server in order
-to reduce the network traffic. Use only tcp protocol with data server.
-In the case of choosing caching policy USE_CACHE_WHEN_FULL, it will first
-download cache_size batches and then will randomized the cached data for actual
-training.
+Please see also prepared examples for cifar10 and Googlenet.
 
-The proto files need to be set up manually at the time, although you can use
-model server to distribute some proto files among clients. To run model
-server use the caffe tool similar to data server:
-"$TOOLS/caffe model_server --solver=/path/to/proto --listen_address=tcp://*:6666"
-To use the model in clients, replace the path to solver with model server
-address: "$TOOLS/caffe train --solver=address"
+For cifar10 example look at `examples/cifar10/train_full_multinode_mpi.sh` file. The script runs 4 processes on localhost. Prepared proto solvers should result in exactly the same behavior as single node full cifar training.
+It uses the MPI setup with an implicit parameter server (*all-reduce* approach). Each process is calculating its own gradients and sending them up through the binary tree structure. The intermediate nodes accumulate the received gradients with their own. The root node applies the weight updates and propagates them down the tree.
 
-Please see also prepared examples (for 2 nodes only) for googlenet in:
-models/bvlc_googlenet/solver_param_server.prototxt 
-models/bvlc_googlenet/solver_client.prototxt 
-The solver tries to offset the bigger batch size with bigger learning rate.
-According to paper 
+A copy of the data has to be accessible from all of the nodes. Datasets can be either distributed to each node or on a parallel file system. The snapshots are saved only by the root process. The same applies to the test phase - it is carried out by the root process.
+
+For Googlenet example look at `models/bvlc_googlenet/solver_client.prototxt`. The solver tries to offset the bigger batch size with bigger learning rate. According to paper:
+
     @article{
       Author = {Forrest N. Iandola, Khalid Ashraf, Matthew W. Moskewicz, Kurt Keutzer},
       Journal = {arXiv preprint arXiv:1511.00175},
       Title = {FireCaffe: near-linear acceleration of deep neural network training on compute clusters},
       Year = {2016}
     }
-this should use 72 epochs to train googlenet. 
+
+this should use 72 epochs to train Googlenet.
 
 ## License and Citation
 Caffe is released under the [BSD 2-Clause license](https://github.com/BVLC/caffe/blob/master/LICENSE).

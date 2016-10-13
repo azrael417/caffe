@@ -1,3 +1,40 @@
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 // Make sure we include Python.h before any system header
 // to avoid _POSIX_C_SOURCE redefinition
 #ifdef WITH_PYTHON_LAYER
@@ -10,6 +47,7 @@
 #include "caffe/layers/batch_norm_layer.hpp"
 #include "caffe/layers/concat_layer.hpp"
 #include "caffe/layers/conv_layer.hpp"
+#include "caffe/layers/inner_product_layer.hpp"
 #include "caffe/layers/lrn_layer.hpp"
 #include "caffe/layers/pooling_layer.hpp"
 #include "caffe/layers/relu_layer.hpp"
@@ -18,6 +56,9 @@
 #include "caffe/layers/tanh_layer.hpp"
 #ifdef MKL2017_SUPPORTED
 #include "caffe/layers/mkl_layers.hpp"
+#endif
+#ifdef MKLDNN_SUPPORTED
+#include "caffe/layers/mkldnn_layers.hpp"
 #endif
 #include "caffe/proto/caffe.pb.h"
 
@@ -44,7 +85,7 @@ shared_ptr<Layer<Dtype> > GetConvolutionLayer(
     const LayerParameter& param) {
   ConvolutionParameter conv_param = param.convolution_param();
   ConvolutionParameter_Engine engine = conv_param.engine();
-#if defined(USE_CUDNN) || defined(USE_MKL2017_AS_DEFAULT_ENGINE)
+#if defined(USE_CUDNN) || defined(USE_MKL2017_AS_DEFAULT_ENGINE) || defined(USE_MKLDNN_AS_DEFAULT_ENGINE)
   bool use_dilation = false;
   for (int i = 0; i < conv_param.dilation_size(); ++i) {
     if (conv_param.dilation(i) > 1) {
@@ -62,6 +103,10 @@ shared_ptr<Layer<Dtype> > GetConvolutionLayer(
     if (!use_dilation) {
       engine = ConvolutionParameter_Engine_MKL2017;
     }
+#elif defined(USE_MKLDNN_AS_DEFAULT_ENGINE)
+    if (!use_dilation) {
+      engine = ConvolutionParameter_Engine_MKLDNN;
+    }
 #endif
   }
   if (engine == ConvolutionParameter_Engine_CAFFE) {
@@ -78,12 +123,55 @@ shared_ptr<Layer<Dtype> > GetConvolutionLayer(
   } else if (engine == ConvolutionParameter_Engine_MKL2017) {
     return shared_ptr<Layer<Dtype> >(new MKLConvolutionLayer<Dtype>(param));
 #endif
+#ifdef MKLDNN_SUPPORTED
+  } else if (engine == ConvolutionParameter_Engine_MKLDNN) {
+    return shared_ptr<Layer<Dtype> >(new MKLDNNConvolutionLayer<Dtype>(param));
+#endif
   } else {
     LOG(FATAL) << "Layer " << param.name() << " has unknown engine.";
   }
 }
 
 REGISTER_LAYER_CREATOR(Convolution, GetConvolutionLayer);
+
+// Get inner_product layer according to engine.
+template <typename Dtype>
+shared_ptr<Layer<Dtype> > GetInnerProductLayer(
+    const LayerParameter& param) {
+  InnerProductParameter ip_param = param.inner_product_param();
+  InnerProductParameter_Engine engine = ip_param.engine();
+  if (engine == InnerProductParameter_Engine_DEFAULT) {
+    engine = InnerProductParameter_Engine_CAFFE;
+#ifdef USE_CUDNN
+    engine = InnerProductParameter_Engine_CUDNN;
+#elif defined(USE_MKLDNN_AS_DEFAULT_ENGINE)
+    if (!ip_param.transpose()) {
+      engine = InnerProductParameter_Engine_MKLDNN;
+    }
+#endif
+  }
+  if (engine == InnerProductParameter_Engine_CAFFE) {
+    return shared_ptr<Layer<Dtype> >(new InnerProductLayer<Dtype>(param));
+#ifdef USE_CUDNN
+  } else if (engine == InnerProductParameter_Engine_CUDNN) {
+    return shared_ptr<Layer<Dtype> >(new CuDNNInnerProductLayer<Dtype>(param));
+#endif
+#ifdef MKLDNN_SUPPORTED
+  } else if (engine == InnerProductParameter_Engine_MKLDNN) {
+    if (ip_param.transpose()) {
+      LOG(FATAL) << "MKL-DNN doesn't support transposed weights at Layer "
+                 << param.name();
+    }
+    return shared_ptr<Layer<Dtype> >(new MKLDNNInnerProductLayer<Dtype>(param));
+#endif
+  } else {
+    LOG(FATAL) << "Layer " << param.name() << " has unknown engine.";
+  }
+
+  return shared_ptr<Layer<Dtype> >(new InnerProductLayer<Dtype>(param));
+}
+
+REGISTER_LAYER_CREATOR(InnerProduct, GetInnerProductLayer);
 
 // Get pooling layer according to engine.
 template <typename Dtype>
@@ -94,9 +182,11 @@ shared_ptr<Layer<Dtype> > GetPoolingLayer(const LayerParameter& param) {
 #ifdef USE_CUDNN
     engine = PoolingParameter_Engine_CUDNN;
 #elif defined(USE_MKL2017_AS_DEFAULT_ENGINE)
+    engine = PoolingParameter_Engine_MKL2017;
+#elif defined(USE_MKLDNN_AS_DEFAULT_ENGINE)
     PoolingParameter_PoolMethod method = param.pooling_param().pool();
     if (method == PoolingParameter_PoolMethod_MAX)
-      engine = PoolingParameter_Engine_MKL2017;
+      engine = PoolingParameter_Engine_MKLDNN;
 #endif
   }
   if (engine == PoolingParameter_Engine_CAFFE) {
@@ -123,6 +213,10 @@ shared_ptr<Layer<Dtype> > GetPoolingLayer(const LayerParameter& param) {
   } else if (engine == PoolingParameter_Engine_MKL2017) {
     return shared_ptr<Layer<Dtype> >(new MKLPoolingLayer<Dtype>(param));
 #endif
+#ifdef MKLDNN_SUPPORTED
+  } else if (engine == PoolingParameter_Engine_MKLDNN) {
+    return shared_ptr<Layer<Dtype> >(new MKLDNNPoolingLayer<Dtype>(param));
+#endif
   } else {
     LOG(FATAL) << "Layer " << param.name() << " has unknown engine.";
   }
@@ -143,6 +237,10 @@ shared_ptr<Layer<Dtype> > GetLRNLayer(const LayerParameter& param) {
     if (param.lrn_param().norm_region()
             == LRNParameter_NormRegion_ACROSS_CHANNELS)
       engine = LRNParameter_Engine_MKL2017;
+#elif defined(USE_MKLDNN_AS_DEFAULT_ENGINE)
+    if (param.lrn_param().norm_region()
+            == LRNParameter_NormRegion_ACROSS_CHANNELS)
+      engine = LRNParameter_Engine_MKLDNN;
 #endif
   }
 
@@ -167,6 +265,10 @@ shared_ptr<Layer<Dtype> > GetLRNLayer(const LayerParameter& param) {
   } else if (engine == LRNParameter_Engine_MKL2017) {
     return shared_ptr<Layer<Dtype> >(new MKLLRNLayer<Dtype>(param));
 #endif
+#if MKLDNN_SUPPORTED
+  } else if (engine == LRNParameter_Engine_MKLDNN) {
+    return shared_ptr<Layer<Dtype> >(new MKLDNNLRNLayer<Dtype>(param));
+#endif
   } else {
     LOG(FATAL) << "Layer " << param.name() << " has unknown engine.";
   }
@@ -180,8 +282,10 @@ shared_ptr<Layer<Dtype> > GetBatchNormLayer(const LayerParameter& param) {
   BatchNormParameter_Engine engine = param.batch_norm_param().engine();
 
   if (engine == BatchNormParameter_Engine_DEFAULT) {
-#if defined(USE_MKL2017_AS_DEFAULT_ENGINE) && defined(USE_MKL2017_NEW_API)
+#if defined(USE_MKL2017_AS_DEFAULT_ENGINE)
     engine = BatchNormParameter_Engine_MKL2017;
+#elif defined(USE_MKLDNN_AS_DEFAULT_ENGINE)
+    engine = BatchNormParameter_Engine_MKLDNN;
 #else
     engine = BatchNormParameter_Engine_CAFFE;
 #endif
@@ -189,9 +293,13 @@ shared_ptr<Layer<Dtype> > GetBatchNormLayer(const LayerParameter& param) {
 
   if (engine == BatchNormParameter_Engine_CAFFE) {
     return shared_ptr<Layer<Dtype> >(new BatchNormLayer<Dtype>(param));
-#if defined(MKL2017_SUPPORTED) && defined(USE_MKL2017_NEW_API)
+#if defined(MKL2017_SUPPORTED)
   } else if (engine == BatchNormParameter_Engine_MKL2017) {
     return shared_ptr<Layer<Dtype> >(new MKLBatchNormLayer<Dtype>(param));
+#endif
+#ifdef MKLDNN_SUPPORTED
+  } else if (engine == BatchNormParameter_Engine_MKLDNN) {
+    return shared_ptr<Layer<Dtype> >(new MKLDNNBatchNormLayer<Dtype>(param));
 #endif
   } else {
     LOG(FATAL) << "Layer " << param.name() << " has unknown engine.";
@@ -206,7 +314,7 @@ shared_ptr<Layer<Dtype> > GetSplitLayer(const LayerParameter& param) {
   SplitParameter_Engine engine = param.split_param().engine();
 
   if (engine == SplitParameter_Engine_DEFAULT) {
-#if defined(USE_MKL2017_AS_DEFAULT_ENGINE) && defined(USE_MKL2017_NEW_API)
+#if defined(USE_MKL2017_AS_DEFAULT_ENGINE)
     engine = SplitParameter_Engine_MKL2017;
 #else
     engine = SplitParameter_Engine_CAFFE;
@@ -215,7 +323,7 @@ shared_ptr<Layer<Dtype> > GetSplitLayer(const LayerParameter& param) {
 
   if (engine == SplitParameter_Engine_CAFFE) {
     return shared_ptr<Layer<Dtype> >(new SplitLayer<Dtype>(param));
-#if defined(MKL2017_SUPPORTED) && defined(USE_MKL2017_NEW_API)
+#if defined(MKL2017_SUPPORTED)
   } else if (engine == SplitParameter_Engine_MKL2017) {
     return shared_ptr<Layer<Dtype> >(new MKLSplitLayer<Dtype>(param));
 #endif
@@ -236,6 +344,8 @@ shared_ptr<Layer<Dtype> > GetReLULayer(const LayerParameter& param) {
     engine = ReLUParameter_Engine_CUDNN;
 #elif defined(USE_MKL2017_AS_DEFAULT_ENGINE)
     engine = ReLUParameter_Engine_MKL2017;
+#elif defined(USE_MKLDNN_AS_DEFAULT_ENGINE)
+    engine = ReLUParameter_Engine_MKLDNN;
 #endif
   }
   if (engine == ReLUParameter_Engine_CAFFE) {
@@ -247,6 +357,10 @@ shared_ptr<Layer<Dtype> > GetReLULayer(const LayerParameter& param) {
 #ifdef MKL2017_SUPPORTED
   } else if (engine == ReLUParameter_Engine_MKL2017) {
     return shared_ptr<Layer<Dtype> >(new MKLReLULayer<Dtype>(param));
+#endif
+#ifdef MKLDNN_SUPPORTED
+  } else if (engine == ReLUParameter_Engine_MKLDNN) {
+    return shared_ptr<Layer<Dtype> >(new MKLDNNReLULayer<Dtype>(param));
 #endif
   } else {
     LOG(FATAL) << "Layer " << param.name() << " has unknown engine.";
@@ -261,16 +375,22 @@ shared_ptr<Layer<Dtype> > GetConcatLayer(const LayerParameter& param) {
   ConcatParameter_Engine engine = param.concat_param().engine();
   if (engine == ConcatParameter_Engine_DEFAULT) {
     engine = ConcatParameter_Engine_CAFFE;
-#if defined(USE_MKL2017_AS_DEFAULT_ENGINE) && defined(USE_MKL2017_NEW_API)
+#if defined(USE_MKL2017_AS_DEFAULT_ENGINE)
     if (param.concat_param().axis() == 1)
       engine = ConcatParameter_Engine_MKL2017;
+#elif defined(USE_MKLDNN_AS_DEFAULT_ENGINE)
+    engine = ConcatParameter_Engine_MKLDNN;
 #endif
   }
   if (engine == ConcatParameter_Engine_CAFFE) {
     return shared_ptr<Layer<Dtype> >(new ConcatLayer<Dtype>(param));
-#if defined(MKL2017_SUPPORTED) && defined(USE_MKL2017_NEW_API)
+#if defined(MKL2017_SUPPORTED)
   } else if (engine == ConcatParameter_Engine_MKL2017) {
     return shared_ptr<Layer<Dtype> >(new MKLConcatLayer<Dtype>(param));
+#endif
+#ifdef MKLDNN_SUPPORTED
+  } else if (engine == ConcatParameter_Engine_MKLDNN) {
+    return shared_ptr<Layer<Dtype> >(new MKLDNNConcatLayer<Dtype>(param));
 #endif
   } else {
     LOG(FATAL) << "Layer " << param.name() << " has unknow engine.";
@@ -285,13 +405,13 @@ shared_ptr<Layer<Dtype> > GetEltwiseLayer(const LayerParameter& param) {
   EltwiseParameter_Engine engine = param.eltwise_param().engine();
   if (engine == EltwiseParameter_Engine_DEFAULT) {
     engine = EltwiseParameter_Engine_CAFFE;
-#if defined(USE_MKL2017_AS_DEFAULT_ENGINE) && defined(USE_MKL2017_NEW_API)
+#if defined(USE_MKL2017_AS_DEFAULT_ENGINE)
     engine = EltwiseParameter_Engine_MKL2017;
 #endif
   }
   if (engine == EltwiseParameter_Engine_CAFFE) {
     return shared_ptr<Layer<Dtype> >(new EltwiseLayer<Dtype>(param));
-#if defined(MKL2017_SUPPORTED) && defined(USE_MKL2017_NEW_API)
+#if defined(MKL2017_SUPPORTED)
   } else if (engine == EltwiseParameter_Engine_MKL2017) {
     return shared_ptr<Layer<Dtype> >(new MKLEltwiseLayer<Dtype>(param));
 #endif

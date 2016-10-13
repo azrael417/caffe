@@ -1,3 +1,40 @@
+/*
+All modification made by Intel Corporation: © 2016 Intel Corporation
+
+All contributions by the University of California:
+Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
+All rights reserved.
+
+All other contributions:
+Copyright (c) 2014, 2015, the respective contributors
+All rights reserved.
+For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Intel Corporation nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #ifdef MKL2017_SUPPORTED
 #include <algorithm>
 #include <cfloat>
@@ -21,6 +58,11 @@ template <typename Dtype>
 void MKLPoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   PoolingParameter pool_param = this->layer_param_.pooling_param();
+
+  channels_ = bottom[0]->channels();
+  height_ = bottom[0]->height();
+  width_ = bottom[0]->width();
+  num_ = bottom[0]->num();
 
   if (pool_param.global_pooling()) {
     CHECK(!(pool_param.has_kernel_size() ||
@@ -132,26 +174,16 @@ void MKLPoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   kernel_size[0] = kernel_w_;
   kernel_size[1] = kernel_h_;
 
-  dnnError_t e;
-  e = dnnLayoutCreate<Dtype>(&fwd_bottom_data->layout_usr, dim, src_sizes,
-          src_strides);
-  CHECK_EQ(e, E_SUCCESS);
-  e = dnnLayoutCreate<Dtype>(&fwd_top_data->layout_usr, dim, dst_sizes,
-          dst_strides);
-  CHECK_EQ(e, E_SUCCESS);
-  e = dnnLayoutCreate<Dtype>(&bwd_bottom_diff->layout_usr, dim, src_sizes,
-          src_strides);
-  CHECK_EQ(e, E_SUCCESS);
-  e = dnnLayoutCreate<Dtype>(&bwd_top_diff->layout_usr, dim, dst_sizes,
-          dst_strides);
-  CHECK_EQ(e, E_SUCCESS);
-
   // Names are for debugging only
   fwd_bottom_data->name = "fwd_bottom_data   @ " + this->layer_param_.name();
   fwd_top_data->name =    "fwd_top_data      @ " + this->layer_param_.name();
   bwd_top_diff->name =    "bwd_top_diff      @ " + this->layer_param_.name();
   bwd_bottom_diff->name = "bwd_bottom_diff   @ " + this->layer_param_.name();
 
+  fwd_bottom_data->create_user_layout(dim, src_sizes, src_strides);
+  fwd_top_data   ->create_user_layout(dim, dst_sizes, dst_strides);
+  bwd_bottom_diff->create_user_layout(dim, src_sizes, src_strides);
+  bwd_top_diff   ->create_user_layout(dim, dst_sizes, dst_strides);
   // Primitives will be allocated during the first fwd pass
   poolingFwd = NULL;
   poolingBwd = NULL;
@@ -162,9 +194,19 @@ void MKLPoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   CHECK_EQ(4, bottom[0]->num_axes()) << "Input must have 4 axes, "
       << "corresponding to (num, channels, height, width)";
+
+  bool shape_changed = true;
+  if (channels_ == bottom[0]->channels() &&
+      height_ == bottom[0]->height() &&
+      width_ == bottom[0]->width() &&
+      num_ == bottom[0]->num())
+    shape_changed = false;
+
   channels_ = bottom[0]->channels();
   height_ = bottom[0]->height();
   width_ = bottom[0]->width();
+  num_ = bottom[0]->num();
+
   if (global_pooling_) {
     kernel_h_ = bottom[0]->height();
     kernel_w_ = bottom[0]->width();
@@ -203,27 +245,23 @@ void MKLPoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       pooled_width_);
   }
 
-  // Recreate MKL layout
-  size_t dim = 4;
-  size_t src_sizes[4], src_strides[4];
+  if (shape_changed) {
+    // Recreate MKL layout
+    size_t dim = 4;
+    size_t src_sizes[4], src_strides[4];
 
-  src_sizes[0] = bottom[0]->width();
-  src_sizes[1] = bottom[0]->height();
-  src_sizes[2] = bottom[0]->channels();
-  src_sizes[3] = bottom[0]->num();
+    src_sizes[0] = bottom[0]->width();
+    src_sizes[1] = bottom[0]->height();
+    src_sizes[2] = bottom[0]->channels();
+    src_sizes[3] = bottom[0]->num();
 
-  src_strides[0] = 1;
-  src_strides[1] = src_sizes[0];
-  src_strides[2] = src_sizes[0]*src_sizes[1];
-  src_strides[3] = src_sizes[0]*src_sizes[1]*src_sizes[2];
+    src_strides[0] = 1;
+    src_strides[1] = src_sizes[0];
+    src_strides[2] = src_sizes[0]*src_sizes[1];
+    src_strides[3] = src_sizes[0]*src_sizes[1]*src_sizes[2];
 
-  dnnError_t e;
-  e = dnnLayoutDelete<Dtype>(fwd_bottom_data->layout_usr);
-  CHECK_EQ(e, E_SUCCESS);
-
-  e = dnnLayoutCreate<Dtype>(&fwd_bottom_data->layout_usr, dim, src_sizes,
-          src_strides);
-  CHECK_EQ(e, E_SUCCESS);
+    fwd_bottom_data->create_user_layout(dim, src_sizes, src_strides);
+  }
 }
 
 // TODO(Yangqing): Is there a faster way to do pooling in the channel-first
@@ -258,7 +296,6 @@ void MKLPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   mask = (use_top_mask) ?
       reinterpret_cast<size_t*>(top[1]->mutable_cpu_data()) :
       (max_idx_.mutable_cpu_data());
-  // caffe_set<size_t>(top_count, -1, mask);
   pooling_res[dnnResourceWorkspace] = reinterpret_cast<void*>(mask);
 
   void* bottom_data =
@@ -281,11 +318,11 @@ void MKLPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     }
   } else if (NULL == poolingFwd) {
     // Is it the first pass? Create a primitive.
-    CHECK_EQ((bottom[0]->get_prv_descriptor_data())->get_descr_type(),
+    CHECK_EQ((bottom[0]->get_prv_data_descriptor())->get_descr_type(),
             PrvMemDescr::PRV_DESCR_MKL2017);
     shared_ptr<MKLData<Dtype> > mem_descr
       =  boost::static_pointer_cast<MKLData<Dtype> >
-            (bottom[0]->get_prv_descriptor_data());
+            (bottom[0]->get_prv_data_descriptor());
     CHECK(mem_descr != NULL);
 
     DLOG(INFO) << "Using layout of " << mem_descr->name
@@ -300,12 +337,7 @@ void MKLPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             kernel_stride, src_offset, dnnBorderZeros);
     CHECK_EQ(status, E_SUCCESS);
 
-    status = dnnLayoutCreateFromPrimitive<Dtype>(&fwd_top_data->layout_int,
-            poolingFwd, dnnResourceDst);
-    CHECK_EQ(status, 0) << "Failed dnnLayoutCreateFromPrimitive with status "
-            << status << "\n";
-
-    fwd_top_data->create_conversions();
+    fwd_top_data->create_internal_layout(poolingFwd, dnnResourceDst);
 
     // Now create poolingBwd
     status = dnnPoolingCreateBackward<Dtype>(&poolingBwd, NULL,
@@ -313,23 +345,15 @@ void MKLPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             kernel_stride, src_offset, dnnBorderZeros);
     CHECK_EQ(status, E_SUCCESS);
 
-    status = dnnLayoutCreateFromPrimitive<Dtype>(&bwd_top_diff->layout_int,
-            poolingFwd, dnnResourceDst);
-    CHECK_EQ(status, E_SUCCESS);
-
-    status = dnnLayoutCreateFromPrimitive<Dtype>(&bwd_bottom_diff->layout_int,
-            poolingFwd, dnnResourceSrc);
-    CHECK_EQ(status, E_SUCCESS);
-
-    bwd_top_diff->create_conversions();
-    bwd_bottom_diff->create_conversions();
+    bwd_top_diff   ->create_internal_layout(poolingFwd, dnnResourceDst);
+    bwd_bottom_diff->create_internal_layout(poolingFwd, dnnResourceSrc);
   }
 
   pooling_res[dnnResourceSrc] = bottom_data;
-  if (fwd_top_data->convert_from_int) {
-    top[0]->set_prv_data(fwd_top_data->prv_ptr(), fwd_top_data, false);
-    pooling_res[dnnResourceDst] =reinterpret_cast<void *>(
-            const_cast<Dtype*>(fwd_top_data->prv_ptr()));
+  if (fwd_top_data->conversion_needed()) {
+    top[0]->set_prv_data_descriptor(fwd_top_data);
+    pooling_res[dnnResourceDst] =
+            reinterpret_cast<void *>(top[0]->mutable_prv_data());
   } else {
     pooling_res[dnnResourceDst] =
             reinterpret_cast<void *>(top[0]->mutable_cpu_data());
@@ -363,17 +387,14 @@ void MKLPoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   pooling_res[dnnResourceDiffDst] = bwd_top_diff->get_converted_prv(top[0],
           true);
 
-  if (bwd_bottom_diff->convert_from_int) {
-    bottom[0]->set_prv_diff(bwd_bottom_diff->prv_ptr(), bwd_bottom_diff,
-            false);
-    pooling_res[dnnResourceDiffSrc] =
-            reinterpret_cast<void *>(bwd_bottom_diff->prv_ptr());
+  if (bwd_bottom_diff->conversion_needed()) {
+    bottom[0]->set_prv_diff_descriptor(bwd_bottom_diff);
+    pooling_res[dnnResourceDiffSrc] = bottom[0]->mutable_prv_diff();
   } else {
     pooling_res[dnnResourceDiffSrc] = bottom[0]->mutable_cpu_diff();
   }
   caffe_set(bottom[0]->count(), Dtype(0),
           reinterpret_cast<Dtype *>(pooling_res[dnnResourceDiffSrc]));
-
   e = dnnExecute<Dtype>(poolingBwd, pooling_res);
   CHECK_EQ(e, E_SUCCESS);
 }
