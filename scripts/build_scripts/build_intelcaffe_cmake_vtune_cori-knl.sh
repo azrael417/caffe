@@ -34,7 +34,7 @@ module load lmdb
 module load snappy
 module load leveldb
 module load python
-module load netcdf
+module load netcdf/4.4.1
 
 #compiler flag:
 cmp=intel
@@ -58,7 +58,7 @@ protobuf_dir=$(module show protobuf/2.4.1 2>&1 > /dev/null | grep LD_LIBRARY_PAT
 lmdb_dir=$(module show lmdb 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
 leveldb_dir=$(module show leveldb 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
 snappy_dir=$(module show snappy 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
-netcdf_dir=$(module show netcdf 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
+netcdf_dir=$(module show netcdf/4.4.1 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
 mkl_dir=$(echo ${MKLROOT})
 
 #-DAtlas_BLAS_LIBRARY=${mkl_dir}/lib/intel64/libmkl_core.a \
@@ -69,7 +69,7 @@ mkl_dir=$(echo ${MKLROOT})
 
 CC=/opt/cray/pe/craype/2.5.5/bin/cc
 CXX=/opt/cray/pe/craype/2.5.5/bin/CC
-LDFLAGS="-Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -lnetcdf"
+LDFLAGS="-Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -L${netcdf_dir}/lib -lnetcdf -lmemkind"
 
 export CRAYPE_LINK_TYPE=dynamic
 
@@ -127,11 +127,10 @@ cmake -G "Unix Makefiles" \
         -DHDF5_IS_PARALLEL=ON \
         -DUSE_NETCDF=ON \
         -DNETCDF_INCLUDE_DIR=${netcdf_dir}/include \
-        -DNETCDF_LIBRARIES=${netcdf_dir}/lib/libnetcdf.so \
+        -DNETCDF_LIBRARIES="${netcdf_dir}/lib/libnetcdf.so" \
         -DUSE_CUDNN=OFF \
         -DBLAS=mkl \
         -DUSE_MKL2017_AS_DEFAULT_ENGINE=ON \
-        -DMKL_USE_SINGLE_DYNAMIC_LIBRARY=OFF \
         -DMisc_LIBRARIES="${LDFLAGS}" \
         -DUSE_LEVELDB=ON \
         -DLevelDB_INCLUDE=${leveldb_dir}/include \
