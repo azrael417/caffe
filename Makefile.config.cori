@@ -31,9 +31,9 @@
 # Multi Node support (uncomment if needed):
 # USE_MPI has to be 1 and CXX has to point to MPI compiler (/usr/bin/mpicxx for Open MPI and MPICH )
  USE_MPI := 1
- CXX := mpiicc
- CXXFLAGS := -qopenmp
-#	     -DUSE_NETCDF
+ CXX := mpiicpc
+ CXXFLAGS := -qopenmp \
+              -DUSE_NETCDF
 # CFLAGS := -DUSE_NETCDF
  #LDFLAGS := -dynamic
 # CUDA directory contains bin/ and lib/ directories that we need.
@@ -72,8 +72,8 @@ BLAS_LIB := $MKLROOT/lib/intel64
 
 # NOTE: this is required only if you will compile the python interface.
 # We need to be able to find Python.h and numpy/arrayobject.h.
-PYTHON_INCLUDE := /usr/common/software/python/2.7-anaconda/envs/caffe_env/include/python2.7/ \
-/usr/common/software/python/2.7-anaconda/envs/caffe_env/lib/python2.7/site-packages/numpy/core/include/
+PYTHON_INCLUDE := /usr/common/software/python/2.7-anaconda/envs/caffe/include/python2.7/ \
+/usr/common/software/python/2.7-anaconda/envs/caffe/lib/python2.7/site-packages/numpy/core/include/
 # Anaconda Python distribution is quite popular. Include path:
 # Verify anaconda location, sometimes it's in root.
 # ANACONDA_HOME := $(HOME)/anaconda
@@ -87,7 +87,7 @@ PYTHON_INCLUDE := /usr/common/software/python/2.7-anaconda/envs/caffe_env/includ
 #                 /usr/lib/python3.5/dist-packages/numpy/core/include
 
 # We need to be able to find libpythonX.X.so or .dylib.
-PYTHON_LIB := /usr/common/software/python/2.7-anaconda/envs/caffe_env/lib
+PYTHON_LIB := /usr/common/software/python/2.7-anaconda/envs/caffe/lib
 
 
 # PYTHON_LIB := $(ANACONDA_HOME)/lib
@@ -100,8 +100,8 @@ PYTHON_LIB := /usr/common/software/python/2.7-anaconda/envs/caffe_env/lib
  WITH_PYTHON_LAYER := 1
 
 # Whatever else you find you need goes here.
-INCLUDE_DIRS := $(PYTHON_INCLUDE) /usr/common/software/python/2.7-anaconda/envs/caffe_env/include
-LIBRARY_DIRS := $(PYTHON_LIB) /usr/common/software/python/2.7-anaconda/envs/caffe_env/lib
+INCLUDE_DIRS := $(PYTHON_INCLUDE) /usr/common/software/python/2.7-anaconda/envs/caffe/include /usr/common/software/netcdf/4.4.1/hsw/intel/include
+LIBRARY_DIRS := $(PYTHON_LIB) /usr/common/software/python/2.7-anaconda/envs/caffe/lib /usr/common/software/netcdf/4.4.1/hsw/intel/lib
 # If Homebrew is installed at a non standard location (for example your home directory) and you use it for general dependencies
 # INCLUDE_DIRS += $(shell brew --prefix)/include
 # LIBRARY_DIRS += $(shell brew --prefix)/lib
