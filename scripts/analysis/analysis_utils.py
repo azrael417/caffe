@@ -6,8 +6,6 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 from glob import glob as glb
-%matplotlib inline
-
 
 def get_meta(l, d):
     """get meta data"""
