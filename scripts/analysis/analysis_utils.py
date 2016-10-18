@@ -190,6 +190,27 @@ def plot_comparative(files_loc, threshold, res_path='', title_postfix='', sort_d
     plt.savefig(os.path.join(res_path,'comparative_layers_time'+title_postfix+'.jpg'), format='jpg',bbox_inches='tight', dpi=900)
     return ax
 
+def plot_pie(files_loc, threshold, res_path='', title_postfix='', sort_data=True):
+    """Plot a time breakdown pie chart from a data frame record"""
+    df = get_df(glb(files_loc))
+    df_filt = group_small_entries(df, threshold)
+    df_filt = normalize_time(df_filt)
+
+    layers_cols = [s for s in df_filt.columns.values if('ward' in s and not 'avg' in s)]
+    layers_cols = layers_cols + ['others']    
+    df_filt.index = df_filt['file name']
+    plt_data = pd.DataFrame(df_filt[layers_cols].transpose(),columns=df_filt['file name'], index=layers_cols)
+
+    if(sort_data):
+        plt_data= plt_data.sort_index()
+        plt_data.sort_values(by=plt_data.columns.values[0], inplace=True, ascending=False)
+    ser = pd.Series(plt_data.iloc[:,0].values, index=plt_data.index.values)
+    ax = ser.plot.pie()
+    ax.legend(loc='center left', bbox_to_anchor=(1.15, 0.5))
+    ax.set_title('Time breakdown '+title_postfix)
+    return ax
+
+
 def plot_all(f_wildcard, threshold=1.0, res_path=''):
     """filter and split the files from the provided wildcard
     and plot the thread/batch scaling figures"""
