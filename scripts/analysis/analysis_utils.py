@@ -208,6 +208,7 @@ def plot_pie(files_loc, threshold, res_path='', title_postfix='', sort_data=True
     ax = ser.plot.pie()
     ax.legend(loc='center left', bbox_to_anchor=(1.15, 0.5))
     ax.set_title('Time breakdown '+title_postfix)
+    plt.savefig(os.path.join(res_path,'time_breakdown'+title_postfix+'.jpg'), format='jpg',bbox_inches='tight', dpi=900)
     return ax
 
 
