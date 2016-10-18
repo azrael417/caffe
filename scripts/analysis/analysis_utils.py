@@ -6,6 +6,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 from glob import glob as glb
+from collections import OrderedDict
 
 def get_meta(l, d):
     """get meta data"""
@@ -52,7 +53,9 @@ def get_data(l, entry):
     # layers timing
     ltime_re = re.compile('.+\s+(\w+)\s+(forward|backward):\s*(.+)\s+ms.')
     m = ltime_re.findall(l)
-    layers_data = {lname+' '+direction: float(val)/1e3 for lname,direction,val in m}
+    layers_data = OrderedDict()
+    for lname,direction,val in m:
+        layers_data[lname+' '+direction] = float(val)/1e3  
     entry.update(layers_data)
     # layers memory footprint
     for layer in entry['layers']:
@@ -65,13 +68,13 @@ def get_df(flist):
     data = []
     for f in flist:
         with open(f, 'r') as fp:
-            entry = dict()
+            entry = OrderedDict()
             txt = fp.read() #.split('\n')
             get_meta(txt, entry)
             get_data(txt, entry)
             entry['file path'] =f
             entry['file name'] =f.split('/')[-1]
-            data.append(pd.DataFrame([entry]))
+            data.append(pd.DataFrame([entry], columns=entry.keys()))
     df = pd.concat(data)
     df.reset_index(inplace=True)
     return df
@@ -152,7 +155,7 @@ def plot_thread_scaling(df, threas, batch_size=1, arch='', res_path=''):
 
     return ax
 
-def plot_comparative(files_loc, threshold, res_path=''):
+def plot_comparative(files_loc, threshold, res_path='', title_postfix='', sort_data=True):
     """Plot comparative results of the data frame records"""
     df = get_df(glb(files_loc))
     df_filt = group_small_entries(df, threshold)
@@ -160,9 +163,10 @@ def plot_comparative(files_loc, threshold, res_path=''):
     layers_cols = layers_cols + ['others']    
     df_filt.index = df_filt['file name']
     plt_data = pd.DataFrame(df_filt[layers_cols].transpose(),columns=df_filt['file name'], index=layers_cols)
-    plt_data= plt_data.sort_index()
 
-    plt_data.sort_values(by=plt_data.columns.values[0], inplace=True, ascending=False)
+    if(sort_data):
+        plt_data= plt_data.sort_index()
+        plt_data.sort_values(by=plt_data.columns.values[0], inplace=True, ascending=False)
 
     ax = plt_data.plot(kind='bar')
     scaling = plt_data.iloc[:,0]/plt_data.iloc[:,1]
@@ -170,11 +174,20 @@ def plot_comparative(files_loc, threshold, res_path=''):
     ax2.set_ylabel('Scaling factor from 1st to 2nd column')
     ax.set_ylabel('Time per iter. (seconds)')
     ax.set_xlabel('File name')
-    ax.set_title('Comparative layers time')
+    ax.set_title('Comparative layers time '+title_postfix)
     ax.set_ylim(ymin=0)
     ax.set_xlim(xmin=ax.get_xlim()[0]-0.25, xmax=ax.get_xlim()[1]+0.25)
-    ax.legend(loc='center left', bbox_to_anchor=(1.15, 0.5))
-    plt.savefig(os.path.join(res_path,'comparative_layers_time.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+
+    # add the total time in the legends
+    df['time per iteration no data'] =  df['time per iteration'] - df['data forward'] - df['data backward']
+    exp_time = dict(df[['file name', 'time per iteration no data']].values)
+    handles, labels = ax.get_legend_handles_labels()
+    new_labels = []
+    for l in labels:
+        new_labels.append(l+' '+str(exp_time[l])+'s/iter (no data)')
+    ax.legend(handles, new_labels)#, loc='center left', bbox_to_anchor=(1.15, 0.5))
+
+    plt.savefig(os.path.join(res_path,'comparative_layers_time'+title_postfix+'.jpg'), format='jpg',bbox_inches='tight', dpi=900)
     return ax
 
 def plot_all(f_wildcard, threshold=1.0, res_path=''):
