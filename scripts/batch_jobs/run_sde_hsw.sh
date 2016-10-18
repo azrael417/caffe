@@ -3,6 +3,8 @@
 #SBATCH -p debug
 #SBATCH -N 1
 
+module switch intel intel/17.0.0.098 
+
 export OMP_NUM_THREADS=16
 export OMP_PLACES=threads
 export OMP_PROC_BIND=spread
