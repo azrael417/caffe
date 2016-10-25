@@ -4,6 +4,8 @@
 #SBATCH -pdebug_knl
 #SBATCH -C quad,flat
 
+module switch intel intel/17.0.0.098 
+
 export OMP_NUM_THREADS=136
 export OMP_PLACES=cores"(68)"
 export OMP_PROC_BIND=spread
@@ -11,6 +13,6 @@ export OMP_PROC_BIND=spread
 #execdir
 execdir=/project/projectdirs/mpccc/tmalas/intelcaffe/install_cori-knl/bin
 
-exe=srun -n 1 -c 272 --cpu_bind=cores ${execdir}/caffe time -model=train_val.prototxt
+exe="srun -n 1 -c 272 --cpu_bind=cores ${execdir}/caffe time -model=train_val.prototxt"
 echo $exe
 ${exe}
