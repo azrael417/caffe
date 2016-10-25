@@ -1,7 +1,7 @@
 #!/bin/bash
 
 . ../environment.sh
-module swap intel intel/2017.beta.up2
+module swap intel intel/17.0.0.098
 source /opt/intel/compilers_and_libraries/linux/mpi/intel64/bin/mpivars.sh intel64
 
 #clean env
@@ -19,7 +19,7 @@ intelcaffe_version="0.9999.vtune"
 #load all required modules
 #module load PrgEnv-intel
 module unload intel 
-module load intel/2017.beta.up2
+module load intel/17.0.0.098
 module load curl/7.48.0
 module load netcdf/4.4.1
 #load cmake
@@ -38,7 +38,7 @@ module load netcdf/4.4.1
 #module load sde
 
 #compiler flag:
-cmp=intel
+cmp=intel_carl
 
 #check out right version
 cd src
@@ -46,7 +46,7 @@ cd src
 #git checkout netcdf-layer
 cd ..
 
-rm -rf ${cmp}
+#rm -rf ${cmp}
 cp -r src ${cmp}
 cd ${cmp}
 
@@ -82,7 +82,7 @@ cmake -G "Unix Makefiles" \
         -DCMAKE_CXX_FLAGS="-g -O3 -std=c++11 -mkl -xMIC-AVX512" \
         -DCMAKE_C_COMPILER="mpiicc" \
         -DCMAKE_C_FLAGS="-g -O3 -std=c99 -mkl -xMIC-AVX512" \
-        -DCMAKE_INSTALL_PREFIX=/project/projectdirs/mpccc/tkurth/NESAP/intelcaffe/install \
+        -DCMAKE_INSTALL_PREFIX=/project/projectdirs/mpccc/tkurth/NESAP/intelcaffe/install_carl \
         -DCMAKE_LINKER="mpiicpc" \
         -DCPU_ONLY=ON \
         -DGFLAGS_ROOT_DIR=${gflags_dir} \
