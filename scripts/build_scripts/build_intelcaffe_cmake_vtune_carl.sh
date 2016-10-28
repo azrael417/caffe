@@ -124,8 +124,8 @@ cmake -G "Unix Makefiles" \
 
 
     #build
-    make -j10
-    make install
+    make -j10 2>&1 | tee ${cmp}_log.txt
+    make install 2>&1 | tee -a ${cmp}_log.txt
 
 cd ..
 #variables
