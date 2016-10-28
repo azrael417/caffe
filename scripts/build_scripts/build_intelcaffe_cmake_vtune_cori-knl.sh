@@ -37,16 +37,16 @@ module load python
 module load netcdf/4.4.1
 
 #compiler flag:
-cmp=intel
+cmp=intel_cori-knl
 
 #check out right version
 #cd src
 #git checkout master
 #cd ..
 
-rm -rf ${cmp}_cori-knl
-cp -r src ${cmp}_cori-knl
-cd ${cmp}_cori-knl
+rm -rf ${cmp}
+cp -r src ${cmp}
+cd ${cmp}
 
 #get directory paths
 boost_dir=$(module show boost/1.61 2>&1 > /dev/null | grep BOOST_DIR | awk '{print $3}' | sed 's|/usr/common/software|/global/common/cori/software|g')
@@ -144,8 +144,8 @@ cmake -G "Unix Makefiles" \
 
 
     #build
-    make -j10
-    make install
+    make -j10 | tee ${cmp}_log.txt
+    make install | tee -a ${cmp}_log.txt
 
 cd ..
 #variables

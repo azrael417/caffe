@@ -35,16 +35,16 @@ module load python
 module load netcdf
 
 #compiler flag:
-cmp=intel
+cmp=intel_edison
 
 #check out right version
 #cd src
 #git checkout master
 #cd ..
 
-rm -rf ${cmp}_cori
-cp -r src ${cmp}_cori
-cd ${cmp}_cori
+rm -rf ${cmp}
+cp -r src ${cmp}
+cd ${cmp}
 
 #get directory paths
 #boost_dir=$(module show boost 2>&1 > /dev/null | grep BOOST_DIR | awk '{print $3}')
@@ -81,7 +81,7 @@ cmake -G "Unix Makefiles" \
         -DCMAKE_CXX_FLAGS="-dynamic -fPIE -std=c++11 -mkl -xCORE-AVX2" \
         -DCMAKE_C_COMPILER="${CC}" \
         -DCMAKE_C_FLAGS="-dynamic -fPIE -std=c99 -mkl -xCORE-AVX2" \
-        -DCMAKE_INSTALL_PREFIX="/project/projectdirs/mpccc/tkurth/NESAP/intelcaffe/install_cori" \
+        -DCMAKE_INSTALL_PREFIX="/project/projectdirs/mpccc/tkurth/NESAP/intelcaffe/install_edison" \
         -DCMAKE_LINKER="${CXX}" \
         -DCMAKE_EXE_LINKER_FLAGS="-shared -mkl" \
         -DCMAKE_MODULE_LINKER_FLAGS="-shared -mkl" \
@@ -118,8 +118,8 @@ cmake -G "Unix Makefiles" \
         .
 
     #build
-    make -j10
-    make install
+    make -j10 | tee ${cmp}_log.txt
+    make install  | tee -a ${cmp}_log.txt
 
 cd ..
 #variables
