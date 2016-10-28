@@ -4,11 +4,13 @@
 #SBATCH -pdebug_knl
 #SBATCH -C quad,flat
 
+CAFFE_ROOT=/project/projectdirs/mpccc/tmalas/intelcaffe/src/
 module switch intel intel/17.0.0.098 
 
 export OMP_PLACES=cores"(68)"
 export OMP_PROC_BIND=spread
 export OMP_NUM_THREADS=68
+
 
 execdir=/project/projectdirs/mpccc/tmalas/intelcaffe/install_cori-knl/bin
 
@@ -24,3 +26,5 @@ do
   echo $exe  | tee    $out_file
   $exe 2>&1 | tee -a $out_file
 done
+
+source ${CAFFE_ROOT}scripts/batch_jobs/context.sh | tee $out_file

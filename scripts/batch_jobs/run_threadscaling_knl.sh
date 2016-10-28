@@ -4,6 +4,8 @@
 #SBATCH -pdebug_knl
 #SBATCH -C quad,flat
 
+CAFFE_ROOT=/project/projectdirs/mpccc/tmalas/intelcaffe/src/
+
 module switch intel intel/17.0.0.098 
 
 export OMP_PLACES=cores"(68)"
@@ -24,3 +26,5 @@ do
   echo $exe
   ${exe} 2>&1 | tee ${results_dir}/atlas_1batch_knl_${OMP_NUM_THREADS}th.out
 done
+
+source ${CAFFE_ROOT}scripts/batch_jobs/context.sh | tee $out_file

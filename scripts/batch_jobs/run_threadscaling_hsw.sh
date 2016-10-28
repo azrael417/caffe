@@ -3,8 +3,9 @@
 #SBATCH -p debug
 #SBATCH -N 1
 
-module switch intel intel/17.0.0.098 
+CAFFE_ROOT=/project/projectdirs/mpccc/tmalas/intelcaffe/src/
 
+module switch intel intel/17.0.0.098 
 
 export OMP_PLACES=threads
 export OMP_PROC_BIND=spread
@@ -24,3 +25,5 @@ do
   echo $exe | tee $out_file
   ${exe} 2>&1 | tee -a $out_file
 done
+
+source ${CAFFE_ROOT}scripts/batch_jobs/context.sh | tee $out_file

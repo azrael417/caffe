@@ -9,6 +9,9 @@ export OMP_NUM_THREADS=16
 export OMP_PLACES=threads
 export OMP_PROC_BIND=spread
 
+CAFFE_ROOT=/project/projectdirs/mpccc/tmalas/intelcaffe/src/
+source ${CAFFE_ROOT}scripts/batch_jobs/context.sh
+
 module load sde
 #executable
 execdir=/project/projectdirs/mpccc/tmalas/intelcaffe/install_cori-hsw/bin
