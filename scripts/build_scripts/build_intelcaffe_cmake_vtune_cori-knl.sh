@@ -18,7 +18,7 @@ intelcaffe_version="0.9999_mkl"
 module swap craype-haswell craype-mic-knl
 module load PrgEnv-intel
 module load cmake/3.5.2
-module load intel/17.0.0.098
+module load intel/16.0.3.210.nersc
 module load cray-memkind
 #source /opt/intel/impi/5.1.3.210/bin64/mpivars.sh
 
@@ -28,7 +28,7 @@ module load boost
 module load protobuf/2.4.1
 module load gflags
 module load glog
-module load cray-hdf5-parallel/1.8.16
+module load cray-hdf5/1.8.16
 module load opencv
 module load lmdb
 module load snappy
@@ -37,16 +37,16 @@ module load python
 module load netcdf/4.4.1
 
 #compiler flag:
-cmp=intel_cori-knl
+cmp=intel
 
 #check out right version
 #cd src
 #git checkout master
 #cd ..
 
-rm -rf ${cmp}
-cp -r src ${cmp}
-cd ${cmp}
+rm -rf ${cmp}_cori-knl
+cp -r src ${cmp}_cori-knl
+cd ${cmp}_cori-knl
 
 #get directory paths
 boost_dir=$(module show boost/1.61 2>&1 > /dev/null | grep BOOST_DIR | awk '{print $3}' | sed 's|/usr/common/software|/global/common/cori/software|g')
@@ -59,7 +59,7 @@ lmdb_dir=$(module show lmdb 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{spli
 leveldb_dir=$(module show leveldb 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
 snappy_dir=$(module show snappy 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
 netcdf_dir=$(module show netcdf/4.4.1 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
-mkl_dir=$(echo ${MKLROOT})
+mkl_dnn_dir="/project/projectdirs/mpccc/tkurth/NESAP/intelcaffe/src/external/mkl/mklml_lnx_2017.0.0.20160801"
 
 #-DAtlas_BLAS_LIBRARY=${mkl_dir}/lib/intel64/libmkl_core.a \
 #-DAtlas_CBLAS_INCLUDE_DIR=${mkl_dir}/include \
@@ -69,7 +69,8 @@ mkl_dir=$(echo ${MKLROOT})
 
 CC=/opt/cray/pe/craype/2.5.5/bin/cc
 CXX=/opt/cray/pe/craype/2.5.5/bin/CC
-LDFLAGS="-Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -L${netcdf_dir}/lib -lnetcdf -lmemkind"
+#LDFLAGS="-Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -L${netcdf_dir}/lib -lnetcdf -lmemkind"
+LDFLAGS="-L${netcdf_dir}/lib -lnetcdf -lmemkind"
 
 export CRAYPE_LINK_TYPE=dynamic
 
@@ -97,9 +98,9 @@ cmake -G "Unix Makefiles" \
         -DBoost_THREAD_LIBRARY_DEBUG=${boost_dir}/lib/libboost_thread.so \
         -DBoost_THREAD_LIBRARY_RELEASE=${boost_dir}/lib/libboost_thread.so \
         -DCMAKE_CXX_COMPILER="${CXX}" \
-        -DCMAKE_CXX_FLAGS="-g -O3 -std=c++11 -mkl -xMIC-AVX512" \
+        -DCMAKE_CXX_FLAGS="-g -O3 -std=c++11 -xMIC-AVX512 -I${mkl_dnn_dir}/include" \
         -DCMAKE_C_COMPILER="${CC}" \
-        -DCMAKE_C_FLAGS="-g -O3 -std=c99 -mkl -xMIC-AVX512" \
+        -DCMAKE_C_FLAGS="-g -O3 -std=c99 -xMIC-AVX512 -I${mkl_dnn_dir}/include" \
         -DCMAKE_INSTALL_PREFIX="/project/projectdirs/mpccc/tkurth/NESAP/intelcaffe/install_cori-knl" \
         -DCMAKE_LINKER="${CXX}" \
         -DCMAKE_SHARED_LINKER_FLAGS="${LDFLAGS}" \
@@ -140,12 +141,13 @@ cmake -G "Unix Makefiles" \
         -DUSE_LMDB=ON \
         -DUSE_OPENCV=OFF \
         -DUSE_OPENMP=ON \
+        -DUSE_MPI=ON \
         .
 
 
     #build
-    make -j10 | tee ${cmp}_log.txt
-    make install | tee -a ${cmp}_log.txt
+    make -j10
+    make install
 
 cd ..
 #variables
