@@ -104,6 +104,13 @@ DEFINE_int32(comm_threads, 1,
 DEFINE_bool(forward_only, false,
     "Optional; Execute only forward pass");
 
+DEFINE_bool(prof_forward_direction, true,
+    "Optional; Select the layer direction to profile with SDE and HW perf. mon. tools"
+    "forward or backward");
+DEFINE_int32(prof_layer, -1,
+    "Optional; Select the layers to profile with SDE and HW perf. mon. tools"
+    " 0 to layers count-1");
+
 // A simple registry for caffe commands.
 typedef int (*BrewFunction)();
 typedef std::map<caffe::string, BrewFunction> BrewMap;
@@ -469,13 +476,25 @@ int time() {
   std::vector<double> backward_time_per_layer(layers.size(), 0.0);
   double forward_time = 0.0;
   double backward_time = 0.0;
+
+  if(FLAGS_prof_layer>=0 && FLAGS_prof_layer < layers.size()){
+    if(FLAGS_prof_forward_direction & FLAGS_prof_layer>=0)
+      LOG(INFO) << "Profiling Layer: " << 
+                   layers[FLAGS_prof_layer]->layer_param().name() << " forward";
+    if(!FLAGS_prof_forward_direction & FLAGS_prof_layer>=0)
+      LOG(INFO) << "Profiling Layer: " << 
+                   layers[FLAGS_prof_layer]->layer_param().name() << " backward";
+  }
+
   for (int j = 0; j < FLAGS_iterations; ++j) {
     Timer iter_timer;
     iter_timer.Start();
     forward_timer.Start();
     for (int i = 0; i < layers.size(); ++i) {
       timer.Start();
+      if(FLAGS_prof_forward_direction & i==FLAGS_prof_layer) __SSC_MARK(0x111);
       layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
+      if(FLAGS_prof_forward_direction & i==FLAGS_prof_layer) __SSC_MARK(0x222);
       forward_time_per_layer[i] += timer.MicroSeconds();
     }
     forward_time += forward_timer.MicroSeconds();
@@ -483,8 +502,10 @@ int time() {
       backward_timer.Start();
       for (int i = layers.size() - 1; i >= 0; --i) {
         timer.Start();
+        if(!FLAGS_prof_forward_direction & i==FLAGS_prof_layer) __SSC_MARK(0x111);
         layers[i]->Backward(top_vecs[i], bottom_need_backward[i],
                             bottom_vecs[i]);
+        if(!FLAGS_prof_forward_direction & i==FLAGS_prof_layer) __SSC_MARK(0x222);
         backward_time_per_layer[i] += timer.MicroSeconds();
       }
       backward_time += backward_timer.MicroSeconds();
