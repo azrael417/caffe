@@ -241,7 +241,7 @@ def plot_flops(sde_files_loc, time_file_loc, res_path='', title_postfix='', sort
     ax = plt_data.plot(kind='bar')
     ax.set_title('Layers flop rate')
     ax.set_ylabel('GFLOP/s')
-    ax.set_ylabel('Layer')
+    ax.set_xlabel('Layer')
     plt.savefig(os.path.join(res_path,'flops_rate.jpg'), format='jpg',bbox_inches='tight', dpi=900)
     return ax
 
