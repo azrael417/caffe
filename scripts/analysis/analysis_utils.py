@@ -217,6 +217,33 @@ def plot_pie(files_loc, threshold, res_path='', title_postfix='', sort_data=True
     plt.savefig(os.path.join(res_path,'time_breakdown'+title_postfix+'.jpg'), format='jpg',bbox_inches='tight', dpi=900)
     return ax
 
+def plot_flops(sde_files_loc, time_file_loc, res_path='', title_postfix='', sort_data=True):
+    """Plot the flop rate given a set of results from SDE for each layer and the time experiement"""
+    # get the timing results of the test case
+    df = get_df(glb(time_file_loc))
+
+    # get the flops from the SDE tests
+    for f in glb(sde_files_loc):
+        with open(f, 'r') as fp:
+            entry = dict()
+            txt = fp.read()
+            get_meta(txt, entry)
+            if ('profiled layer' in entry.keys()):
+                df[entry['profiled layer']+' gflops'] = entry['total flops']/df[entry['profiled layer']+ ' avg time']/1e9
+            else:
+                print "Could not parse: ", f
+    layers_gflops = [s for s in df.columns.values if('gflops' in s)]
+   
+    # layers_time_cols = [s for s in df.columns.values if('ward avg time' in s)] + ['others time']
+    layers_gflops_cols = [s for s in df.columns.values if('ward gflops' in s)]
+    
+    plt_data = pd.DataFrame(df[layers_gflops_cols].transpose(), index=layers_gflops_cols)
+    ax = plt_data.plot(kind='bar')
+    ax.set_title('Layers flop rate')
+    ax.set_ylabel('GFLOP/s')
+    ax.set_ylabel('Layer')
+    plt.savefig(os.path.join(res_path,'flops_rate.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+    return ax
 
 def plot_all(f_wildcard, threshold=1.0, res_path=''):
     """filter and split the files from the provided wildcard
