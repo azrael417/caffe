@@ -11,19 +11,20 @@ from collections import OrderedDict
 def get_meta(l, d):
     """get meta data"""
     layer_re = re.compile('.+ Creating layer (.+)')
-    iters_re = re.compile('Testing for\s+(\d+)\s+iterations.')
-    th_re = re.compile('Number of OpenMP threads: (\d+)')
-    batch_size_re = re.compile('batch_size: (\d+)')
-    batch_size_re2 = re.compile('shape .*?dim: (\d+)',re.DOTALL)
     m = layer_re.findall(l)
     if(m is not []): layers = m
+    d['layers'] = set(layers)
 
+    iters_re = re.compile('Testing for\s+(\d+)\s+iterations.')
     m = iters_re.search(l)
     if(m is not None): d['iterations'] = int(m.group(1))    
 
+    th_re = re.compile('Number of OpenMP threads: (\d+)')
     m = th_re.search(l)
     if(m is not None): d['threads'] = int(m.group(1))    
 
+    batch_size_re = re.compile('batch_size: (\d+)')
+    batch_size_re2 = re.compile('shape .*?dim: (\d+)',re.DOTALL)
     m = batch_size_re.search(l)
     if(m is not None):
         d['batch size'] = int(m.group(1))
@@ -31,10 +32,15 @@ def get_meta(l, d):
         m = batch_size_re2.search(l)
         if(m is not None):
             d['batch size'] = int(m.group(1))
-    
-    d['layers'] = set(layers)
-    return d
 
+    prof_re = re.compile('.+ Profiling Layer: (.+)')
+    m = prof_re.search(l)
+    if(m is not None): d['profiled layer'] = m.group(1)
+
+    flops_re = re.compile('--->Total FLOPs = (\d+)')
+    m = flops_re.search(l)
+    if(m is not None): d['total flops'] = int(m.group(1))
+    return d
 
 def get_data(l, entry):
     """get the time of each layer and the total"""
@@ -55,7 +61,7 @@ def get_data(l, entry):
     m = ltime_re.findall(l)
     layers_data = OrderedDict()
     for lname,direction,val in m:
-        layers_data[lname+' '+direction] = float(val)/1e3  
+        layers_data[lname+' '+direction+' avg time'] = float(val)/1e3  
     entry.update(layers_data)
     # layers memory footprint
     for layer in entry['layers']:
@@ -82,7 +88,7 @@ def get_df(flist):
 def normalize_batches(df):
     """Normalize the time by the batch size"""
     df_norm = df.copy()
-    time_fields = [s for s in df.columns.values if('ward' in s or 'time' in s)]
+    time_fields = [s for s in df.columns.values if('time' in s)]
     for f in time_fields:
         df_norm.loc[:, f] = df.loc[:, f]/df.loc[:, 'batch size']
     return df_norm
@@ -90,33 +96,33 @@ def normalize_batches(df):
 def normalize_time(df):
     """Normalize the time by the total time"""
     df_norm = df.copy()
-    time_fields = [s for s in df.columns.values if('ward' in s  or 'time per iteration' in s)]
+    time_fields = [s for s in df.columns.values if(('ward avg time' in s) or ('time per iteration' in s) or ('others' in s))]
     for f in time_fields:
         df_norm.loc[:, f] = 100.0*df.loc[:, f]/df.loc[:, 'time per iteration']
     del df_norm['total time']
     return df_norm
 
-def group_small_entries(df, threas):
+def group_small_entries(df, threshold):
     """Sum insignificant entries in one column that fall
-    below the 'threas' percentile of the total time"""
+    below the 'threshold' percentile of the total time"""
     df_filt = df.copy()
-    df_filt['others'] = 0.0
+    df_filt['others time'] = 0.0
     df_norm_time = normalize_time(df)
-    time_fields = [s for s in df.columns.values if('ward' in s)]
+    time_fields = [s for s in df.columns.values if('ward avg time' in s)]
     for f in time_fields:
-        if(not all(df_norm_time[f].apply(lambda x: x > threas))):
-            df_filt['others'] = df_filt['others'] + df_filt[f]
+        if(not all(df_norm_time[f].apply(lambda x: x > threshold))):
+            df_filt['others time'] = df_filt['others time'] + df_filt[f]
             del df_filt[f]
     return df_filt
 
-def plot_batch_scaling(df, threas, threads=1, arch='', res_path=''):
+def plot_batch_scaling(df, threshold, threads=1, arch='', res_path=''):
     """Plot batch scaling from a data frame table"""
     df.drop_duplicates('batch size',inplace=True)
     df_norm_batch = normalize_batches(df)
-    df_filt = group_small_entries(df_norm_batch, threas)
+    df_filt = group_small_entries(df_norm_batch, threshold)
 
-    layers_cols = [s for s in df_filt.columns.values if('ward' in s and not 'avg' in s)]
-    layers_cols = layers_cols + ['others']
+    layers_cols = [s for s in df_filt.columns.values if('ward avg time' in s)]
+    layers_cols = layers_cols + ['others time']
     df_filt.index = df_filt['batch size']
     plt_data = pd.DataFrame(df_filt[layers_cols],index=df_filt['batch size'], columns=layers_cols)
 
@@ -132,12 +138,12 @@ def plot_batch_scaling(df, threas, threads=1, arch='', res_path=''):
     plt.savefig(os.path.join(res_path, arch+'_batch scaling_'+str(threads)+'th.jpg'), format='jpg',bbox_inches='tight', dpi=900)
     return ax
 
-def plot_thread_scaling(df, threas, batch_size=1, arch='', res_path=''):
+def plot_thread_scaling(df, threshold, batch_size=1, arch='', res_path=''):
     """Plot thread scaling from a data frame table"""
-    df_filt = group_small_entries(df, threas)
+    df_filt = group_small_entries(df, threshold)
 
-    layers_cols = [s for s in df_filt.columns.values if('ward' in s and not 'avg' in s)]
-    layers_cols = layers_cols + ['others']
+    layers_cols = [s for s in df_filt.columns.values if('ward avg time' in s)]
+    layers_cols = layers_cols + ['others time']
     df_filt.index = df_filt['threads']
     plt_data = pd.DataFrame(df_filt[layers_cols],index=df_filt['threads'], columns=layers_cols)
 
@@ -159,8 +165,8 @@ def plot_comparative(files_loc, threshold, res_path='', title_postfix='', sort_d
     """Plot comparative results of the data frame records"""
     df = get_df(glb(files_loc))
     df_filt = group_small_entries(df, threshold)
-    layers_cols = [s for s in df_filt.columns.values if('ward' in s and not 'avg' in s)]
-    layers_cols = layers_cols + ['others']    
+    layers_cols = [s for s in df_filt.columns.values if('ward avg time' in s)]
+    layers_cols = layers_cols + ['others time']    
     df_filt.index = df_filt['file name']
     plt_data = pd.DataFrame(df_filt[layers_cols].transpose(),columns=df_filt['file name'], index=layers_cols)
 
@@ -179,7 +185,7 @@ def plot_comparative(files_loc, threshold, res_path='', title_postfix='', sort_d
     ax.set_xlim(xmin=ax.get_xlim()[0]-0.25, xmax=ax.get_xlim()[1]+0.25)
 
     # add the total time in the legends
-    df['time per iteration no data'] =  df['time per iteration'] - df['data forward'] - df['data backward']
+    df['time per iteration no data'] =  df['time per iteration'] - df['data forward avg time'] - df['data backward avg time']
     exp_time = dict(df[['file name', 'time per iteration no data']].values)
     handles, labels = ax.get_legend_handles_labels()
     new_labels = []
@@ -196,8 +202,8 @@ def plot_pie(files_loc, threshold, res_path='', title_postfix='', sort_data=True
     df_filt = group_small_entries(df, threshold)
     df_filt = normalize_time(df_filt)
 
-    layers_cols = [s for s in df_filt.columns.values if('ward' in s and not 'avg' in s)]
-    layers_cols = layers_cols + ['others']    
+    layers_cols = [s for s in df_filt.columns.values if('ward avg time' in s)]
+    layers_cols = layers_cols + ['others time']    
     df_filt.index = df_filt['file name']
     plt_data = pd.DataFrame(df_filt[layers_cols].transpose(),columns=df_filt['file name'], index=layers_cols)
 
