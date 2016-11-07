@@ -1,6 +1,7 @@
 #!/bin/bash
 
-#. ../environment.sh
+# IntelCaffe repo. has to be located under the CAFFE_ROOT directory, using the name 'src'
+CAFFE_ROOT='/project/projectdirs/mpccc/tmalas/intelcaffe'
 
 #clean env
 #module unload PrgEnv-gnu
@@ -18,6 +19,7 @@ intelcaffe_version="0.9999_mkl"
 module swap craype-haswell craype-mic-knl
 module load PrgEnv-intel
 module load cmake/3.5.2
+module unload intel
 module load intel/16.0.3.210.nersc
 module load cray-memkind
 #source /opt/intel/impi/5.1.3.210/bin64/mpivars.sh
@@ -37,16 +39,16 @@ module load python
 module load netcdf/4.4.1
 
 #compiler flag:
-cmp=intel
+cmp=intel_cori-knl
 
 #check out right version
 #cd src
 #git checkout master
 #cd ..
 
-rm -rf ${cmp}_cori-knl
-cp -r src ${cmp}_cori-knl
-cd ${cmp}_cori-knl
+rm -rf ${cmp}
+cp -r src ${cmp}
+cd ${cmp}
 
 #get directory paths
 boost_dir=$(module show boost/1.61 2>&1 > /dev/null | grep BOOST_DIR | awk '{print $3}' | sed 's|/usr/common/software|/global/common/cori/software|g')
@@ -59,7 +61,7 @@ lmdb_dir=$(module show lmdb 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{spli
 leveldb_dir=$(module show leveldb 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
 snappy_dir=$(module show snappy 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
 netcdf_dir=$(module show netcdf/4.4.1 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
-mkl_dnn_dir="/project/projectdirs/mpccc/tkurth/NESAP/intelcaffe/src/external/mkl/mklml_lnx_2017.0.0.20160801"
+mkl_dnn_dir=${CAFFE_ROOT}"/src/external/mkl/mklml_lnx_2017.0.0.20160801"
 
 #-DAtlas_BLAS_LIBRARY=${mkl_dir}/lib/intel64/libmkl_core.a \
 #-DAtlas_CBLAS_INCLUDE_DIR=${mkl_dir}/include \
@@ -73,6 +75,8 @@ CXX=/opt/cray/pe/craype/2.5.5/bin/CC
 LDFLAGS="-L${netcdf_dir}/lib -lnetcdf -lmemkind"
 
 export CRAYPE_LINK_TYPE=dynamic
+
+INSTALL_PREFIX=${CAFFE_ROOT}"/install_cori-knl"
 
 #configure
 cmake -G "Unix Makefiles" \
@@ -101,7 +105,7 @@ cmake -G "Unix Makefiles" \
         -DCMAKE_CXX_FLAGS="-g -O3 -std=c++11 -xMIC-AVX512 -I${mkl_dnn_dir}/include" \
         -DCMAKE_C_COMPILER="${CC}" \
         -DCMAKE_C_FLAGS="-g -O3 -std=c99 -xMIC-AVX512 -I${mkl_dnn_dir}/include" \
-        -DCMAKE_INSTALL_PREFIX="/project/projectdirs/mpccc/tkurth/NESAP/intelcaffe/install_cori-knl" \
+        -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}
         -DCMAKE_LINKER="${CXX}" \
         -DCMAKE_SHARED_LINKER_FLAGS="${LDFLAGS}" \
         -DCMAKE_MODULE_LINKER_FLAGS="${LDFLAGS}" \
@@ -146,9 +150,8 @@ cmake -G "Unix Makefiles" \
 
 
     #build
-    make -j10
-    make install
-
+    make -j10 #2>&1 | tee ${INSTALL_PREFIX}/make_log.txt
+    make install #2>&1 | tee -a ${INSTALL_PREFIX}/make_log.txt
 cd ..
 #variables
 #export CRAYPE_LINK_TYPE=dynamic
