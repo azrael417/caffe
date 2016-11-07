@@ -61,7 +61,7 @@ lmdb_dir=$(module show lmdb 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{spli
 leveldb_dir=$(module show leveldb 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
 snappy_dir=$(module show snappy 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
 netcdf_dir=$(module show netcdf/4.4.1 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
-mkl_dnn_dir=${CAFFE_ROOT}"/src/external/mkl/mklml_lnx_2017.0.0.20160801"
+mkl_dnn_dir="${CAFFE_ROOT}/src/external/mkl/mklml_lnx_2017.0.0.20160801"
 
 #-DAtlas_BLAS_LIBRARY=${mkl_dir}/lib/intel64/libmkl_core.a \
 #-DAtlas_CBLAS_INCLUDE_DIR=${mkl_dir}/include \
@@ -75,8 +75,6 @@ CXX=/opt/cray/pe/craype/2.5.5/bin/CC
 LDFLAGS="-L${netcdf_dir}/lib -lnetcdf -lmemkind"
 
 export CRAYPE_LINK_TYPE=dynamic
-
-INSTALL_PREFIX=${CAFFE_ROOT}"/install_cori-knl"
 
 #configure
 cmake -G "Unix Makefiles" \
@@ -105,7 +103,7 @@ cmake -G "Unix Makefiles" \
         -DCMAKE_CXX_FLAGS="-g -O3 -std=c++11 -xMIC-AVX512 -I${mkl_dnn_dir}/include" \
         -DCMAKE_C_COMPILER="${CC}" \
         -DCMAKE_C_FLAGS="-g -O3 -std=c99 -xMIC-AVX512 -I${mkl_dnn_dir}/include" \
-        -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}
+        -DCMAKE_INSTALL_PREFIX="${CAFFE_ROOT}/install_cori-knl" \
         -DCMAKE_LINKER="${CXX}" \
         -DCMAKE_SHARED_LINKER_FLAGS="${LDFLAGS}" \
         -DCMAKE_MODULE_LINKER_FLAGS="${LDFLAGS}" \
@@ -150,8 +148,8 @@ cmake -G "Unix Makefiles" \
 
 
     #build
-    make -j10 #2>&1 | tee ${INSTALL_PREFIX}/make_log.txt
-    make install #2>&1 | tee -a ${INSTALL_PREFIX}/make_log.txt
+    make -j10
+    make install
 cd ..
 #variables
 #export CRAYPE_LINK_TYPE=dynamic

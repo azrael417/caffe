@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # IntelCaffe repo. has to be located under the CAFFE_ROOT directory, using the name 'src'
-CAFFE_ROOT='/project/projectdirs/mpccc/tmalas/intelcaffe'
+CAFFE_ROOT="/project/projectdirs/mpccc/tmalas/intelcaffe"
 
 module load cmake
 module unload intel
@@ -66,7 +66,7 @@ netcdf_dir=/usr/common/software/netcdf/4.4.1/hsw/intel
 curl_dir=/usr/common/software/curl/7.48.0/hsw
 openssl_dir=/usr/common/software/openssl/0.9.8
 
-mkl_dnn_dir=${CAFFE_ROOT}"/src/external/mkl/mklml_lnx_2017.0.0.20160801"
+mkl_dnn_dir="${CAFFE_ROOT}/src/external/mkl/mklml_lnx_2017.0.0.20160801"
 
 #hdf5 stuff
 export HDF5_DIR=${hdf5_dir}
@@ -75,8 +75,6 @@ export HDF5_INCLUDE_OPTS=${hdf5_dir}/include
 #gflags
 export LD_LIBRARY_PATH=${gflags_dir}/lib:${LD_LIBRARY_PATH}
 export PATH=${gflags_dir}/bin:${PATH}
-
-INSTALL_PREFIX=${CAFFE_ROOT}/install_carl
 
 #configure
 cmake -G "Unix Makefiles" \
@@ -89,7 +87,7 @@ cmake -G "Unix Makefiles" \
         -DCMAKE_CXX_FLAGS="-g -O3 -std=c++11 -mkl -xMIC-AVX512 -I${mkl_dnn_dir}/include" \
         -DCMAKE_C_COMPILER="mpiicc" \
         -DCMAKE_C_FLAGS="-g -O3 -std=c99 -mkl -xMIC-AVX512 -I${mkl_dnn_dir}/include" \
-        -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
+        -DCMAKE_INSTALL_PREFIX="${CAFFE_ROOT}/install_carl" \
         -DCMAKE_LINKER="mpiicpc" \
         -DCPU_ONLY=ON \
         -DGFLAGS_ROOT_DIR=${gflags_dir} \
@@ -131,8 +129,8 @@ cmake -G "Unix Makefiles" \
 
 
     #build
-    make -j10 #2>&1 | tee ${INSTALL_PREFIX}/make_log.txt
-    make install #2>&1 | tee -a ${INSTALL_PREFIX}/make_log.txt
+    make -j10
+    make install
 
 cd ..
 #variables
