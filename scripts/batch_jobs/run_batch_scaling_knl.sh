@@ -5,7 +5,7 @@
 #SBATCH -C quad,flat
 
 CAFFE_ROOT=/project/projectdirs/mpccc/tmalas/intelcaffe/src/
-module switch intel intel/17.0.0.098 
+module switch intel intel/16.0.3.210.test
 
 export OMP_PLACES=cores"(68)"
 export OMP_PROC_BIND=spread

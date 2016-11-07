@@ -5,7 +5,7 @@
 #SBATCH -C quad,flat
 
 
-module switch intel intel/17.0.0.098 
+module switch intel intel/16.0.3.210.test
 
 export OMP_NUM_THREADS=136
 export OMP_PLACES=cores"(68)"
