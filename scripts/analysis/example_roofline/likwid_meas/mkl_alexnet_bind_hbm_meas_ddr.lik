@@ -1,0 +1,2699 @@
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz
+CPU type:	Intel Xeon Phi (Knights Landing) (Co)Processor
+CPU clock:	1.40 GHz
+Warning: The Marker API requires the application to run on the selected CPUs.
+Warning: likwid-perfctr pins the application only when using the -C command line option.
+Warning: LIKWID assumes that the application does it before the first instrumented code region is started.
+Warning: You can use the string in the environment variable LIKWID_THREADS to pin you application to
+Warning: to the CPUs specified after the -c command line option.
+--------------------------------------------------------------------------------
+I1109 13:18:23.743749 157747 caffe.cpp:442] Use CPU.
+I1109 13:18:23.792415 157747 cpu_info.cpp:452] Processor speed [MHz]: 1400
+I1109 13:18:23.792495 157747 cpu_info.cpp:455] Total number of sockets: 1
+I1109 13:18:23.792515 157747 cpu_info.cpp:458] Total number of CPU cores: 68
+I1109 13:18:23.792531 157747 cpu_info.cpp:461] Total number of processors: 272
+I1109 13:18:23.792546 157747 cpu_info.cpp:464] GPU is used: no
+I1109 13:18:23.792562 157747 cpu_info.cpp:467] OpenMP environmental variables are specified: yes
+I1109 13:18:23.792575 157747 cpu_info.cpp:470] OpenMP thread bind allowed: no
+I1109 13:18:23.792590 157747 cpu_info.cpp:473] Number of OpenMP threads: 67
+I1109 13:18:23.827181 157747 net.cpp:484] The NetState phase (0) differed from the phase (1) specified by a rule in layer data
+I1109 13:18:23.827324 157747 net.cpp:484] The NetState phase (0) differed from the phase (1) specified by a rule in layer accuracy
+I1109 13:18:23.827708 157747 net.cpp:120] Initializing net from parameters: 
+name: "AlexNet"
+state {
+  phase: TRAIN
+  level: 0
+  stage: ""
+}
+layer {
+  name: "data"
+  type: "DummyData"
+  top: "data"
+  top: "label"
+  include {
+    phase: TRAIN
+  }
+  dummy_data_param {
+    data_filler {
+      type: "gaussian"
+      std: 1
+    }
+    data_filler {
+      type: "constant"
+      value: 0
+    }
+    shape {
+      dim: 32
+      dim: 3
+      dim: 227
+      dim: 227
+    }
+    shape {
+      dim: 32
+      dim: 1
+      dim: 1
+      dim: 1
+    }
+  }
+}
+layer {
+  name: "conv1"
+  type: "Convolution"
+  bottom: "data"
+  top: "conv1"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 96
+    kernel_size: 11
+    stride: 4
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+    engine: MKL2017
+  }
+}
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "conv1"
+  top: "conv1"
+  relu_param {
+    engine: MKL2017
+  }
+}
+layer {
+  name: "norm1"
+  type: "LRN"
+  bottom: "conv1"
+  top: "norm1"
+  lrn_param {
+    local_size: 5
+    alpha: 0.0001
+    beta: 0.75
+    engine: MKL2017
+  }
+}
+layer {
+  name: "pool1"
+  type: "Pooling"
+  bottom: "norm1"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    engine: MKL2017
+  }
+}
+layer {
+  name: "conv2"
+  type: "Convolution"
+  bottom: "pool1"
+  top: "conv2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 2
+    kernel_size: 5
+    group: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.1
+    }
+    engine: MKL2017
+  }
+}
+layer {
+  name: "relu2"
+  type: "ReLU"
+  bottom: "conv2"
+  top: "conv2"
+  relu_param {
+    engine: MKL2017
+  }
+}
+layer {
+  name: "norm2"
+  type: "LRN"
+  bottom: "conv2"
+  top: "norm2"
+  lrn_param {
+    local_size: 5
+    alpha: 0.0001
+    beta: 0.75
+    engine: MKL2017
+  }
+}
+layer {
+  name: "pool2"
+  type: "Pooling"
+  bottom: "norm2"
+  top: "pool2"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    engine: MKL2017
+  }
+}
+layer {
+  name: "conv3"
+  type: "Convolution"
+  bottom: "pool2"
+  top: "conv3"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 384
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+    engine: MKL2017
+  }
+}
+layer {
+  name: "relu3"
+  type: "ReLU"
+  bottom: "conv3"
+  top: "conv3"
+  relu_param {
+    engine: MKL2017
+  }
+}
+layer {
+  name: "conv4"
+  type: "Convolution"
+  bottom: "conv3"
+  top: "conv4"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 384
+    pad: 1
+    kernel_size: 3
+    group: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.1
+    }
+    engine: MKL2017
+  }
+}
+layer {
+  name: "relu4"
+  type: "ReLU"
+  bottom: "conv4"
+  top: "conv4"
+  relu_param {
+    engine: MKL2017
+  }
+}
+layer {
+  name: "conv5"
+  type: "Convolution"
+  bottom: "conv4"
+  top: "conv5"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 1
+    kernel_size: 3
+    group: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.1
+    }
+    engine: MKL2017
+  }
+}
+layer {
+  name: "relu5"
+  type: "ReLU"
+  bottom: "conv5"
+  top: "conv5"
+  relu_param {
+    engine: MKL2017
+  }
+}
+layer {
+  name: "pool5"
+  type: "Pooling"
+  bottom: "conv5"
+  top: "pool5"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    engine: MKL2017
+  }
+}
+layer {
+  name: "fc6"
+  type: "InnerProduct"
+  bottom: "pool5"
+  top: "fc6"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 4096
+    weight_filler {
+      type: "gaussian"
+      std: 0.005
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.1
+    }
+  }
+}
+layer {
+  name: "relu6"
+  type: "ReLU"
+  bottom: "fc6"
+  top: "fc6"
+}
+layer {
+  name: "drop6"
+  type: "Dropout"
+  bottom: "fc6"
+  top: "fc6"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+layer {
+  name: "fc7"
+  type: "InnerProduct"
+  bottom: "fc6"
+  top: "fc7"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 4096
+    weight_filler {
+      type: "gaussian"
+      std: 0.005
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.1
+    }
+  }
+}
+layer {
+  name: "relu7"
+  type: "ReLU"
+  bottom: "fc7"
+  top: "fc7"
+}
+layer {
+  name: "drop7"
+  type: "Dropout"
+  bottom: "fc7"
+  top: "fc7"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+layer {
+  name: "fc8"
+  type: "InnerProduct"
+  bottom: "fc7"
+  top: "fc8"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 1000
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "fc8"
+  bottom: "label"
+  top: "loss"
+}
+I1109 13:18:23.830761 157747 layer_factory.hpp:114] Creating layer data
+I1109 13:18:23.830860 157747 net.cpp:160] Creating Layer data
+I1109 13:18:23.830895 157747 net.cpp:570] data -> data
+I1109 13:18:23.830955 157747 net.cpp:570] data -> label
+I1109 13:18:23.855602 157747 net.cpp:210] Setting up data
+I1109 13:18:23.855710 157747 net.cpp:217] Top shape: 32 3 227 227 (4946784)
+I1109 13:18:23.855777 157747 net.cpp:217] Top shape: 32 1 1 1 (32)
+I1109 13:18:23.855815 157747 net.cpp:225] Memory required for data: 19787264
+I1109 13:18:23.855857 157747 layer_factory.hpp:114] Creating layer conv1
+I1109 13:18:23.856017 157747 net.cpp:160] Creating Layer conv1
+I1109 13:18:23.856062 157747 net.cpp:596] conv1 <- data
+I1109 13:18:23.856127 157747 net.cpp:570] conv1 -> conv1
+I1109 13:18:23.946435 157747 net.cpp:210] Setting up conv1
+I1109 13:18:23.946528 157747 net.cpp:217] Top shape: 32 96 55 55 (9292800)
+I1109 13:18:23.946588 157747 net.cpp:225] Memory required for data: 56958464
+I1109 13:18:23.946665 157747 layer_factory.hpp:114] Creating layer relu1
+I1109 13:18:23.946732 157747 net.cpp:160] Creating Layer relu1
+I1109 13:18:23.946760 157747 net.cpp:596] relu1 <- conv1
+I1109 13:18:23.946827 157747 net.cpp:557] relu1 -> conv1 (in-place)
+I1109 13:18:23.946938 157747 net.cpp:210] Setting up relu1
+I1109 13:18:23.946964 157747 net.cpp:217] Top shape: 32 96 55 55 (9292800)
+I1109 13:18:23.946996 157747 net.cpp:225] Memory required for data: 94129664
+I1109 13:18:23.947022 157747 layer_factory.hpp:114] Creating layer norm1
+I1109 13:18:23.947068 157747 net.cpp:160] Creating Layer norm1
+I1109 13:18:23.947116 157747 net.cpp:596] norm1 <- conv1
+I1109 13:18:23.947156 157747 net.cpp:570] norm1 -> norm1
+I1109 13:18:23.947230 157747 net.cpp:210] Setting up norm1
+I1109 13:18:23.947252 157747 net.cpp:217] Top shape: 32 96 55 55 (9292800)
+I1109 13:18:23.947350 157747 net.cpp:225] Memory required for data: 131300864
+I1109 13:18:23.947373 157747 layer_factory.hpp:114] Creating layer pool1
+I1109 13:18:23.947417 157747 net.cpp:160] Creating Layer pool1
+I1109 13:18:23.947437 157747 net.cpp:596] pool1 <- norm1
+I1109 13:18:23.947473 157747 net.cpp:570] pool1 -> pool1
+I1109 13:18:23.947558 157747 net.cpp:210] Setting up pool1
+I1109 13:18:23.947582 157747 net.cpp:217] Top shape: 32 96 27 27 (2239488)
+I1109 13:18:23.947607 157747 net.cpp:225] Memory required for data: 140258816
+I1109 13:18:23.947626 157747 layer_factory.hpp:114] Creating layer conv2
+I1109 13:18:23.947690 157747 net.cpp:160] Creating Layer conv2
+I1109 13:18:23.947710 157747 net.cpp:596] conv2 <- pool1
+I1109 13:18:23.947741 157747 net.cpp:570] conv2 -> conv2
+I1109 13:18:24.049331 157747 net.cpp:210] Setting up conv2
+I1109 13:18:24.049417 157747 net.cpp:217] Top shape: 32 256 27 27 (5971968)
+I1109 13:18:24.049461 157747 net.cpp:225] Memory required for data: 164146688
+I1109 13:18:24.049530 157747 layer_factory.hpp:114] Creating layer relu2
+I1109 13:18:24.049600 157747 net.cpp:160] Creating Layer relu2
+I1109 13:18:24.049633 157747 net.cpp:596] relu2 <- conv2
+I1109 13:18:24.049707 157747 net.cpp:557] relu2 -> conv2 (in-place)
+I1109 13:18:24.049815 157747 net.cpp:210] Setting up relu2
+I1109 13:18:24.049847 157747 net.cpp:217] Top shape: 32 256 27 27 (5971968)
+I1109 13:18:24.049882 157747 net.cpp:225] Memory required for data: 188034560
+I1109 13:18:24.049911 157747 layer_factory.hpp:114] Creating layer norm2
+I1109 13:18:24.049984 157747 net.cpp:160] Creating Layer norm2
+I1109 13:18:24.050004 157747 net.cpp:596] norm2 <- conv2
+I1109 13:18:24.050036 157747 net.cpp:570] norm2 -> norm2
+I1109 13:18:24.050110 157747 net.cpp:210] Setting up norm2
+I1109 13:18:24.050137 157747 net.cpp:217] Top shape: 32 256 27 27 (5971968)
+I1109 13:18:24.050164 157747 net.cpp:225] Memory required for data: 211922432
+I1109 13:18:24.050184 157747 layer_factory.hpp:114] Creating layer pool2
+I1109 13:18:24.050222 157747 net.cpp:160] Creating Layer pool2
+I1109 13:18:24.050242 157747 net.cpp:596] pool2 <- norm2
+I1109 13:18:24.050292 157747 net.cpp:570] pool2 -> pool2
+I1109 13:18:24.050369 157747 net.cpp:210] Setting up pool2
+I1109 13:18:24.050391 157747 net.cpp:217] Top shape: 32 256 13 13 (1384448)
+I1109 13:18:24.050417 157747 net.cpp:225] Memory required for data: 217460224
+I1109 13:18:24.050437 157747 layer_factory.hpp:114] Creating layer conv3
+I1109 13:18:24.050519 157747 net.cpp:160] Creating Layer conv3
+I1109 13:18:24.050541 157747 net.cpp:596] conv3 <- pool2
+I1109 13:18:24.050572 157747 net.cpp:570] conv3 -> conv3
+I1109 13:18:24.152617 157747 net.cpp:210] Setting up conv3
+I1109 13:18:24.152717 157747 net.cpp:217] Top shape: 32 384 13 13 (2076672)
+I1109 13:18:24.152849 157747 net.cpp:225] Memory required for data: 225766912
+I1109 13:18:24.152943 157747 layer_factory.hpp:114] Creating layer relu3
+I1109 13:18:24.153029 157747 net.cpp:160] Creating Layer relu3
+I1109 13:18:24.153069 157747 net.cpp:596] relu3 <- conv3
+I1109 13:18:24.153148 157747 net.cpp:557] relu3 -> conv3 (in-place)
+I1109 13:18:24.153266 157747 net.cpp:210] Setting up relu3
+I1109 13:18:24.153301 157747 net.cpp:217] Top shape: 32 384 13 13 (2076672)
+I1109 13:18:24.153338 157747 net.cpp:225] Memory required for data: 234073600
+I1109 13:18:24.153364 157747 layer_factory.hpp:114] Creating layer conv4
+I1109 13:18:24.153457 157747 net.cpp:160] Creating Layer conv4
+I1109 13:18:24.153486 157747 net.cpp:596] conv4 <- conv3
+I1109 13:18:24.153535 157747 net.cpp:570] conv4 -> conv4
+I1109 13:18:24.244355 157747 net.cpp:210] Setting up conv4
+I1109 13:18:24.244453 157747 net.cpp:217] Top shape: 32 384 13 13 (2076672)
+I1109 13:18:24.244504 157747 net.cpp:225] Memory required for data: 242380288
+I1109 13:18:24.244571 157747 layer_factory.hpp:114] Creating layer relu4
+I1109 13:18:24.244679 157747 net.cpp:160] Creating Layer relu4
+I1109 13:18:24.244721 157747 net.cpp:596] relu4 <- conv4
+I1109 13:18:24.244776 157747 net.cpp:557] relu4 -> conv4 (in-place)
+I1109 13:18:24.244932 157747 net.cpp:210] Setting up relu4
+I1109 13:18:24.245059 157747 net.cpp:217] Top shape: 32 384 13 13 (2076672)
+I1109 13:18:24.245105 157747 net.cpp:225] Memory required for data: 250686976
+I1109 13:18:24.245134 157747 layer_factory.hpp:114] Creating layer conv5
+I1109 13:18:24.245236 157747 net.cpp:160] Creating Layer conv5
+I1109 13:18:24.245267 157747 net.cpp:596] conv5 <- conv4
+I1109 13:18:24.245318 157747 net.cpp:570] conv5 -> conv5
+I1109 13:18:24.319617 157747 net.cpp:210] Setting up conv5
+I1109 13:18:24.319710 157747 net.cpp:217] Top shape: 32 256 13 13 (1384448)
+I1109 13:18:24.319766 157747 net.cpp:225] Memory required for data: 256224768
+I1109 13:18:24.319882 157747 layer_factory.hpp:114] Creating layer relu5
+I1109 13:18:24.319972 157747 net.cpp:160] Creating Layer relu5
+I1109 13:18:24.320013 157747 net.cpp:596] relu5 <- conv5
+I1109 13:18:24.320068 157747 net.cpp:557] relu5 -> conv5 (in-place)
+I1109 13:18:24.320180 157747 net.cpp:210] Setting up relu5
+I1109 13:18:24.320219 157747 net.cpp:217] Top shape: 32 256 13 13 (1384448)
+I1109 13:18:24.320257 157747 net.cpp:225] Memory required for data: 261762560
+I1109 13:18:24.320286 157747 layer_factory.hpp:114] Creating layer pool5
+I1109 13:18:24.320361 157747 net.cpp:160] Creating Layer pool5
+I1109 13:18:24.320390 157747 net.cpp:596] pool5 <- conv5
+I1109 13:18:24.320458 157747 net.cpp:570] pool5 -> pool5
+I1109 13:18:24.320590 157747 net.cpp:210] Setting up pool5
+I1109 13:18:24.320623 157747 net.cpp:217] Top shape: 32 256 6 6 (294912)
+I1109 13:18:24.320683 157747 net.cpp:225] Memory required for data: 262942208
+I1109 13:18:24.320708 157747 layer_factory.hpp:114] Creating layer fc6
+I1109 13:18:24.320832 157747 net.cpp:160] Creating Layer fc6
+I1109 13:18:24.320870 157747 net.cpp:596] fc6 <- pool5
+I1109 13:18:24.320915 157747 net.cpp:570] fc6 -> fc6
+I1109 13:18:26.078519 157747 net.cpp:210] Setting up fc6
+I1109 13:18:26.078639 157747 net.cpp:217] Top shape: 32 4096 (131072)
+I1109 13:18:26.078686 157747 net.cpp:225] Memory required for data: 263466496
+I1109 13:18:26.078780 157747 layer_factory.hpp:114] Creating layer relu6
+I1109 13:18:26.078905 157747 net.cpp:160] Creating Layer relu6
+I1109 13:18:26.078956 157747 net.cpp:596] relu6 <- fc6
+I1109 13:18:26.079027 157747 net.cpp:557] relu6 -> fc6 (in-place)
+I1109 13:18:26.079154 157747 net.cpp:210] Setting up relu6
+I1109 13:18:26.079216 157747 net.cpp:217] Top shape: 32 4096 (131072)
+I1109 13:18:26.079247 157747 net.cpp:225] Memory required for data: 263990784
+I1109 13:18:26.079272 157747 layer_factory.hpp:114] Creating layer drop6
+I1109 13:18:26.079332 157747 net.cpp:160] Creating Layer drop6
+I1109 13:18:26.079356 157747 net.cpp:596] drop6 <- fc6
+I1109 13:18:26.079391 157747 net.cpp:557] drop6 -> fc6 (in-place)
+I1109 13:18:26.079448 157747 net.cpp:210] Setting up drop6
+I1109 13:18:26.079470 157747 net.cpp:217] Top shape: 32 4096 (131072)
+I1109 13:18:26.079496 157747 net.cpp:225] Memory required for data: 264515072
+I1109 13:18:26.079517 157747 layer_factory.hpp:114] Creating layer fc7
+I1109 13:18:26.079562 157747 net.cpp:160] Creating Layer fc7
+I1109 13:18:26.079581 157747 net.cpp:596] fc7 <- fc6
+I1109 13:18:26.079625 157747 net.cpp:570] fc7 -> fc7
+I1109 13:18:26.863646 157747 net.cpp:210] Setting up fc7
+I1109 13:18:26.863765 157747 net.cpp:217] Top shape: 32 4096 (131072)
+I1109 13:18:26.863808 157747 net.cpp:225] Memory required for data: 265039360
+I1109 13:18:26.863888 157747 layer_factory.hpp:114] Creating layer relu7
+I1109 13:18:26.863973 157747 net.cpp:160] Creating Layer relu7
+I1109 13:18:26.864050 157747 net.cpp:596] relu7 <- fc7
+I1109 13:18:26.864115 157747 net.cpp:557] relu7 -> fc7 (in-place)
+I1109 13:18:26.864241 157747 net.cpp:210] Setting up relu7
+I1109 13:18:26.864274 157747 net.cpp:217] Top shape: 32 4096 (131072)
+I1109 13:18:26.864334 157747 net.cpp:225] Memory required for data: 265563648
+I1109 13:18:26.864358 157747 layer_factory.hpp:114] Creating layer drop7
+I1109 13:18:26.864405 157747 net.cpp:160] Creating Layer drop7
+I1109 13:18:26.864425 157747 net.cpp:596] drop7 <- fc7
+I1109 13:18:26.864456 157747 net.cpp:557] drop7 -> fc7 (in-place)
+I1109 13:18:26.864583 157747 net.cpp:210] Setting up drop7
+I1109 13:18:26.864605 157747 net.cpp:217] Top shape: 32 4096 (131072)
+I1109 13:18:26.864632 157747 net.cpp:225] Memory required for data: 266087936
+I1109 13:18:26.864655 157747 layer_factory.hpp:114] Creating layer fc8
+I1109 13:18:26.864706 157747 net.cpp:160] Creating Layer fc8
+I1109 13:18:26.864727 157747 net.cpp:596] fc8 <- fc7
+I1109 13:18:26.864768 157747 net.cpp:570] fc8 -> fc8
+I1109 13:18:27.056519 157747 net.cpp:210] Setting up fc8
+I1109 13:18:27.056634 157747 net.cpp:217] Top shape: 32 1000 (32000)
+I1109 13:18:27.056674 157747 net.cpp:225] Memory required for data: 266215936
+I1109 13:18:27.056754 157747 layer_factory.hpp:114] Creating layer loss
+I1109 13:18:27.056897 157747 net.cpp:160] Creating Layer loss
+I1109 13:18:27.056946 157747 net.cpp:596] loss <- fc8
+I1109 13:18:27.056988 157747 net.cpp:596] loss <- label
+I1109 13:18:27.057049 157747 net.cpp:570] loss -> loss
+I1109 13:18:27.057137 157747 layer_factory.hpp:114] Creating layer loss
+I1109 13:18:27.079180 157747 net.cpp:210] Setting up loss
+I1109 13:18:27.079259 157747 net.cpp:217] Top shape: (1)
+I1109 13:18:27.079301 157747 net.cpp:220]     with loss weight 1
+I1109 13:18:27.079406 157747 net.cpp:225] Memory required for data: 266215940
+I1109 13:18:27.079437 157747 net.cpp:287] loss needs backward computation.
+I1109 13:18:27.079465 157747 net.cpp:287] fc8 needs backward computation.
+I1109 13:18:27.079488 157747 net.cpp:287] drop7 needs backward computation.
+I1109 13:18:27.079510 157747 net.cpp:287] relu7 needs backward computation.
+I1109 13:18:27.079531 157747 net.cpp:287] fc7 needs backward computation.
+I1109 13:18:27.079565 157747 net.cpp:287] drop6 needs backward computation.
+I1109 13:18:27.079591 157747 net.cpp:287] relu6 needs backward computation.
+I1109 13:18:27.079612 157747 net.cpp:287] fc6 needs backward computation.
+I1109 13:18:27.079638 157747 net.cpp:287] pool5 needs backward computation.
+I1109 13:18:27.079658 157747 net.cpp:287] relu5 needs backward computation.
+I1109 13:18:27.079686 157747 net.cpp:287] conv5 needs backward computation.
+I1109 13:18:27.079713 157747 net.cpp:287] relu4 needs backward computation.
+I1109 13:18:27.079738 157747 net.cpp:287] conv4 needs backward computation.
+I1109 13:18:27.079761 157747 net.cpp:287] relu3 needs backward computation.
+I1109 13:18:27.079784 157747 net.cpp:287] conv3 needs backward computation.
+I1109 13:18:27.079810 157747 net.cpp:287] pool2 needs backward computation.
+I1109 13:18:27.079836 157747 net.cpp:287] norm2 needs backward computation.
+I1109 13:18:27.079861 157747 net.cpp:287] relu2 needs backward computation.
+I1109 13:18:27.079882 157747 net.cpp:287] conv2 needs backward computation.
+I1109 13:18:27.079903 157747 net.cpp:287] pool1 needs backward computation.
+I1109 13:18:27.079924 157747 net.cpp:287] norm1 needs backward computation.
+I1109 13:18:27.079944 157747 net.cpp:287] relu1 needs backward computation.
+I1109 13:18:27.079964 157747 net.cpp:287] conv1 needs backward computation.
+I1109 13:18:27.079993 157747 net.cpp:289] data does not need backward computation.
+I1109 13:18:27.080013 157747 net.cpp:331] This network produces output loss
+I1109 13:18:27.080059 157747 net.cpp:345] Network initialization done.
+I1109 13:18:27.080435 157747 caffe.cpp:450] Performing Forward
+I1109 13:18:27.444298 157747 caffe.cpp:455] Initial loss: 6.95797
+I1109 13:18:27.444403 157747 caffe.cpp:457] Performing Backward
+I1109 13:18:27.559550 157747 caffe.cpp:466] *** Benchmark begins ***
+I1109 13:18:27.559631 157747 caffe.cpp:467] Testing for 100 iterations.
+I1109 13:18:28.781812 157747 caffe.cpp:481] LIKWID_MARKER_INIT
+I1109 13:18:29.224045 157747 caffe.cpp:533] Iteration: 1 forward-backward time: 441 ms.
+I1109 13:18:29.666527 157747 caffe.cpp:533] Iteration: 2 forward-backward time: 442 ms.
+I1109 13:18:30.104710 157747 caffe.cpp:533] Iteration: 3 forward-backward time: 438 ms.
+I1109 13:18:30.539137 157747 caffe.cpp:533] Iteration: 4 forward-backward time: 434 ms.
+I1109 13:18:30.987951 157747 caffe.cpp:533] Iteration: 5 forward-backward time: 448 ms.
+I1109 13:18:31.433229 157747 caffe.cpp:533] Iteration: 6 forward-backward time: 445 ms.
+I1109 13:18:31.868702 157747 caffe.cpp:533] Iteration: 7 forward-backward time: 435 ms.
+I1109 13:18:32.302819 157747 caffe.cpp:533] Iteration: 8 forward-backward time: 434 ms.
+I1109 13:18:32.749686 157747 caffe.cpp:533] Iteration: 9 forward-backward time: 446 ms.
+I1109 13:18:33.185422 157747 caffe.cpp:533] Iteration: 10 forward-backward time: 435 ms.
+I1109 13:18:33.620302 157747 caffe.cpp:533] Iteration: 11 forward-backward time: 434 ms.
+I1109 13:18:34.054231 157747 caffe.cpp:533] Iteration: 12 forward-backward time: 433 ms.
+I1109 13:18:34.502153 157747 caffe.cpp:533] Iteration: 13 forward-backward time: 447 ms.
+I1109 13:18:34.947239 157747 caffe.cpp:533] Iteration: 14 forward-backward time: 445 ms.
+I1109 13:18:35.382087 157747 caffe.cpp:533] Iteration: 15 forward-backward time: 434 ms.
+I1109 13:18:35.815229 157747 caffe.cpp:533] Iteration: 16 forward-backward time: 433 ms.
+I1109 13:18:36.250452 157747 caffe.cpp:533] Iteration: 17 forward-backward time: 435 ms.
+I1109 13:18:36.685731 157747 caffe.cpp:533] Iteration: 18 forward-backward time: 435 ms.
+I1109 13:18:37.120082 157747 caffe.cpp:533] Iteration: 19 forward-backward time: 434 ms.
+I1109 13:18:37.553263 157747 caffe.cpp:533] Iteration: 20 forward-backward time: 433 ms.
+I1109 13:18:37.990633 157747 caffe.cpp:533] Iteration: 21 forward-backward time: 437 ms.
+I1109 13:18:38.434135 157747 caffe.cpp:533] Iteration: 22 forward-backward time: 443 ms.
+I1109 13:18:38.868985 157747 caffe.cpp:533] Iteration: 23 forward-backward time: 434 ms.
+I1109 13:18:39.304332 157747 caffe.cpp:533] Iteration: 24 forward-backward time: 435 ms.
+I1109 13:18:39.738087 157747 caffe.cpp:533] Iteration: 25 forward-backward time: 433 ms.
+I1109 13:18:40.173274 157747 caffe.cpp:533] Iteration: 26 forward-backward time: 435 ms.
+I1109 13:18:40.606309 157747 caffe.cpp:533] Iteration: 27 forward-backward time: 432 ms.
+I1109 13:18:41.041108 157747 caffe.cpp:533] Iteration: 28 forward-backward time: 434 ms.
+I1109 13:18:41.476831 157747 caffe.cpp:533] Iteration: 29 forward-backward time: 435 ms.
+I1109 13:18:41.911728 157747 caffe.cpp:533] Iteration: 30 forward-backward time: 434 ms.
+I1109 13:18:42.345386 157747 caffe.cpp:533] Iteration: 31 forward-backward time: 433 ms.
+I1109 13:18:42.780858 157747 caffe.cpp:533] Iteration: 32 forward-backward time: 435 ms.
+I1109 13:18:43.214239 157747 caffe.cpp:533] Iteration: 33 forward-backward time: 433 ms.
+I1109 13:18:43.661805 157747 caffe.cpp:533] Iteration: 34 forward-backward time: 447 ms.
+I1109 13:18:44.098382 157747 caffe.cpp:533] Iteration: 35 forward-backward time: 436 ms.
+I1109 13:18:44.533210 157747 caffe.cpp:533] Iteration: 36 forward-backward time: 434 ms.
+I1109 13:18:44.966887 157747 caffe.cpp:533] Iteration: 37 forward-backward time: 433 ms.
+I1109 13:18:45.401468 157747 caffe.cpp:533] Iteration: 38 forward-backward time: 434 ms.
+I1109 13:18:45.834902 157747 caffe.cpp:533] Iteration: 39 forward-backward time: 433 ms.
+I1109 13:18:46.270854 157747 caffe.cpp:533] Iteration: 40 forward-backward time: 435 ms.
+I1109 13:18:46.704566 157747 caffe.cpp:533] Iteration: 41 forward-backward time: 433 ms.
+I1109 13:18:47.139459 157747 caffe.cpp:533] Iteration: 42 forward-backward time: 434 ms.
+I1109 13:18:47.572775 157747 caffe.cpp:533] Iteration: 43 forward-backward time: 433 ms.
+I1109 13:18:48.008093 157747 caffe.cpp:533] Iteration: 44 forward-backward time: 435 ms.
+I1109 13:18:48.452414 157747 caffe.cpp:533] Iteration: 45 forward-backward time: 444 ms.
+I1109 13:18:48.890808 157747 caffe.cpp:533] Iteration: 46 forward-backward time: 438 ms.
+I1109 13:18:49.325088 157747 caffe.cpp:533] Iteration: 47 forward-backward time: 434 ms.
+I1109 13:18:49.759943 157747 caffe.cpp:533] Iteration: 48 forward-backward time: 434 ms.
+I1109 13:18:50.193727 157747 caffe.cpp:533] Iteration: 49 forward-backward time: 433 ms.
+I1109 13:18:50.628053 157747 caffe.cpp:533] Iteration: 50 forward-backward time: 434 ms.
+I1109 13:18:51.061161 157747 caffe.cpp:533] Iteration: 51 forward-backward time: 433 ms.
+I1109 13:18:51.499614 157747 caffe.cpp:533] Iteration: 52 forward-backward time: 438 ms.
+I1109 13:18:51.934010 157747 caffe.cpp:533] Iteration: 53 forward-backward time: 434 ms.
+I1109 13:18:52.368388 157747 caffe.cpp:533] Iteration: 54 forward-backward time: 434 ms.
+I1109 13:18:52.801393 157747 caffe.cpp:533] Iteration: 55 forward-backward time: 432 ms.
+I1109 13:18:53.234616 157747 caffe.cpp:533] Iteration: 56 forward-backward time: 433 ms.
+I1109 13:18:53.674677 157747 caffe.cpp:533] Iteration: 57 forward-backward time: 440 ms.
+I1109 13:18:54.108165 157747 caffe.cpp:533] Iteration: 58 forward-backward time: 433 ms.
+I1109 13:18:54.542933 157747 caffe.cpp:533] Iteration: 59 forward-backward time: 433 ms.
+I1109 13:18:54.976187 157747 caffe.cpp:533] Iteration: 60 forward-backward time: 433 ms.
+I1109 13:18:55.423063 157747 caffe.cpp:533] Iteration: 61 forward-backward time: 446 ms.
+I1109 13:18:55.858077 157747 caffe.cpp:533] Iteration: 62 forward-backward time: 434 ms.
+I1109 13:18:56.292443 157747 caffe.cpp:533] Iteration: 63 forward-backward time: 434 ms.
+I1109 13:18:56.725982 157747 caffe.cpp:533] Iteration: 64 forward-backward time: 433 ms.
+I1109 13:18:57.160837 157747 caffe.cpp:533] Iteration: 65 forward-backward time: 434 ms.
+I1109 13:18:57.594780 157747 caffe.cpp:533] Iteration: 66 forward-backward time: 433 ms.
+I1109 13:18:58.029446 157747 caffe.cpp:533] Iteration: 67 forward-backward time: 434 ms.
+I1109 13:18:58.462538 157747 caffe.cpp:533] Iteration: 68 forward-backward time: 433 ms.
+I1109 13:18:58.897948 157747 caffe.cpp:533] Iteration: 69 forward-backward time: 435 ms.
+I1109 13:18:59.333382 157747 caffe.cpp:533] Iteration: 70 forward-backward time: 435 ms.
+I1109 13:18:59.769827 157747 caffe.cpp:533] Iteration: 71 forward-backward time: 436 ms.
+I1109 13:19:00.205961 157747 caffe.cpp:533] Iteration: 72 forward-backward time: 436 ms.
+I1109 13:19:00.643735 157747 caffe.cpp:533] Iteration: 73 forward-backward time: 437 ms.
+I1109 13:19:01.077083 157747 caffe.cpp:533] Iteration: 74 forward-backward time: 433 ms.
+I1109 13:19:01.512639 157747 caffe.cpp:533] Iteration: 75 forward-backward time: 435 ms.
+I1109 13:19:01.946209 157747 caffe.cpp:533] Iteration: 76 forward-backward time: 433 ms.
+I1109 13:19:02.380389 157747 caffe.cpp:533] Iteration: 77 forward-backward time: 434 ms.
+I1109 13:19:02.813107 157747 caffe.cpp:533] Iteration: 78 forward-backward time: 432 ms.
+I1109 13:19:03.247606 157747 caffe.cpp:533] Iteration: 79 forward-backward time: 434 ms.
+I1109 13:19:03.684082 157747 caffe.cpp:533] Iteration: 80 forward-backward time: 436 ms.
+I1109 13:19:04.119818 157747 caffe.cpp:533] Iteration: 81 forward-backward time: 435 ms.
+I1109 13:19:04.553007 157747 caffe.cpp:533] Iteration: 82 forward-backward time: 433 ms.
+I1109 13:19:04.987191 157747 caffe.cpp:533] Iteration: 83 forward-backward time: 434 ms.
+I1109 13:19:05.421030 157747 caffe.cpp:533] Iteration: 84 forward-backward time: 433 ms.
+I1109 13:19:05.856055 157747 caffe.cpp:533] Iteration: 85 forward-backward time: 434 ms.
+I1109 13:19:06.291049 157747 caffe.cpp:533] Iteration: 86 forward-backward time: 434 ms.
+I1109 13:19:06.725401 157747 caffe.cpp:533] Iteration: 87 forward-backward time: 434 ms.
+I1109 13:19:07.158987 157747 caffe.cpp:533] Iteration: 88 forward-backward time: 433 ms.
+I1109 13:19:07.605085 157747 caffe.cpp:533] Iteration: 89 forward-backward time: 446 ms.
+I1109 13:19:08.040318 157747 caffe.cpp:533] Iteration: 90 forward-backward time: 435 ms.
+I1109 13:19:08.473778 157747 caffe.cpp:533] Iteration: 91 forward-backward time: 433 ms.
+I1109 13:19:08.907933 157747 caffe.cpp:533] Iteration: 92 forward-backward time: 434 ms.
+I1109 13:19:09.341812 157747 caffe.cpp:533] Iteration: 93 forward-backward time: 433 ms.
+I1109 13:19:09.776562 157747 caffe.cpp:533] Iteration: 94 forward-backward time: 434 ms.
+I1109 13:19:10.210240 157747 caffe.cpp:533] Iteration: 95 forward-backward time: 433 ms.
+I1109 13:19:10.644824 157747 caffe.cpp:533] Iteration: 96 forward-backward time: 434 ms.
+I1109 13:19:11.078044 157747 caffe.cpp:533] Iteration: 97 forward-backward time: 433 ms.
+I1109 13:19:11.515208 157747 caffe.cpp:533] Iteration: 98 forward-backward time: 437 ms.
+I1109 13:19:11.950093 157747 caffe.cpp:533] Iteration: 99 forward-backward time: 434 ms.
+I1109 13:19:12.393853 157747 caffe.cpp:533] Iteration: 100 forward-backward time: 443 ms.
+I1109 13:19:12.393956 157747 caffe.cpp:540] Average time per layer: 
+I1109 13:19:12.393982 157747 caffe.cpp:543]       data	forward: 241.377 ms.
+I1109 13:19:12.394026 157747 caffe.cpp:547]       data	backward: 0.00762 ms.
+I1109 13:19:12.394057 157747 caffe.cpp:543]      conv1	forward: 2.97311 ms.
+I1109 13:19:12.394094 157747 caffe.cpp:547]      conv1	backward: 2.84982 ms.
+I1109 13:19:12.394212 157747 caffe.cpp:543]      relu1	forward: 0.24757 ms.
+I1109 13:19:12.394258 157747 caffe.cpp:547]      relu1	backward: 0.47298 ms.
+I1109 13:19:12.394292 157747 caffe.cpp:543]      norm1	forward: 1.25187 ms.
+I1109 13:19:12.394336 157747 caffe.cpp:547]      norm1	backward: 0.7619 ms.
+I1109 13:19:12.394373 157747 caffe.cpp:543]      pool1	forward: 0.42015 ms.
+I1109 13:19:12.394404 157747 caffe.cpp:547]      pool1	backward: 0.65515 ms.
+I1109 13:19:12.394428 157747 caffe.cpp:543]      conv2	forward: 3.10087 ms.
+I1109 13:19:12.394453 157747 caffe.cpp:547]      conv2	backward: 6.97154 ms.
+I1109 13:19:12.394475 157747 caffe.cpp:543]      relu2	forward: 0.13413 ms.
+I1109 13:19:12.394500 157747 caffe.cpp:547]      relu2	backward: 0.33865 ms.
+I1109 13:19:12.394522 157747 caffe.cpp:543]      norm2	forward: 0.82415 ms.
+I1109 13:19:12.394546 157747 caffe.cpp:547]      norm2	backward: 0.60301 ms.
+I1109 13:19:12.394569 157747 caffe.cpp:543]      pool2	forward: 0.32298 ms.
+I1109 13:19:12.394593 157747 caffe.cpp:547]      pool2	backward: 0.85281 ms.
+I1109 13:19:12.394616 157747 caffe.cpp:543]      conv3	forward: 2.45403 ms.
+I1109 13:19:12.394639 157747 caffe.cpp:547]      conv3	backward: 5.58485 ms.
+I1109 13:19:12.394661 157747 caffe.cpp:543]      relu3	forward: 0.11077 ms.
+I1109 13:19:12.394686 157747 caffe.cpp:547]      relu3	backward: 0.4995 ms.
+I1109 13:19:12.394709 157747 caffe.cpp:543]      conv4	forward: 1.8129 ms.
+I1109 13:19:12.394732 157747 caffe.cpp:547]      conv4	backward: 4.31533 ms.
+I1109 13:19:12.394755 157747 caffe.cpp:543]      relu4	forward: 0.08124 ms.
+I1109 13:19:12.394778 157747 caffe.cpp:547]      relu4	backward: 0.34968 ms.
+I1109 13:19:12.394801 157747 caffe.cpp:543]      conv5	forward: 1.27939 ms.
+I1109 13:19:12.394830 157747 caffe.cpp:547]      conv5	backward: 2.81554 ms.
+I1109 13:19:12.394853 157747 caffe.cpp:543]      relu5	forward: 0.07139 ms.
+I1109 13:19:12.394877 157747 caffe.cpp:547]      relu5	backward: 0.07909 ms.
+I1109 13:19:12.394901 157747 caffe.cpp:543]      pool5	forward: 0.11226 ms.
+I1109 13:19:12.394924 157747 caffe.cpp:547]      pool5	backward: 0.19497 ms.
+I1109 13:19:12.394948 157747 caffe.cpp:543]        fc6	forward: 2.38747 ms.
+I1109 13:19:12.394970 157747 caffe.cpp:547]        fc6	backward: 4.24879 ms.
+I1109 13:19:12.394992 157747 caffe.cpp:543]      relu6	forward: 0.06252 ms.
+I1109 13:19:12.395016 157747 caffe.cpp:547]      relu6	backward: 0.0534 ms.
+I1109 13:19:12.395040 157747 caffe.cpp:543]      drop6	forward: 0.13276 ms.
+I1109 13:19:12.395067 157747 caffe.cpp:547]      drop6	backward: 0.04414 ms.
+I1109 13:19:12.395092 157747 caffe.cpp:543]        fc7	forward: 1.36351 ms.
+I1109 13:19:12.395114 157747 caffe.cpp:547]        fc7	backward: 3.35645 ms.
+I1109 13:19:12.395138 157747 caffe.cpp:543]      relu7	forward: 0.05827 ms.
+I1109 13:19:12.395161 157747 caffe.cpp:547]      relu7	backward: 0.0545 ms.
+I1109 13:19:12.395184 157747 caffe.cpp:543]      drop7	forward: 0.09163 ms.
+I1109 13:19:12.395213 157747 caffe.cpp:547]      drop7	backward: 0.04602 ms.
+I1109 13:19:12.395241 157747 caffe.cpp:543]        fc8	forward: 0.83745 ms.
+I1109 13:19:12.395267 157747 caffe.cpp:547]        fc8	backward: 1.07527 ms.
+I1109 13:19:12.395293 157747 caffe.cpp:543]       loss	forward: 1.26427 ms.
+I1109 13:19:12.395323 157747 caffe.cpp:547]       loss	backward: 0.12901 ms.
+I1109 13:19:12.395357 157747 caffe.cpp:553] Average Forward pass: 330.951 ms.
+I1109 13:19:12.395383 157747 caffe.cpp:556] Average Backward pass: 105.023 ms.
+I1109 13:19:12.395408 157747 caffe.cpp:558] Average Forward-Backward: 448.35 ms.
+I1109 13:19:12.395434 157747 caffe.cpp:561] Total Time: 44835 ms.
+I1109 13:19:12.395459 157747 caffe.cpp:562] *** Benchmark ends ***
+I1109 13:19:12.395479 157747 caffe.cpp:565] LIKWID_MARKER_CLOSE
+--------------------------------------------------------------------------------
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region loss_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.029151,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,8577869
+CPU_CLK_UNHALTED_CORE,FIXC1,49102500
+CPU_CLK_UNHALTED_REF,FIXC2,45829320
+MC_CAS_READS,MBOX0C0,147857
+MC_CAS_WRITES,MBOX0C1,63550
+MC_CAS_READS,MBOX1C0,147757
+MC_CAS_WRITES,MBOX1C1,61678
+MC_CAS_READS,MBOX2C0,146240
+MC_CAS_WRITES,MBOX2C1,62193
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,147765
+MC_CAS_WRITES,MBOX4C1,58766
+MC_CAS_READS,MBOX5C0,145528
+MC_CAS_WRITES,MBOX5C1,59903
+MC_CAS_READS,MBOX6C0,150233
+MC_CAS_WRITES,MBOX6C1,63380
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region loss_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0292,
+Runtime unhalted [s],0.0352,
+Clock [MHz],1496.5096,
+CPI,5.7243,
+Memory read bandwidth [MBytes/s],1943.8241,
+Memory read data volume [GBytes],0.0567,
+Memory writeback bandwidth [MBytes/s],811.1598,
+Memory writeback data volume [GBytes],0.0236,
+Memory bandwidth [MBytes/s],2754.9840,
+Memory data volume [GBytes],0.0803,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu2_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.037029,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,9244254
+CPU_CLK_UNHALTED_CORE,FIXC1,63359640
+CPU_CLK_UNHALTED_REF,FIXC2,59135650
+MC_CAS_READS,MBOX0C0,315035
+MC_CAS_WRITES,MBOX0C1,131011
+MC_CAS_READS,MBOX1C0,321643
+MC_CAS_WRITES,MBOX1C1,135126
+MC_CAS_READS,MBOX2C0,321740
+MC_CAS_WRITES,MBOX2C1,135164
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,316394
+MC_CAS_WRITES,MBOX4C1,131753
+MC_CAS_READS,MBOX5C0,319068
+MC_CAS_WRITES,MBOX5C1,131891
+MC_CAS_READS,MBOX6C0,320116
+MC_CAS_WRITES,MBOX6C1,132123
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu2_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0370,
+Runtime unhalted [s],0.0454,
+Clock [MHz],1496.5204,
+CPI,6.8539,
+Memory read bandwidth [MBytes/s],3308.1101,
+Memory read data volume [GBytes],0.1225,
+Memory writeback bandwidth [MBytes/s],1377.6354,
+Memory writeback data volume [GBytes],0.0510,
+Memory bandwidth [MBytes/s],4685.7455,
+Memory data volume [GBytes],0.1735,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region pool5_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.021618,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,17473720
+CPU_CLK_UNHALTED_CORE,FIXC1,39132740
+CPU_CLK_UNHALTED_REF,FIXC2,36524290
+MC_CAS_READS,MBOX0C0,153845
+MC_CAS_WRITES,MBOX0C1,41313
+MC_CAS_READS,MBOX1C0,156584
+MC_CAS_WRITES,MBOX1C1,45561
+MC_CAS_READS,MBOX2C0,154105
+MC_CAS_WRITES,MBOX2C1,43564
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,152470
+MC_CAS_WRITES,MBOX4C1,42004
+MC_CAS_READS,MBOX5C0,156062
+MC_CAS_WRITES,MBOX5C1,43259
+MC_CAS_READS,MBOX6C0,156985
+MC_CAS_WRITES,MBOX6C1,42409
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region pool5_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0216,
+Runtime unhalted [s],0.0280,
+Clock [MHz],1496.5037,
+CPI,2.2395,
+Memory read bandwidth [MBytes/s],2753.4567,
+Memory read data volume [GBytes],0.0595,
+Memory writeback bandwidth [MBytes/s],764.1460,
+Memory writeback data volume [GBytes],0.0165,
+Memory bandwidth [MBytes/s],3517.6027,
+Memory data volume [GBytes],0.0760,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu6_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.008088,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,3753627
+CPU_CLK_UNHALTED_CORE,FIXC1,18493790
+CPU_CLK_UNHALTED_REF,FIXC2,17260260
+MC_CAS_READS,MBOX0C0,69341
+MC_CAS_WRITES,MBOX0C1,9150
+MC_CAS_READS,MBOX1C0,67291
+MC_CAS_WRITES,MBOX1C1,10224
+MC_CAS_READS,MBOX2C0,67382
+MC_CAS_WRITES,MBOX2C1,9542
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,69339
+MC_CAS_WRITES,MBOX4C1,9048
+MC_CAS_READS,MBOX5C0,67355
+MC_CAS_WRITES,MBOX5C1,9401
+MC_CAS_READS,MBOX6C0,68485
+MC_CAS_WRITES,MBOX6C1,9084
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu6_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0081,
+Runtime unhalted [s],0.0132,
+Clock [MHz],1496.5730,
+CPI,4.9269,
+Memory read bandwidth [MBytes/s],3237.8680,
+Memory read data volume [GBytes],0.0262,
+Memory writeback bandwidth [MBytes/s],446.6704,
+Memory writeback data volume [GBytes],0.0036,
+Memory bandwidth [MBytes/s],3684.5384,
+Memory data volume [GBytes],0.0298,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu4_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.009968,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,5098683
+CPU_CLK_UNHALTED_CORE,FIXC1,21328640
+CPU_CLK_UNHALTED_REF,FIXC2,19906240
+MC_CAS_READS,MBOX0C0,96645
+MC_CAS_WRITES,MBOX0C1,20326
+MC_CAS_READS,MBOX1C0,98814
+MC_CAS_WRITES,MBOX1C1,22007
+MC_CAS_READS,MBOX2C0,97553
+MC_CAS_WRITES,MBOX2C1,21227
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,98518
+MC_CAS_WRITES,MBOX4C1,20985
+MC_CAS_READS,MBOX5C0,98717
+MC_CAS_WRITES,MBOX5C1,21192
+MC_CAS_READS,MBOX6C0,97333
+MC_CAS_WRITES,MBOX6C1,21298
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu4_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0100,
+Runtime unhalted [s],0.0153,
+Clock [MHz],1496.5569,
+CPI,4.1832,
+Memory read bandwidth [MBytes/s],3772.5676,
+Memory read data volume [GBytes],0.0376,
+Memory writeback bandwidth [MBytes/s],815.6304,
+Memory writeback data volume [GBytes],0.0081,
+Memory bandwidth [MBytes/s],4588.1980,
+Memory data volume [GBytes],0.0457,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu2_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.016061,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,7832544
+CPU_CLK_UNHALTED_CORE,FIXC1,32276860
+CPU_CLK_UNHALTED_REF,FIXC2,30125050
+MC_CAS_READS,MBOX0C0,206611
+MC_CAS_WRITES,MBOX0C1,90438
+MC_CAS_READS,MBOX1C0,210802
+MC_CAS_WRITES,MBOX1C1,93316
+MC_CAS_READS,MBOX2C0,210732
+MC_CAS_WRITES,MBOX2C1,92454
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,208356
+MC_CAS_WRITES,MBOX4C1,90395
+MC_CAS_READS,MBOX5C0,209882
+MC_CAS_WRITES,MBOX5C1,91783
+MC_CAS_READS,MBOX6C0,210087
+MC_CAS_WRITES,MBOX6C1,91213
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu2_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0161,
+Runtime unhalted [s],0.0231,
+Clock [MHz],1496.5210,
+CPI,4.1209,
+Memory read bandwidth [MBytes/s],5006.7573,
+Memory read data volume [GBytes],0.0804,
+Memory writeback bandwidth [MBytes/s],2190.0314,
+Memory writeback data volume [GBytes],0.0352,
+Memory bandwidth [MBytes/s],7196.7888,
+Memory data volume [GBytes],0.1156,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region norm2_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.063568,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,27019350
+CPU_CLK_UNHALTED_CORE,FIXC1,103151600
+CPU_CLK_UNHALTED_REF,FIXC2,96275030
+MC_CAS_READS,MBOX0C0,374862
+MC_CAS_WRITES,MBOX0C1,149667
+MC_CAS_READS,MBOX1C0,379963
+MC_CAS_WRITES,MBOX1C1,151588
+MC_CAS_READS,MBOX2C0,378656
+MC_CAS_WRITES,MBOX2C1,151110
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,374601
+MC_CAS_WRITES,MBOX4C1,147850
+MC_CAS_READS,MBOX5C0,376744
+MC_CAS_WRITES,MBOX5C1,148912
+MC_CAS_READS,MBOX6C0,376399
+MC_CAS_WRITES,MBOX6C1,147856
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region norm2_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0636,
+Runtime unhalted [s],0.0739,
+Clock [MHz],1496.5169,
+CPI,3.8177,
+Memory read bandwidth [MBytes/s],2276.5830,
+Memory read data volume [GBytes],0.1447,
+Memory writeback bandwidth [MBytes/s],903.0752,
+Memory writeback data volume [GBytes],0.0574,
+Memory bandwidth [MBytes/s],3179.6583,
+Memory data volume [GBytes],0.2021,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu6_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.006941,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,3407901
+CPU_CLK_UNHALTED_CORE,FIXC1,16645950
+CPU_CLK_UNHALTED_REF,FIXC2,15536330
+MC_CAS_READS,MBOX0C0,49320
+MC_CAS_WRITES,MBOX0C1,9686
+MC_CAS_READS,MBOX1C0,48641
+MC_CAS_WRITES,MBOX1C1,10533
+MC_CAS_READS,MBOX2C0,49877
+MC_CAS_WRITES,MBOX2C1,10081
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,48182
+MC_CAS_WRITES,MBOX4C1,9701
+MC_CAS_READS,MBOX5C0,48918
+MC_CAS_WRITES,MBOX5C1,9582
+MC_CAS_READS,MBOX6C0,50328
+MC_CAS_WRITES,MBOX6C1,9496
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu6_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0069,
+Runtime unhalted [s],0.0119,
+Clock [MHz],1496.5094,
+CPI,4.8845,
+Memory read bandwidth [MBytes/s],2722.6760,
+Memory read data volume [GBytes],0.0189,
+Memory writeback bandwidth [MBytes/s],544.7731,
+Memory writeback data volume [GBytes],0.0038,
+Memory bandwidth [MBytes/s],3267.4491,
+Memory data volume [GBytes],0.0227,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region conv1_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.288458,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,526425700
+CPU_CLK_UNHALTED_CORE,FIXC1,433349900
+CPU_CLK_UNHALTED_REF,FIXC2,404460000
+MC_CAS_READS,MBOX0C0,956774
+MC_CAS_WRITES,MBOX0C1,266751
+MC_CAS_READS,MBOX1C0,988924
+MC_CAS_WRITES,MBOX1C1,279865
+MC_CAS_READS,MBOX2C0,977782
+MC_CAS_WRITES,MBOX2C1,282989
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,973225
+MC_CAS_WRITES,MBOX4C1,273092
+MC_CAS_READS,MBOX5C0,985153
+MC_CAS_WRITES,MBOX5C1,272978
+MC_CAS_READS,MBOX6C0,973146
+MC_CAS_WRITES,MBOX6C1,272492
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region conv1_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.2885,
+Runtime unhalted [s],0.3103,
+Clock [MHz],1496.5197,
+CPI,0.8232,
+Memory read bandwidth [MBytes/s],1299.0457,
+Memory read data volume [GBytes],0.3747,
+Memory writeback bandwidth [MBytes/s],365.6777,
+Memory writeback data volume [GBytes],0.1055,
+Memory bandwidth [MBytes/s],1664.7234,
+Memory data volume [GBytes],0.4802,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region conv5_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.284789,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,554799000
+CPU_CLK_UNHALTED_CORE,FIXC1,423538200
+CPU_CLK_UNHALTED_REF,FIXC2,395302500
+MC_CAS_READS,MBOX0C0,800148
+MC_CAS_WRITES,MBOX0C1,258890
+MC_CAS_READS,MBOX1C0,802416
+MC_CAS_WRITES,MBOX1C1,262844
+MC_CAS_READS,MBOX2C0,805294
+MC_CAS_WRITES,MBOX2C1,259906
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,800631
+MC_CAS_WRITES,MBOX4C1,259232
+MC_CAS_READS,MBOX5C0,802556
+MC_CAS_WRITES,MBOX5C1,260138
+MC_CAS_READS,MBOX6C0,803483
+MC_CAS_WRITES,MBOX6C1,256526
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region conv5_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.2848,
+Runtime unhalted [s],0.3032,
+Clock [MHz],1496.5194,
+CPI,0.7634,
+Memory read bandwidth [MBytes/s],1081.9578,
+Memory read data volume [GBytes],0.3081,
+Memory writeback bandwidth [MBytes/s],350.0215,
+Memory writeback data volume [GBytes],0.0997,
+Memory bandwidth [MBytes/s],1431.9793,
+Memory data volume [GBytes],0.4078,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region pool2_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.088509,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,21286120
+CPU_CLK_UNHALTED_CORE,FIXC1,133597800
+CPU_CLK_UNHALTED_REF,FIXC2,124691300
+MC_CAS_READS,MBOX0C0,401640
+MC_CAS_WRITES,MBOX0C1,160214
+MC_CAS_READS,MBOX1C0,406981
+MC_CAS_WRITES,MBOX1C1,163786
+MC_CAS_READS,MBOX2C0,405559
+MC_CAS_WRITES,MBOX2C1,161604
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,399006
+MC_CAS_WRITES,MBOX4C1,159580
+MC_CAS_READS,MBOX5C0,407065
+MC_CAS_WRITES,MBOX5C1,160610
+MC_CAS_READS,MBOX6C0,405698
+MC_CAS_WRITES,MBOX6C1,158000
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region pool2_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0885,
+Runtime unhalted [s],0.0956,
+Clock [MHz],1496.5198,
+CPI,6.2763,
+Memory read bandwidth [MBytes/s],1754.1816,
+Memory read data volume [GBytes],0.1553,
+Memory writeback bandwidth [MBytes/s],696.9107,
+Memory writeback data volume [GBytes],0.0617,
+Memory bandwidth [MBytes/s],2451.0922,
+Memory data volume [GBytes],0.2169,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region fc8_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.112241,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,58176640
+CPU_CLK_UNHALTED_CORE,FIXC1,168099900
+CPU_CLK_UNHALTED_REF,FIXC2,156893200
+MC_CAS_READS,MBOX0C0,483031
+MC_CAS_WRITES,MBOX0C1,216297
+MC_CAS_READS,MBOX1C0,482226
+MC_CAS_WRITES,MBOX1C1,218818
+MC_CAS_READS,MBOX2C0,484044
+MC_CAS_WRITES,MBOX2C1,219412
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,483427
+MC_CAS_WRITES,MBOX4C1,213130
+MC_CAS_READS,MBOX5C0,478897
+MC_CAS_WRITES,MBOX5C1,210068
+MC_CAS_READS,MBOX6C0,482684
+MC_CAS_WRITES,MBOX6C1,217919
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region fc8_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.1122,
+Runtime unhalted [s],0.1204,
+Clock [MHz],1496.5204,
+CPI,2.8895,
+Memory read bandwidth [MBytes/s],1650.3382,
+Memory read data volume [GBytes],0.1852,
+Memory writeback bandwidth [MBytes/s],738.7776,
+Memory writeback data volume [GBytes],0.0829,
+Memory bandwidth [MBytes/s],2389.1159,
+Memory data volume [GBytes],0.2682,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region pool1_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.068925,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,16778420
+CPU_CLK_UNHALTED_CORE,FIXC1,108679700
+CPU_CLK_UNHALTED_REF,FIXC2,101434300
+MC_CAS_READS,MBOX0C0,492077
+MC_CAS_WRITES,MBOX0C1,189786
+MC_CAS_READS,MBOX1C0,502892
+MC_CAS_WRITES,MBOX1C1,197899
+MC_CAS_READS,MBOX2C0,500586
+MC_CAS_WRITES,MBOX2C1,194639
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,494505
+MC_CAS_WRITES,MBOX4C1,190836
+MC_CAS_READS,MBOX5C0,500368
+MC_CAS_WRITES,MBOX5C1,192103
+MC_CAS_READS,MBOX6C0,499666
+MC_CAS_WRITES,MBOX6C1,189730
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region pool1_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0689,
+Runtime unhalted [s],0.0778,
+Clock [MHz],1496.5213,
+CPI,6.4774,
+Memory read bandwidth [MBytes/s],2776.4529,
+Memory read data volume [GBytes],0.1914,
+Memory writeback bandwidth [MBytes/s],1072.4692,
+Memory writeback data volume [GBytes],0.0739,
+Memory bandwidth [MBytes/s],3848.9221,
+Memory data volume [GBytes],0.2653,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region fc7_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.139951,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,125910600
+CPU_CLK_UNHALTED_CORE,FIXC1,214098900
+CPU_CLK_UNHALTED_REF,FIXC2,199825200
+MC_CAS_READS,MBOX0C0,573846
+MC_CAS_WRITES,MBOX0C1,143519
+MC_CAS_READS,MBOX1C0,576109
+MC_CAS_WRITES,MBOX1C1,153122
+MC_CAS_READS,MBOX2C0,577534
+MC_CAS_WRITES,MBOX2C1,166205
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,584497
+MC_CAS_WRITES,MBOX4C1,146650
+MC_CAS_READS,MBOX5C0,572531
+MC_CAS_WRITES,MBOX5C1,156225
+MC_CAS_READS,MBOX6C0,569399
+MC_CAS_WRITES,MBOX6C1,158994
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region fc7_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.1400,
+Runtime unhalted [s],0.1533,
+Clock [MHz],1496.5233,
+CPI,1.7004,
+Memory read bandwidth [MBytes/s],1579.4813,
+Memory read data volume [GBytes],0.2211,
+Memory writeback bandwidth [MBytes/s],422.8737,
+Memory writeback data volume [GBytes],0.0592,
+Memory bandwidth [MBytes/s],2002.3550,
+Memory data volume [GBytes],0.2802,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu3_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.052878,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,8423437
+CPU_CLK_UNHALTED_CORE,FIXC1,86729630
+CPU_CLK_UNHALTED_REF,FIXC2,80948030
+MC_CAS_READS,MBOX0C0,292218
+MC_CAS_WRITES,MBOX0C1,116547
+MC_CAS_READS,MBOX1C0,294876
+MC_CAS_WRITES,MBOX1C1,119463
+MC_CAS_READS,MBOX2C0,295071
+MC_CAS_WRITES,MBOX2C1,117979
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,290574
+MC_CAS_WRITES,MBOX4C1,115828
+MC_CAS_READS,MBOX5C0,294064
+MC_CAS_WRITES,MBOX5C1,117087
+MC_CAS_READS,MBOX6C0,294800
+MC_CAS_WRITES,MBOX6C1,114909
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu3_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0529,
+Runtime unhalted [s],0.0621,
+Clock [MHz],1496.5131,
+CPI,10.2962,
+Memory read bandwidth [MBytes/s],2132.1440,
+Memory read data volume [GBytes],0.1127,
+Memory writeback bandwidth [MBytes/s],849.4345,
+Memory writeback data volume [GBytes],0.0449,
+Memory bandwidth [MBytes/s],2981.5785,
+Memory data volume [GBytes],0.1577,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region conv2_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.700956,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,1471374000
+CPU_CLK_UNHALTED_CORE,FIXC1,1018118000
+CPU_CLK_UNHALTED_REF,FIXC2,950243400
+MC_CAS_READS,MBOX0C0,1446918
+MC_CAS_WRITES,MBOX0C1,365919
+MC_CAS_READS,MBOX1C0,1462865
+MC_CAS_WRITES,MBOX1C1,373738
+MC_CAS_READS,MBOX2C0,1461226
+MC_CAS_WRITES,MBOX2C1,367893
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,1458749
+MC_CAS_WRITES,MBOX4C1,363894
+MC_CAS_READS,MBOX5C0,1458223
+MC_CAS_WRITES,MBOX5C1,365413
+MC_CAS_READS,MBOX6C0,1455250
+MC_CAS_WRITES,MBOX6C1,365872
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region conv2_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.7010,
+Runtime unhalted [s],0.7289,
+Clock [MHz],1496.5201,
+CPI,0.6920,
+Memory read bandwidth [MBytes/s],798.2911,
+Memory read data volume [GBytes],0.5596,
+Memory writeback bandwidth [MBytes/s],201.1178,
+Memory writeback data volume [GBytes],0.1410,
+Memory bandwidth [MBytes/s],999.4089,
+Memory data volume [GBytes],0.7005,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region pool2_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.035250,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,14422240
+CPU_CLK_UNHALTED_CORE,FIXC1,61237630
+CPU_CLK_UNHALTED_REF,FIXC2,57155360
+MC_CAS_READS,MBOX0C0,284811
+MC_CAS_WRITES,MBOX0C1,120435
+MC_CAS_READS,MBOX1C0,289504
+MC_CAS_WRITES,MBOX1C1,122996
+MC_CAS_READS,MBOX2C0,288617
+MC_CAS_WRITES,MBOX2C1,120823
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,286619
+MC_CAS_WRITES,MBOX4C1,120710
+MC_CAS_READS,MBOX5C0,288709
+MC_CAS_WRITES,MBOX5C1,121269
+MC_CAS_READS,MBOX6C0,289247
+MC_CAS_WRITES,MBOX6C1,118674
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region pool2_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0352,
+Runtime unhalted [s],0.0438,
+Clock [MHz],1496.5138,
+CPI,4.2461,
+Memory read bandwidth [MBytes/s],3136.4853,
+Memory read data volume [GBytes],0.1106,
+Memory writeback bandwidth [MBytes/s],1316.1510,
+Memory writeback data volume [GBytes],0.0464,
+Memory bandwidth [MBytes/s],4452.6363,
+Memory data volume [GBytes],0.1570,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu7_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.007074,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,3516973
+CPU_CLK_UNHALTED_CORE,FIXC1,16820600
+CPU_CLK_UNHALTED_REF,FIXC2,15698900
+MC_CAS_READS,MBOX0C0,53709
+MC_CAS_WRITES,MBOX0C1,10072
+MC_CAS_READS,MBOX1C0,53488
+MC_CAS_WRITES,MBOX1C1,11104
+MC_CAS_READS,MBOX2C0,53894
+MC_CAS_WRITES,MBOX2C1,10626
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,53362
+MC_CAS_WRITES,MBOX4C1,10308
+MC_CAS_READS,MBOX5C0,53019
+MC_CAS_WRITES,MBOX5C1,10648
+MC_CAS_READS,MBOX6C0,54321
+MC_CAS_WRITES,MBOX6C1,10305
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu7_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0071,
+Runtime unhalted [s],0.0120,
+Clock [MHz],1496.5512,
+CPI,4.7827,
+Memory read bandwidth [MBytes/s],2911.2453,
+Memory read data volume [GBytes],0.0206,
+Memory writeback bandwidth [MBytes/s],570.5278,
+Memory writeback data volume [GBytes],0.0040,
+Memory bandwidth [MBytes/s],3481.7732,
+Memory data volume [GBytes],0.0246,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region drop6_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.006263,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,3428581
+CPU_CLK_UNHALTED_CORE,FIXC1,16207930
+CPU_CLK_UNHALTED_REF,FIXC2,15127100
+MC_CAS_READS,MBOX0C0,72547
+MC_CAS_WRITES,MBOX0C1,10726
+MC_CAS_READS,MBOX1C0,72595
+MC_CAS_WRITES,MBOX1C1,11720
+MC_CAS_READS,MBOX2C0,72729
+MC_CAS_WRITES,MBOX2C1,10990
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,72513
+MC_CAS_WRITES,MBOX4C1,10809
+MC_CAS_READS,MBOX5C0,71548
+MC_CAS_WRITES,MBOX5C1,10800
+MC_CAS_READS,MBOX6C0,73460
+MC_CAS_WRITES,MBOX6C1,10810
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region drop6_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0063,
+Runtime unhalted [s],0.0116,
+Clock [MHz],1496.5498,
+CPI,4.7273,
+Memory read bandwidth [MBytes/s],4449.2266,
+Memory read data volume [GBytes],0.0279,
+Memory writeback bandwidth [MBytes/s],672.9656,
+Memory writeback data volume [GBytes],0.0042,
+Memory bandwidth [MBytes/s],5122.1922,
+Memory data volume [GBytes],0.0321,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region drop7_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.010580,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,5863166
+CPU_CLK_UNHALTED_CORE,FIXC1,21145210
+CPU_CLK_UNHALTED_REF,FIXC2,19735600
+MC_CAS_READS,MBOX0C0,52555
+MC_CAS_WRITES,MBOX0C1,11351
+MC_CAS_READS,MBOX1C0,54056
+MC_CAS_WRITES,MBOX1C1,12496
+MC_CAS_READS,MBOX2C0,53166
+MC_CAS_WRITES,MBOX2C1,12371
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,52440
+MC_CAS_WRITES,MBOX4C1,11581
+MC_CAS_READS,MBOX5C0,53168
+MC_CAS_WRITES,MBOX5C1,11913
+MC_CAS_READS,MBOX6C0,53512
+MC_CAS_WRITES,MBOX6C1,11633
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region drop7_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0106,
+Runtime unhalted [s],0.0151,
+Clock [MHz],1496.5147,
+CPI,3.6064,
+Memory read bandwidth [MBytes/s],1929.0556,
+Memory read data volume [GBytes],0.0204,
+Memory writeback bandwidth [MBytes/s],431.5766,
+Memory writeback data volume [GBytes],0.0046,
+Memory bandwidth [MBytes/s],2360.6321,
+Memory data volume [GBytes],0.0250,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region conv5_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.131334,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,286401000
+CPU_CLK_UNHALTED_CORE,FIXC1,202191200
+CPU_CLK_UNHALTED_REF,FIXC2,188711500
+MC_CAS_READS,MBOX0C0,475088
+MC_CAS_WRITES,MBOX0C1,176503
+MC_CAS_READS,MBOX1C0,476735
+MC_CAS_WRITES,MBOX1C1,178379
+MC_CAS_READS,MBOX2C0,476674
+MC_CAS_WRITES,MBOX2C1,177366
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,476463
+MC_CAS_WRITES,MBOX4C1,176533
+MC_CAS_READS,MBOX5C0,470906
+MC_CAS_WRITES,MBOX5C1,175752
+MC_CAS_READS,MBOX6C0,473196
+MC_CAS_WRITES,MBOX6C1,174229
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region conv5_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.1313,
+Runtime unhalted [s],0.1448,
+Clock [MHz],1496.5223,
+CPI,0.7060,
+Memory read bandwidth [MBytes/s],1388.3705,
+Memory read data volume [GBytes],0.1823,
+Memory writeback bandwidth [MBytes/s],515.9431,
+Memory writeback data volume [GBytes],0.0678,
+Memory bandwidth [MBytes/s],1904.3136,
+Memory data volume [GBytes],0.2501,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region norm2_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.085717,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,37099550
+CPU_CLK_UNHALTED_CORE,FIXC1,135825900
+CPU_CLK_UNHALTED_REF,FIXC2,126771200
+MC_CAS_READS,MBOX0C0,391434
+MC_CAS_WRITES,MBOX0C1,163754
+MC_CAS_READS,MBOX1C0,396244
+MC_CAS_WRITES,MBOX1C1,163328
+MC_CAS_READS,MBOX2C0,394764
+MC_CAS_WRITES,MBOX2C1,163498
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,391002
+MC_CAS_WRITES,MBOX4C1,162157
+MC_CAS_READS,MBOX5C0,394015
+MC_CAS_WRITES,MBOX5C1,161028
+MC_CAS_READS,MBOX6C0,392018
+MC_CAS_WRITES,MBOX6C1,160030
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region norm2_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0857,
+Runtime unhalted [s],0.0972,
+Clock [MHz],1496.5158,
+CPI,3.6611,
+Memory read bandwidth [MBytes/s],1761.6864,
+Memory read data volume [GBytes],0.1510,
+Memory writeback bandwidth [MBytes/s],727.0770,
+Memory writeback data volume [GBytes],0.0623,
+Memory bandwidth [MBytes/s],2488.7634,
+Memory data volume [GBytes],0.2133,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region conv1_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.300615,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,460603600
+CPU_CLK_UNHALTED_CORE,FIXC1,450053400
+CPU_CLK_UNHALTED_REF,FIXC2,420051000
+MC_CAS_READS,MBOX0C0,855355
+MC_CAS_WRITES,MBOX0C1,393423
+MC_CAS_READS,MBOX1C0,864532
+MC_CAS_WRITES,MBOX1C1,400603
+MC_CAS_READS,MBOX2C0,861504
+MC_CAS_WRITES,MBOX2C1,400599
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,860752
+MC_CAS_WRITES,MBOX4C1,395009
+MC_CAS_READS,MBOX5C0,860782
+MC_CAS_WRITES,MBOX5C1,397726
+MC_CAS_READS,MBOX6C0,863817
+MC_CAS_WRITES,MBOX6C1,393913
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region conv1_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.3006,
+Runtime unhalted [s],0.3222,
+Clock [MHz],1496.5159,
+CPI,0.9771,
+Memory read bandwidth [MBytes/s],1099.9852,
+Memory read data volume [GBytes],0.3307,
+Memory writeback bandwidth [MBytes/s],506.9665,
+Memory writeback data volume [GBytes],0.1524,
+Memory bandwidth [MBytes/s],1606.9516,
+Memory data volume [GBytes],0.4831,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region data_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.002362,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,2496770
+CPU_CLK_UNHALTED_CORE,FIXC1,8088953
+CPU_CLK_UNHALTED_REF,FIXC2,7549038
+MC_CAS_READS,MBOX0C0,37168
+MC_CAS_WRITES,MBOX0C1,4188
+MC_CAS_READS,MBOX1C0,37911
+MC_CAS_WRITES,MBOX1C1,4246
+MC_CAS_READS,MBOX2C0,37633
+MC_CAS_WRITES,MBOX2C1,3997
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,37356
+MC_CAS_WRITES,MBOX4C1,4287
+MC_CAS_READS,MBOX5C0,37710
+MC_CAS_WRITES,MBOX5C1,4312
+MC_CAS_READS,MBOX6C0,38302
+MC_CAS_WRITES,MBOX6C1,3942
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region data_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0024,
+Runtime unhalted [s],0.0058,
+Clock [MHz],1496.6492,
+CPI,3.2398,
+Memory read bandwidth [MBytes/s],6125.5453,
+Memory read data volume [GBytes],0.0145,
+Memory writeback bandwidth [MBytes/s],676.6061,
+Memory writeback data volume [GBytes],0.0016,
+Memory bandwidth [MBytes/s],6802.1515,
+Memory data volume [GBytes],0.0161,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region conv3_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.249190,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,571826400
+CPU_CLK_UNHALTED_CORE,FIXC1,374295400
+CPU_CLK_UNHALTED_REF,FIXC2,349342300
+MC_CAS_READS,MBOX0C0,656621
+MC_CAS_WRITES,MBOX0C1,192095
+MC_CAS_READS,MBOX1C0,660907
+MC_CAS_WRITES,MBOX1C1,194455
+MC_CAS_READS,MBOX2C0,660622
+MC_CAS_WRITES,MBOX2C1,192516
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,659706
+MC_CAS_WRITES,MBOX4C1,192454
+MC_CAS_READS,MBOX5C0,655537
+MC_CAS_WRITES,MBOX5C1,189402
+MC_CAS_READS,MBOX6C0,654053
+MC_CAS_WRITES,MBOX6C1,189901
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region conv3_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.2492,
+Runtime unhalted [s],0.2680,
+Clock [MHz],1496.5203,
+CPI,0.6546,
+Memory read bandwidth [MBytes/s],1013.8306,
+Memory read data volume [GBytes],0.2526,
+Memory writeback bandwidth [MBytes/s],295.5682,
+Memory writeback data volume [GBytes],0.0737,
+Memory bandwidth [MBytes/s],1309.3988,
+Memory data volume [GBytes],0.3263,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu5_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.008776,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,4692541
+CPU_CLK_UNHALTED_CORE,FIXC1,19044820
+CPU_CLK_UNHALTED_REF,FIXC2,17775280
+MC_CAS_READS,MBOX0C0,63975
+MC_CAS_WRITES,MBOX0C1,10648
+MC_CAS_READS,MBOX1C0,64553
+MC_CAS_WRITES,MBOX1C1,11343
+MC_CAS_READS,MBOX2C0,64536
+MC_CAS_WRITES,MBOX2C1,10957
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,65065
+MC_CAS_WRITES,MBOX4C1,11045
+MC_CAS_READS,MBOX5C0,65649
+MC_CAS_WRITES,MBOX5C1,10995
+MC_CAS_READS,MBOX6C0,64665
+MC_CAS_WRITES,MBOX6C1,10771
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu5_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0088,
+Runtime unhalted [s],0.0136,
+Clock [MHz],1496.5104,
+CPI,4.0585,
+Memory read bandwidth [MBytes/s],2832.7428,
+Memory read data volume [GBytes],0.0249,
+Memory writeback bandwidth [MBytes/s],479.5513,
+Memory writeback data volume [GBytes],0.0042,
+Memory bandwidth [MBytes/s],3312.2941,
+Memory data volume [GBytes],0.0291,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu3_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.012986,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,6386657
+CPU_CLK_UNHALTED_CORE,FIXC1,26141150
+CPU_CLK_UNHALTED_REF,FIXC2,24398350
+MC_CAS_READS,MBOX0C0,93850
+MC_CAS_WRITES,MBOX0C1,17734
+MC_CAS_READS,MBOX1C0,94905
+MC_CAS_WRITES,MBOX1C1,19251
+MC_CAS_READS,MBOX2C0,94094
+MC_CAS_WRITES,MBOX2C1,18840
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,94564
+MC_CAS_WRITES,MBOX4C1,18200
+MC_CAS_READS,MBOX5C0,94296
+MC_CAS_WRITES,MBOX5C1,18998
+MC_CAS_READS,MBOX6C0,94692
+MC_CAS_WRITES,MBOX6C1,18700
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu3_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0130,
+Runtime unhalted [s],0.0187,
+Clock [MHz],1496.5235,
+CPI,4.0931,
+Memory read bandwidth [MBytes/s],2791.4225,
+Memory read data volume [GBytes],0.0362,
+Memory writeback bandwidth [MBytes/s],550.6101,
+Memory writeback data volume [GBytes],0.0072,
+Memory bandwidth [MBytes/s],3342.0326,
+Memory data volume [GBytes],0.0434,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu1_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.027722,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,9769032
+CPU_CLK_UNHALTED_CORE,FIXC1,49808400
+CPU_CLK_UNHALTED_REF,FIXC2,46487880
+MC_CAS_READS,MBOX0C0,287076
+MC_CAS_WRITES,MBOX0C1,129356
+MC_CAS_READS,MBOX1C0,293726
+MC_CAS_WRITES,MBOX1C1,129860
+MC_CAS_READS,MBOX2C0,291598
+MC_CAS_WRITES,MBOX2C1,129778
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,289457
+MC_CAS_WRITES,MBOX4C1,128732
+MC_CAS_READS,MBOX5C0,290851
+MC_CAS_WRITES,MBOX5C1,127637
+MC_CAS_READS,MBOX6C0,291018
+MC_CAS_WRITES,MBOX6C1,127548
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu1_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0277,
+Runtime unhalted [s],0.0357,
+Clock [MHz],1496.5187,
+CPI,5.0986,
+Memory read bandwidth [MBytes/s],4025.5890,
+Memory read data volume [GBytes],0.1116,
+Memory writeback bandwidth [MBytes/s],1784.3526,
+Memory writeback data volume [GBytes],0.0495,
+Memory bandwidth [MBytes/s],5809.9415,
+Memory data volume [GBytes],0.1611,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu4_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.038089,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,8583836
+CPU_CLK_UNHALTED_CORE,FIXC1,65673430
+CPU_CLK_UNHALTED_REF,FIXC2,61295160
+MC_CAS_READS,MBOX0C0,316452
+MC_CAS_WRITES,MBOX0C1,124326
+MC_CAS_READS,MBOX1C0,319795
+MC_CAS_WRITES,MBOX1C1,127809
+MC_CAS_READS,MBOX2C0,320365
+MC_CAS_WRITES,MBOX2C1,126177
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,315048
+MC_CAS_WRITES,MBOX4C1,123064
+MC_CAS_READS,MBOX5C0,317899
+MC_CAS_WRITES,MBOX5C1,125086
+MC_CAS_READS,MBOX6C0,319740
+MC_CAS_WRITES,MBOX6C1,123859
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu4_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0381,
+Runtime unhalted [s],0.0470,
+Clock [MHz],1496.5210,
+CPI,7.6508,
+Memory read bandwidth [MBytes/s],3208.1847,
+Memory read data volume [GBytes],0.1222,
+Memory writeback bandwidth [MBytes/s],1260.7603,
+Memory writeback data volume [GBytes],0.0480,
+Memory bandwidth [MBytes/s],4468.9450,
+Memory data volume [GBytes],0.1702,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region conv3_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.561656,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,1082254000
+CPU_CLK_UNHALTED_CORE,FIXC1,820971400
+CPU_CLK_UNHALTED_REF,FIXC2,766240300
+MC_CAS_READS,MBOX0C0,1227598
+MC_CAS_WRITES,MBOX0C1,335745
+MC_CAS_READS,MBOX1C0,1228907
+MC_CAS_WRITES,MBOX1C1,344115
+MC_CAS_READS,MBOX2C0,1227785
+MC_CAS_WRITES,MBOX2C1,336765
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,1228223
+MC_CAS_WRITES,MBOX4C1,332322
+MC_CAS_READS,MBOX5C0,1232106
+MC_CAS_WRITES,MBOX5C1,345090
+MC_CAS_READS,MBOX6C0,1228126
+MC_CAS_WRITES,MBOX6C1,335803
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region conv3_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.5617,
+Runtime unhalted [s],0.5878,
+Clock [MHz],1496.5194,
+CPI,0.7586,
+Memory read bandwidth [MBytes/s],840.1148,
+Memory read data volume [GBytes],0.4719,
+Memory writeback bandwidth [MBytes/s],231.2977,
+Memory writeback data volume [GBytes],0.1299,
+Memory bandwidth [MBytes/s],1071.4124,
+Memory data volume [GBytes],0.6018,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu7_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.007484,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,3577706
+CPU_CLK_UNHALTED_CORE,FIXC1,17000660
+CPU_CLK_UNHALTED_REF,FIXC2,15867360
+MC_CAS_READS,MBOX0C0,56545
+MC_CAS_WRITES,MBOX0C1,8532
+MC_CAS_READS,MBOX1C0,55736
+MC_CAS_WRITES,MBOX1C1,9389
+MC_CAS_READS,MBOX2C0,57035
+MC_CAS_WRITES,MBOX2C1,8858
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,57982
+MC_CAS_WRITES,MBOX4C1,8735
+MC_CAS_READS,MBOX5C0,55749
+MC_CAS_WRITES,MBOX5C1,8790
+MC_CAS_READS,MBOX6C0,57641
+MC_CAS_WRITES,MBOX6C1,8359
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu7_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0075,
+Runtime unhalted [s],0.0122,
+Clock [MHz],1496.5127,
+CPI,4.7518,
+Memory read bandwidth [MBytes/s],2913.2456,
+Memory read data volume [GBytes],0.0218,
+Memory writeback bandwidth [MBytes/s],450.3248,
+Memory writeback data volume [GBytes],0.0034,
+Memory bandwidth [MBytes/s],3363.5703,
+Memory data volume [GBytes],0.0252,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region drop7_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.006475,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,3479197
+CPU_CLK_UNHALTED_CORE,FIXC1,16777640
+CPU_CLK_UNHALTED_REF,FIXC2,15659630
+MC_CAS_READS,MBOX0C0,55047
+MC_CAS_WRITES,MBOX0C1,10786
+MC_CAS_READS,MBOX1C0,53947
+MC_CAS_WRITES,MBOX1C1,11378
+MC_CAS_READS,MBOX2C0,54791
+MC_CAS_WRITES,MBOX2C1,11129
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,55168
+MC_CAS_WRITES,MBOX4C1,11121
+MC_CAS_READS,MBOX5C0,53623
+MC_CAS_WRITES,MBOX5C1,10907
+MC_CAS_READS,MBOX6C0,55550
+MC_CAS_WRITES,MBOX6C1,10877
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region drop7_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0065,
+Runtime unhalted [s],0.0120,
+Clock [MHz],1496.4723,
+CPI,4.8223,
+Memory read bandwidth [MBytes/s],3243.2591,
+Memory read data volume [GBytes],0.0210,
+Memory writeback bandwidth [MBytes/s],654.3135,
+Memory writeback data volume [GBytes],0.0042,
+Memory bandwidth [MBytes/s],3897.5726,
+Memory data volume [GBytes],0.0252,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region fc6_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.428335,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,410607000
+CPU_CLK_UNHALTED_CORE,FIXC1,633135900
+CPU_CLK_UNHALTED_REF,FIXC2,590927200
+MC_CAS_READS,MBOX0C0,1578801
+MC_CAS_WRITES,MBOX0C1,522617
+MC_CAS_READS,MBOX1C0,1597648
+MC_CAS_WRITES,MBOX1C1,536163
+MC_CAS_READS,MBOX2C0,1601909
+MC_CAS_WRITES,MBOX2C1,542912
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,1597335
+MC_CAS_WRITES,MBOX4C1,523043
+MC_CAS_READS,MBOX5C0,1583844
+MC_CAS_WRITES,MBOX5C1,521130
+MC_CAS_READS,MBOX6C0,1599224
+MC_CAS_WRITES,MBOX6C1,543602
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region fc6_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.4283,
+Runtime unhalted [s],0.4533,
+Clock [MHz],1496.5191,
+CPI,1.5420,
+Memory read bandwidth [MBytes/s],1428.2309,
+Memory read data volume [GBytes],0.6118,
+Memory writeback bandwidth [MBytes/s],476.5571,
+Memory writeback data volume [GBytes],0.2041,
+Memory bandwidth [MBytes/s],1904.7880,
+Memory data volume [GBytes],0.8159,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region fc8_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.088235,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,47604750
+CPU_CLK_UNHALTED_CORE,FIXC1,133664600
+CPU_CLK_UNHALTED_REF,FIXC2,124753800
+MC_CAS_READS,MBOX0C0,512877
+MC_CAS_WRITES,MBOX0C1,200740
+MC_CAS_READS,MBOX1C0,520161
+MC_CAS_WRITES,MBOX1C1,206000
+MC_CAS_READS,MBOX2C0,517401
+MC_CAS_WRITES,MBOX2C1,205232
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,514389
+MC_CAS_WRITES,MBOX4C1,203402
+MC_CAS_READS,MBOX5C0,515995
+MC_CAS_WRITES,MBOX5C1,201788
+MC_CAS_READS,MBOX6C0,515305
+MC_CAS_WRITES,MBOX6C1,200836
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region fc8_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0882,
+Runtime unhalted [s],0.0957,
+Clock [MHz],1496.5180,
+CPI,2.8078,
+Memory read bandwidth [MBytes/s],2245.7196,
+Memory read data volume [GBytes],0.1982,
+Memory writeback bandwidth [MBytes/s],883.4525,
+Memory writeback data volume [GBytes],0.0780,
+Memory bandwidth [MBytes/s],3129.1721,
+Memory data volume [GBytes],0.2761,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region fc6_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.242191,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,258136900
+CPU_CLK_UNHALTED_CORE,FIXC1,362489200
+CPU_CLK_UNHALTED_REF,FIXC2,338323100
+MC_CAS_READS,MBOX0C0,1026152
+MC_CAS_WRITES,MBOX0C1,258329
+MC_CAS_READS,MBOX1C0,1036397
+MC_CAS_WRITES,MBOX1C1,254775
+MC_CAS_READS,MBOX2C0,1048341
+MC_CAS_WRITES,MBOX2C1,259437
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,1044696
+MC_CAS_WRITES,MBOX4C1,254721
+MC_CAS_READS,MBOX5C0,1052722
+MC_CAS_WRITES,MBOX5C1,257236
+MC_CAS_READS,MBOX6C0,1029809
+MC_CAS_WRITES,MBOX6C1,259204
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region fc6_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.2422,
+Runtime unhalted [s],0.2595,
+Clock [MHz],1496.5207,
+CPI,1.4043,
+Memory read bandwidth [MBytes/s],1648.4475,
+Memory read data volume [GBytes],0.3992,
+Memory writeback bandwidth [MBytes/s],407.9295,
+Memory writeback data volume [GBytes],0.0988,
+Memory bandwidth [MBytes/s],2056.3770,
+Memory data volume [GBytes],0.4980,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu1_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.050393,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,12212340
+CPU_CLK_UNHALTED_CORE,FIXC1,83601860
+CPU_CLK_UNHALTED_REF,FIXC2,78028660
+MC_CAS_READS,MBOX0C0,327888
+MC_CAS_WRITES,MBOX0C1,143234
+MC_CAS_READS,MBOX1C0,333235
+MC_CAS_WRITES,MBOX1C1,145420
+MC_CAS_READS,MBOX2C0,331796
+MC_CAS_WRITES,MBOX2C1,146345
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,328869
+MC_CAS_WRITES,MBOX4C1,142980
+MC_CAS_READS,MBOX5C0,330386
+MC_CAS_WRITES,MBOX5C1,142454
+MC_CAS_READS,MBOX6C0,329937
+MC_CAS_WRITES,MBOX6C1,143340
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu1_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0504,
+Runtime unhalted [s],0.0599,
+Clock [MHz],1496.5151,
+CPI,6.8457,
+Memory read bandwidth [MBytes/s],2517.3110,
+Memory read data volume [GBytes],0.1269,
+Memory writeback bandwidth [MBytes/s],1097.0048,
+Memory writeback data volume [GBytes],0.0553,
+Memory bandwidth [MBytes/s],3614.3158,
+Memory data volume [GBytes],0.1821,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region relu5_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.009857,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,4408406
+CPU_CLK_UNHALTED_CORE,FIXC1,21729640
+CPU_CLK_UNHALTED_REF,FIXC2,20280780
+MC_CAS_READS,MBOX0C0,114411
+MC_CAS_WRITES,MBOX0C1,40930
+MC_CAS_READS,MBOX1C0,116863
+MC_CAS_WRITES,MBOX1C1,44106
+MC_CAS_READS,MBOX2C0,116897
+MC_CAS_WRITES,MBOX2C1,42308
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,114442
+MC_CAS_WRITES,MBOX4C1,40957
+MC_CAS_READS,MBOX5C0,115086
+MC_CAS_WRITES,MBOX5C1,42195
+MC_CAS_READS,MBOX6C0,116513
+MC_CAS_WRITES,MBOX6C1,41533
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region relu5_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0099,
+Runtime unhalted [s],0.0156,
+Clock [MHz],1496.5361,
+CPI,4.9291,
+Memory read bandwidth [MBytes/s],4507.4969,
+Memory read data volume [GBytes],0.0444,
+Memory writeback bandwidth [MBytes/s],1636.4165,
+Memory writeback data volume [GBytes],0.0161,
+Memory bandwidth [MBytes/s],6143.9134,
+Memory data volume [GBytes],0.0606,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region norm1_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.079551,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,43401990
+CPU_CLK_UNHALTED_CORE,FIXC1,125861000
+CPU_CLK_UNHALTED_REF,FIXC2,117470300
+MC_CAS_READS,MBOX0C0,440672
+MC_CAS_WRITES,MBOX0C1,157348
+MC_CAS_READS,MBOX1C0,443950
+MC_CAS_WRITES,MBOX1C1,158271
+MC_CAS_READS,MBOX2C0,440495
+MC_CAS_WRITES,MBOX2C1,158090
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,438124
+MC_CAS_WRITES,MBOX4C1,155515
+MC_CAS_READS,MBOX5C0,440115
+MC_CAS_WRITES,MBOX5C1,155400
+MC_CAS_READS,MBOX6C0,438887
+MC_CAS_WRITES,MBOX6C1,154362
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region norm1_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0796,
+Runtime unhalted [s],0.0901,
+Clock [MHz],1496.5196,
+CPI,2.8999,
+Memory read bandwidth [MBytes/s],2125.7216,
+Memory read data volume [GBytes],0.1691,
+Memory writeback bandwidth [MBytes/s],755.4274,
+Memory writeback data volume [GBytes],0.0601,
+Memory bandwidth [MBytes/s],2881.1490,
+Memory data volume [GBytes],0.2292,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region pool5_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.012808,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,7106127
+CPU_CLK_UNHALTED_CORE,FIXC1,24852920
+CPU_CLK_UNHALTED_REF,FIXC2,23196140
+MC_CAS_READS,MBOX0C0,66139
+MC_CAS_WRITES,MBOX0C1,13968
+MC_CAS_READS,MBOX1C0,66635
+MC_CAS_WRITES,MBOX1C1,14920
+MC_CAS_READS,MBOX2C0,66316
+MC_CAS_WRITES,MBOX2C1,14477
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,67334
+MC_CAS_WRITES,MBOX4C1,14036
+MC_CAS_READS,MBOX5C0,66184
+MC_CAS_WRITES,MBOX5C1,14532
+MC_CAS_READS,MBOX6C0,66083
+MC_CAS_WRITES,MBOX6C1,14109
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region pool5_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0128,
+Runtime unhalted [s],0.0178,
+Clock [MHz],1496.5148,
+CPI,3.4974,
+Memory read bandwidth [MBytes/s],1992.2208,
+Memory read data volume [GBytes],0.0255,
+Memory writeback bandwidth [MBytes/s],429.9436,
+Memory writeback data volume [GBytes],0.0055,
+Memory bandwidth [MBytes/s],2422.1644,
+Memory data volume [GBytes],0.0310,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region loss_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.142573,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,91811620
+CPU_CLK_UNHALTED_CORE,FIXC1,206210800
+CPU_CLK_UNHALTED_REF,FIXC2,192463000
+MC_CAS_READS,MBOX0C0,1200327
+MC_CAS_WRITES,MBOX0C1,113968
+MC_CAS_READS,MBOX1C0,1228499
+MC_CAS_WRITES,MBOX1C1,107837
+MC_CAS_READS,MBOX2C0,1220862
+MC_CAS_WRITES,MBOX2C1,119618
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,1219709
+MC_CAS_WRITES,MBOX4C1,105410
+MC_CAS_READS,MBOX5C0,1208912
+MC_CAS_WRITES,MBOX5C1,113657
+MC_CAS_READS,MBOX6C0,1220141
+MC_CAS_WRITES,MBOX6C1,119089
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region loss_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.1426,
+Runtime unhalted [s],0.1476,
+Clock [MHz],1496.5232,
+CPI,2.2460,
+Memory read bandwidth [MBytes/s],3276.2289,
+Memory read data volume [GBytes],0.4671,
+Memory writeback bandwidth [MBytes/s],305.0588,
+Memory writeback data volume [GBytes],0.0435,
+Memory bandwidth [MBytes/s],3581.2877,
+Memory data volume [GBytes],0.5106,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region pool1_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.045170,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,21329070
+CPU_CLK_UNHALTED_CORE,FIXC1,75398070
+CPU_CLK_UNHALTED_REF,FIXC2,70371060
+MC_CAS_READS,MBOX0C0,339372
+MC_CAS_WRITES,MBOX0C1,149444
+MC_CAS_READS,MBOX1C0,342882
+MC_CAS_WRITES,MBOX1C1,150934
+MC_CAS_READS,MBOX2C0,342788
+MC_CAS_WRITES,MBOX2C1,149690
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,340814
+MC_CAS_WRITES,MBOX4C1,148765
+MC_CAS_READS,MBOX5C0,343009
+MC_CAS_WRITES,MBOX5C1,149804
+MC_CAS_READS,MBOX6C0,342094
+MC_CAS_WRITES,MBOX6C1,146463
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region pool1_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0452,
+Runtime unhalted [s],0.0540,
+Clock [MHz],1496.5301,
+CPI,3.5350,
+Memory read bandwidth [MBytes/s],2905.9518,
+Memory read data volume [GBytes],0.1313,
+Memory writeback bandwidth [MBytes/s],1268.2445,
+Memory writeback data volume [GBytes],0.0573,
+Memory bandwidth [MBytes/s],4174.1962,
+Memory data volume [GBytes],0.1885,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region conv4_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.184857,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,426685500
+CPU_CLK_UNHALTED_CORE,FIXC1,279817900
+CPU_CLK_UNHALTED_REF,FIXC2,261163800
+MC_CAS_READS,MBOX0C0,546323
+MC_CAS_WRITES,MBOX0C1,197159
+MC_CAS_READS,MBOX1C0,551329
+MC_CAS_WRITES,MBOX1C1,198328
+MC_CAS_READS,MBOX2C0,551295
+MC_CAS_WRITES,MBOX2C1,197817
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,548700
+MC_CAS_WRITES,MBOX4C1,197439
+MC_CAS_READS,MBOX5C0,546119
+MC_CAS_WRITES,MBOX5C1,195357
+MC_CAS_READS,MBOX6C0,546778
+MC_CAS_WRITES,MBOX6C1,194517
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region conv4_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.1849,
+Runtime unhalted [s],0.2003,
+Clock [MHz],1496.5176,
+CPI,0.6558,
+Memory read bandwidth [MBytes/s],1139.2340,
+Memory read data volume [GBytes],0.2106,
+Memory writeback bandwidth [MBytes/s],408.7467,
+Memory writeback data volume [GBytes],0.0756,
+Memory bandwidth [MBytes/s],1547.9808,
+Memory data volume [GBytes],0.2862,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region drop6_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.015001,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,7613386
+CPU_CLK_UNHALTED_CORE,FIXC1,25060220
+CPU_CLK_UNHALTED_REF,FIXC2,23389140
+MC_CAS_READS,MBOX0C0,84756
+MC_CAS_WRITES,MBOX0C1,13185
+MC_CAS_READS,MBOX1C0,86911
+MC_CAS_WRITES,MBOX1C1,17464
+MC_CAS_READS,MBOX2C0,85279
+MC_CAS_WRITES,MBOX2C1,14634
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,83659
+MC_CAS_WRITES,MBOX4C1,13302
+MC_CAS_READS,MBOX5C0,85095
+MC_CAS_WRITES,MBOX5C1,14300
+MC_CAS_READS,MBOX6C0,84818
+MC_CAS_WRITES,MBOX6C1,16025
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region drop6_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0150,
+Runtime unhalted [s],0.0179,
+Clock [MHz],1496.5455,
+CPI,3.2916,
+Memory read bandwidth [MBytes/s],2178.0185,
+Memory read data volume [GBytes],0.0327,
+Memory writeback bandwidth [MBytes/s],379.3160,
+Memory writeback data volume [GBytes],0.0057,
+Memory bandwidth [MBytes/s],2557.3344,
+Memory data volume [GBytes],0.0384,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region fc7_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.339176,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,190045200
+CPU_CLK_UNHALTED_CORE,FIXC1,491097900
+CPU_CLK_UNHALTED_REF,FIXC2,458357700
+MC_CAS_READS,MBOX0C0,911202
+MC_CAS_WRITES,MBOX0C1,288242
+MC_CAS_READS,MBOX1C0,910231
+MC_CAS_WRITES,MBOX1C1,296189
+MC_CAS_READS,MBOX2C0,915101
+MC_CAS_WRITES,MBOX2C1,298146
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,917668
+MC_CAS_WRITES,MBOX4C1,288578
+MC_CAS_READS,MBOX5C0,906282
+MC_CAS_WRITES,MBOX5C1,284150
+MC_CAS_READS,MBOX6C0,912368
+MC_CAS_WRITES,MBOX6C1,303806
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region fc7_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.3392,
+Runtime unhalted [s],0.3516,
+Clock [MHz],1496.5211,
+CPI,2.5841,
+Memory read bandwidth [MBytes/s],1032.6863,
+Memory read data volume [GBytes],0.3503,
+Memory writeback bandwidth [MBytes/s],331.9311,
+Memory writeback data volume [GBytes],0.1126,
+Memory bandwidth [MBytes/s],1364.6175,
+Memory data volume [GBytes],0.4628,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region norm1_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.128513,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,56095380
+CPU_CLK_UNHALTED_CORE,FIXC1,196593700
+CPU_CLK_UNHALTED_REF,FIXC2,183487700
+MC_CAS_READS,MBOX0C0,472865
+MC_CAS_WRITES,MBOX0C1,173359
+MC_CAS_READS,MBOX1C0,479994
+MC_CAS_WRITES,MBOX1C1,172815
+MC_CAS_READS,MBOX2C0,477064
+MC_CAS_WRITES,MBOX2C1,172744
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,471969
+MC_CAS_WRITES,MBOX4C1,170998
+MC_CAS_READS,MBOX5C0,477876
+MC_CAS_WRITES,MBOX5C1,171177
+MC_CAS_READS,MBOX6C0,476604
+MC_CAS_WRITES,MBOX6C1,170198
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region norm1_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.1285,
+Runtime unhalted [s],0.1408,
+Clock [MHz],1496.5180,
+CPI,3.5046,
+Memory read bandwidth [MBytes/s],1422.4872,
+Memory read data volume [GBytes],0.1828,
+Memory writeback bandwidth [MBytes/s],513.5879,
+Memory writeback data volume [GBytes],0.0660,
+Memory bandwidth [MBytes/s],1936.0751,
+Memory data volume [GBytes],0.2488,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region conv2_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.313706,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,733535000
+CPU_CLK_UNHALTED_CORE,FIXC1,472463300
+CPU_CLK_UNHALTED_REF,FIXC2,440966000
+MC_CAS_READS,MBOX0C0,678694
+MC_CAS_WRITES,MBOX0C1,187804
+MC_CAS_READS,MBOX1C0,684941
+MC_CAS_WRITES,MBOX1C1,188727
+MC_CAS_READS,MBOX2C0,681910
+MC_CAS_WRITES,MBOX2C1,189109
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,682779
+MC_CAS_WRITES,MBOX4C1,186291
+MC_CAS_READS,MBOX5C0,681073
+MC_CAS_WRITES,MBOX5C1,185247
+MC_CAS_READS,MBOX6C0,679821
+MC_CAS_WRITES,MBOX6C1,185060
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region conv2_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.3137,
+Runtime unhalted [s],0.3383,
+Clock [MHz],1496.5192,
+CPI,0.6441,
+Memory read bandwidth [MBytes/s],834.2510,
+Memory read data volume [GBytes],0.2617,
+Memory writeback bandwidth [MBytes/s],228.9504,
+Memory writeback data volume [GBytes],0.0718,
+Memory bandwidth [MBytes/s],1063.2014,
+Memory data volume [GBytes],0.3335,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region conv4_backward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.434579,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,860485300
+CPU_CLK_UNHALTED_CORE,FIXC1,645089800
+CPU_CLK_UNHALTED_REF,FIXC2,602084000
+MC_CAS_READS,MBOX0C0,971518
+MC_CAS_WRITES,MBOX0C1,279011
+MC_CAS_READS,MBOX1C0,974315
+MC_CAS_WRITES,MBOX1C1,283085
+MC_CAS_READS,MBOX2C0,971728
+MC_CAS_WRITES,MBOX2C1,281084
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,969267
+MC_CAS_WRITES,MBOX4C1,277334
+MC_CAS_READS,MBOX5C0,976411
+MC_CAS_WRITES,MBOX5C1,280629
+MC_CAS_READS,MBOX6C0,970973
+MC_CAS_WRITES,MBOX6C1,277495
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region conv4_backward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.4346,
+Runtime unhalted [s],0.4618,
+Clock [MHz],1496.5196,
+CPI,0.7497,
+Memory read bandwidth [MBytes/s],859.1980,
+Memory read data volume [GBytes],0.3734,
+Memory writeback bandwidth [MBytes/s],247.2112,
+Memory writeback data volume [GBytes],0.1074,
+Memory bandwidth [MBytes/s],1106.4091,
+Memory data volume [GBytes],0.4808,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.39675203 GHz,
+TABLE,Region data_forward,Group 1 Raw,MEM,19
+Region Info,Core 0,
+RDTSC Runtime [s],24.145560,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,33983950000
+CPU_CLK_UNHALTED_CORE,FIXC1,35793290000
+CPU_CLK_UNHALTED_REF,FIXC2,33422830000
+MC_CAS_READS,MBOX0C0,15293980
+MC_CAS_WRITES,MBOX0C1,2272170
+MC_CAS_READS,MBOX1C0,15535650
+MC_CAS_WRITES,MBOX1C1,2183502
+MC_CAS_READS,MBOX2C0,15722940
+MC_CAS_WRITES,MBOX2C1,2186268
+MC_CAS_READS,MBOX3C0,0
+MC_CAS_WRITES,MBOX3C1,0
+MC_CAS_READS,MBOX4C0,15528130
+MC_CAS_WRITES,MBOX4C1,2145538
+MC_CAS_READS,MBOX5C0,15343210
+MC_CAS_WRITES,MBOX5C1,2161089
+MC_CAS_READS,MBOX6C0,15622970
+MC_CAS_WRITES,MBOX6C1,2267916
+MC_CAS_READS,MBOX7C0,0
+MC_CAS_WRITES,MBOX7C1,0
+TABLE,Region data_forward,Group 1 Metric,MEM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],24.1456,
+Runtime unhalted [s],25.6261,
+Clock [MHz],1495.8144,
+CPI,1.0532,
+Memory read bandwidth [MBytes/s],246.6292,
+Memory read data volume [GBytes],5.9550,
+Memory writeback bandwidth [MBytes/s],35.0315,
+Memory writeback data volume [GBytes],0.8459,
+Memory bandwidth [MBytes/s],281.6607,
+Memory data volume [GBytes],6.8009,

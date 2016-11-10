@@ -1,0 +1,2699 @@
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz
+CPU type:	Intel Xeon Phi (Knights Landing) (Co)Processor
+CPU clock:	1.40 GHz
+Warning: The Marker API requires the application to run on the selected CPUs.
+Warning: likwid-perfctr pins the application only when using the -C command line option.
+Warning: LIKWID assumes that the application does it before the first instrumented code region is started.
+Warning: You can use the string in the environment variable LIKWID_THREADS to pin you application to
+Warning: to the CPUs specified after the -c command line option.
+--------------------------------------------------------------------------------
+I1109 13:17:10.190198 157665 caffe.cpp:442] Use CPU.
+I1109 13:17:10.239184 157665 cpu_info.cpp:452] Processor speed [MHz]: 1400
+I1109 13:17:10.239262 157665 cpu_info.cpp:455] Total number of sockets: 1
+I1109 13:17:10.239284 157665 cpu_info.cpp:458] Total number of CPU cores: 68
+I1109 13:17:10.239300 157665 cpu_info.cpp:461] Total number of processors: 272
+I1109 13:17:10.239315 157665 cpu_info.cpp:464] GPU is used: no
+I1109 13:17:10.239331 157665 cpu_info.cpp:467] OpenMP environmental variables are specified: yes
+I1109 13:17:10.239346 157665 cpu_info.cpp:470] OpenMP thread bind allowed: no
+I1109 13:17:10.239362 157665 cpu_info.cpp:473] Number of OpenMP threads: 67
+I1109 13:17:10.273418 157665 net.cpp:484] The NetState phase (0) differed from the phase (1) specified by a rule in layer data
+I1109 13:17:10.273527 157665 net.cpp:484] The NetState phase (0) differed from the phase (1) specified by a rule in layer accuracy
+I1109 13:17:10.273984 157665 net.cpp:120] Initializing net from parameters: 
+name: "AlexNet"
+state {
+  phase: TRAIN
+  level: 0
+  stage: ""
+}
+layer {
+  name: "data"
+  type: "DummyData"
+  top: "data"
+  top: "label"
+  include {
+    phase: TRAIN
+  }
+  dummy_data_param {
+    data_filler {
+      type: "gaussian"
+      std: 1
+    }
+    data_filler {
+      type: "constant"
+      value: 0
+    }
+    shape {
+      dim: 32
+      dim: 3
+      dim: 227
+      dim: 227
+    }
+    shape {
+      dim: 32
+      dim: 1
+      dim: 1
+      dim: 1
+    }
+  }
+}
+layer {
+  name: "conv1"
+  type: "Convolution"
+  bottom: "data"
+  top: "conv1"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 96
+    kernel_size: 11
+    stride: 4
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+    engine: MKL2017
+  }
+}
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "conv1"
+  top: "conv1"
+  relu_param {
+    engine: MKL2017
+  }
+}
+layer {
+  name: "norm1"
+  type: "LRN"
+  bottom: "conv1"
+  top: "norm1"
+  lrn_param {
+    local_size: 5
+    alpha: 0.0001
+    beta: 0.75
+    engine: MKL2017
+  }
+}
+layer {
+  name: "pool1"
+  type: "Pooling"
+  bottom: "norm1"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    engine: MKL2017
+  }
+}
+layer {
+  name: "conv2"
+  type: "Convolution"
+  bottom: "pool1"
+  top: "conv2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 2
+    kernel_size: 5
+    group: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.1
+    }
+    engine: MKL2017
+  }
+}
+layer {
+  name: "relu2"
+  type: "ReLU"
+  bottom: "conv2"
+  top: "conv2"
+  relu_param {
+    engine: MKL2017
+  }
+}
+layer {
+  name: "norm2"
+  type: "LRN"
+  bottom: "conv2"
+  top: "norm2"
+  lrn_param {
+    local_size: 5
+    alpha: 0.0001
+    beta: 0.75
+    engine: MKL2017
+  }
+}
+layer {
+  name: "pool2"
+  type: "Pooling"
+  bottom: "norm2"
+  top: "pool2"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    engine: MKL2017
+  }
+}
+layer {
+  name: "conv3"
+  type: "Convolution"
+  bottom: "pool2"
+  top: "conv3"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 384
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+    engine: MKL2017
+  }
+}
+layer {
+  name: "relu3"
+  type: "ReLU"
+  bottom: "conv3"
+  top: "conv3"
+  relu_param {
+    engine: MKL2017
+  }
+}
+layer {
+  name: "conv4"
+  type: "Convolution"
+  bottom: "conv3"
+  top: "conv4"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 384
+    pad: 1
+    kernel_size: 3
+    group: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.1
+    }
+    engine: MKL2017
+  }
+}
+layer {
+  name: "relu4"
+  type: "ReLU"
+  bottom: "conv4"
+  top: "conv4"
+  relu_param {
+    engine: MKL2017
+  }
+}
+layer {
+  name: "conv5"
+  type: "Convolution"
+  bottom: "conv4"
+  top: "conv5"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 1
+    kernel_size: 3
+    group: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.1
+    }
+    engine: MKL2017
+  }
+}
+layer {
+  name: "relu5"
+  type: "ReLU"
+  bottom: "conv5"
+  top: "conv5"
+  relu_param {
+    engine: MKL2017
+  }
+}
+layer {
+  name: "pool5"
+  type: "Pooling"
+  bottom: "conv5"
+  top: "pool5"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    engine: MKL2017
+  }
+}
+layer {
+  name: "fc6"
+  type: "InnerProduct"
+  bottom: "pool5"
+  top: "fc6"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 4096
+    weight_filler {
+      type: "gaussian"
+      std: 0.005
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.1
+    }
+  }
+}
+layer {
+  name: "relu6"
+  type: "ReLU"
+  bottom: "fc6"
+  top: "fc6"
+}
+layer {
+  name: "drop6"
+  type: "Dropout"
+  bottom: "fc6"
+  top: "fc6"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+layer {
+  name: "fc7"
+  type: "InnerProduct"
+  bottom: "fc6"
+  top: "fc7"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 4096
+    weight_filler {
+      type: "gaussian"
+      std: 0.005
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.1
+    }
+  }
+}
+layer {
+  name: "relu7"
+  type: "ReLU"
+  bottom: "fc7"
+  top: "fc7"
+}
+layer {
+  name: "drop7"
+  type: "Dropout"
+  bottom: "fc7"
+  top: "fc7"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+layer {
+  name: "fc8"
+  type: "InnerProduct"
+  bottom: "fc7"
+  top: "fc8"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 1000
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "fc8"
+  bottom: "label"
+  top: "loss"
+}
+I1109 13:17:10.277061 157665 layer_factory.hpp:114] Creating layer data
+I1109 13:17:10.277130 157665 net.cpp:160] Creating Layer data
+I1109 13:17:10.277165 157665 net.cpp:570] data -> data
+I1109 13:17:10.277223 157665 net.cpp:570] data -> label
+I1109 13:17:10.302561 157665 net.cpp:210] Setting up data
+I1109 13:17:10.302671 157665 net.cpp:217] Top shape: 32 3 227 227 (4946784)
+I1109 13:17:10.302743 157665 net.cpp:217] Top shape: 32 1 1 1 (32)
+I1109 13:17:10.302785 157665 net.cpp:225] Memory required for data: 19787264
+I1109 13:17:10.302824 157665 layer_factory.hpp:114] Creating layer conv1
+I1109 13:17:10.302949 157665 net.cpp:160] Creating Layer conv1
+I1109 13:17:10.302994 157665 net.cpp:596] conv1 <- data
+I1109 13:17:10.303056 157665 net.cpp:570] conv1 -> conv1
+I1109 13:17:10.396054 157665 net.cpp:210] Setting up conv1
+I1109 13:17:10.396148 157665 net.cpp:217] Top shape: 32 96 55 55 (9292800)
+I1109 13:17:10.396206 157665 net.cpp:225] Memory required for data: 56958464
+I1109 13:17:10.396322 157665 layer_factory.hpp:114] Creating layer relu1
+I1109 13:17:10.396390 157665 net.cpp:160] Creating Layer relu1
+I1109 13:17:10.396420 157665 net.cpp:596] relu1 <- conv1
+I1109 13:17:10.396456 157665 net.cpp:557] relu1 -> conv1 (in-place)
+I1109 13:17:10.396564 157665 net.cpp:210] Setting up relu1
+I1109 13:17:10.396590 157665 net.cpp:217] Top shape: 32 96 55 55 (9292800)
+I1109 13:17:10.396620 157665 net.cpp:225] Memory required for data: 94129664
+I1109 13:17:10.396642 157665 layer_factory.hpp:114] Creating layer norm1
+I1109 13:17:10.396689 157665 net.cpp:160] Creating Layer norm1
+I1109 13:17:10.396709 157665 net.cpp:596] norm1 <- conv1
+I1109 13:17:10.396775 157665 net.cpp:570] norm1 -> norm1
+I1109 13:17:10.396879 157665 net.cpp:210] Setting up norm1
+I1109 13:17:10.396900 157665 net.cpp:217] Top shape: 32 96 55 55 (9292800)
+I1109 13:17:10.396998 157665 net.cpp:225] Memory required for data: 131300864
+I1109 13:17:10.397022 157665 layer_factory.hpp:114] Creating layer pool1
+I1109 13:17:10.397068 157665 net.cpp:160] Creating Layer pool1
+I1109 13:17:10.397086 157665 net.cpp:596] pool1 <- norm1
+I1109 13:17:10.397121 157665 net.cpp:570] pool1 -> pool1
+I1109 13:17:10.397205 157665 net.cpp:210] Setting up pool1
+I1109 13:17:10.397228 157665 net.cpp:217] Top shape: 32 96 27 27 (2239488)
+I1109 13:17:10.397253 157665 net.cpp:225] Memory required for data: 140258816
+I1109 13:17:10.397272 157665 layer_factory.hpp:114] Creating layer conv2
+I1109 13:17:10.397336 157665 net.cpp:160] Creating Layer conv2
+I1109 13:17:10.397354 157665 net.cpp:596] conv2 <- pool1
+I1109 13:17:10.397385 157665 net.cpp:570] conv2 -> conv2
+I1109 13:17:10.501672 157665 net.cpp:210] Setting up conv2
+I1109 13:17:10.501761 157665 net.cpp:217] Top shape: 32 256 27 27 (5971968)
+I1109 13:17:10.501807 157665 net.cpp:225] Memory required for data: 164146688
+I1109 13:17:10.501914 157665 layer_factory.hpp:114] Creating layer relu2
+I1109 13:17:10.501979 157665 net.cpp:160] Creating Layer relu2
+I1109 13:17:10.502012 157665 net.cpp:596] relu2 <- conv2
+I1109 13:17:10.502053 157665 net.cpp:557] relu2 -> conv2 (in-place)
+I1109 13:17:10.502159 157665 net.cpp:210] Setting up relu2
+I1109 13:17:10.502190 157665 net.cpp:217] Top shape: 32 256 27 27 (5971968)
+I1109 13:17:10.502223 157665 net.cpp:225] Memory required for data: 188034560
+I1109 13:17:10.502246 157665 layer_factory.hpp:114] Creating layer norm2
+I1109 13:17:10.502291 157665 net.cpp:160] Creating Layer norm2
+I1109 13:17:10.502339 157665 net.cpp:596] norm2 <- conv2
+I1109 13:17:10.502370 157665 net.cpp:570] norm2 -> norm2
+I1109 13:17:10.502441 157665 net.cpp:210] Setting up norm2
+I1109 13:17:10.502465 157665 net.cpp:217] Top shape: 32 256 27 27 (5971968)
+I1109 13:17:10.502490 157665 net.cpp:225] Memory required for data: 211922432
+I1109 13:17:10.502511 157665 layer_factory.hpp:114] Creating layer pool2
+I1109 13:17:10.502549 157665 net.cpp:160] Creating Layer pool2
+I1109 13:17:10.502568 157665 net.cpp:596] pool2 <- norm2
+I1109 13:17:10.502624 157665 net.cpp:570] pool2 -> pool2
+I1109 13:17:10.502704 157665 net.cpp:210] Setting up pool2
+I1109 13:17:10.502729 157665 net.cpp:217] Top shape: 32 256 13 13 (1384448)
+I1109 13:17:10.502756 157665 net.cpp:225] Memory required for data: 217460224
+I1109 13:17:10.502777 157665 layer_factory.hpp:114] Creating layer conv3
+I1109 13:17:10.502862 157665 net.cpp:160] Creating Layer conv3
+I1109 13:17:10.502885 157665 net.cpp:596] conv3 <- pool2
+I1109 13:17:10.502918 157665 net.cpp:570] conv3 -> conv3
+I1109 13:17:10.604979 157665 net.cpp:210] Setting up conv3
+I1109 13:17:10.605075 157665 net.cpp:217] Top shape: 32 384 13 13 (2076672)
+I1109 13:17:10.605182 157665 net.cpp:225] Memory required for data: 225766912
+I1109 13:17:10.605268 157665 layer_factory.hpp:114] Creating layer relu3
+I1109 13:17:10.605347 157665 net.cpp:160] Creating Layer relu3
+I1109 13:17:10.605386 157665 net.cpp:596] relu3 <- conv3
+I1109 13:17:10.605455 157665 net.cpp:557] relu3 -> conv3 (in-place)
+I1109 13:17:10.605566 157665 net.cpp:210] Setting up relu3
+I1109 13:17:10.605600 157665 net.cpp:217] Top shape: 32 384 13 13 (2076672)
+I1109 13:17:10.605635 157665 net.cpp:225] Memory required for data: 234073600
+I1109 13:17:10.605690 157665 layer_factory.hpp:114] Creating layer conv4
+I1109 13:17:10.605782 157665 net.cpp:160] Creating Layer conv4
+I1109 13:17:10.605808 157665 net.cpp:596] conv4 <- conv3
+I1109 13:17:10.605856 157665 net.cpp:570] conv4 -> conv4
+I1109 13:17:10.696265 157665 net.cpp:210] Setting up conv4
+I1109 13:17:10.696362 157665 net.cpp:217] Top shape: 32 384 13 13 (2076672)
+I1109 13:17:10.696413 157665 net.cpp:225] Memory required for data: 242380288
+I1109 13:17:10.696517 157665 layer_factory.hpp:114] Creating layer relu4
+I1109 13:17:10.696599 157665 net.cpp:160] Creating Layer relu4
+I1109 13:17:10.696642 157665 net.cpp:596] relu4 <- conv4
+I1109 13:17:10.696696 157665 net.cpp:557] relu4 -> conv4 (in-place)
+I1109 13:17:10.696847 157665 net.cpp:210] Setting up relu4
+I1109 13:17:10.696969 157665 net.cpp:217] Top shape: 32 384 13 13 (2076672)
+I1109 13:17:10.697016 157665 net.cpp:225] Memory required for data: 250686976
+I1109 13:17:10.697074 157665 layer_factory.hpp:114] Creating layer conv5
+I1109 13:17:10.697170 157665 net.cpp:160] Creating Layer conv5
+I1109 13:17:10.697201 157665 net.cpp:596] conv5 <- conv4
+I1109 13:17:10.697252 157665 net.cpp:570] conv5 -> conv5
+I1109 13:17:10.771142 157665 net.cpp:210] Setting up conv5
+I1109 13:17:10.771242 157665 net.cpp:217] Top shape: 32 256 13 13 (1384448)
+I1109 13:17:10.771298 157665 net.cpp:225] Memory required for data: 256224768
+I1109 13:17:10.771417 157665 layer_factory.hpp:114] Creating layer relu5
+I1109 13:17:10.771504 157665 net.cpp:160] Creating Layer relu5
+I1109 13:17:10.771549 157665 net.cpp:596] relu5 <- conv5
+I1109 13:17:10.771605 157665 net.cpp:557] relu5 -> conv5 (in-place)
+I1109 13:17:10.771716 157665 net.cpp:210] Setting up relu5
+I1109 13:17:10.771757 157665 net.cpp:217] Top shape: 32 256 13 13 (1384448)
+I1109 13:17:10.771822 157665 net.cpp:225] Memory required for data: 261762560
+I1109 13:17:10.771852 157665 layer_factory.hpp:114] Creating layer pool5
+I1109 13:17:10.771925 157665 net.cpp:160] Creating Layer pool5
+I1109 13:17:10.771955 157665 net.cpp:596] pool5 <- conv5
+I1109 13:17:10.771996 157665 net.cpp:570] pool5 -> pool5
+I1109 13:17:10.772096 157665 net.cpp:210] Setting up pool5
+I1109 13:17:10.772127 157665 net.cpp:217] Top shape: 32 256 6 6 (294912)
+I1109 13:17:10.772158 157665 net.cpp:225] Memory required for data: 262942208
+I1109 13:17:10.772183 157665 layer_factory.hpp:114] Creating layer fc6
+I1109 13:17:10.772265 157665 net.cpp:160] Creating Layer fc6
+I1109 13:17:10.772295 157665 net.cpp:596] fc6 <- pool5
+I1109 13:17:10.772334 157665 net.cpp:570] fc6 -> fc6
+I1109 13:17:12.536550 157665 net.cpp:210] Setting up fc6
+I1109 13:17:12.536670 157665 net.cpp:217] Top shape: 32 4096 (131072)
+I1109 13:17:12.536720 157665 net.cpp:225] Memory required for data: 263466496
+I1109 13:17:12.536896 157665 layer_factory.hpp:114] Creating layer relu6
+I1109 13:17:12.537000 157665 net.cpp:160] Creating Layer relu6
+I1109 13:17:12.537058 157665 net.cpp:596] relu6 <- fc6
+I1109 13:17:12.537144 157665 net.cpp:557] relu6 -> fc6 (in-place)
+I1109 13:17:12.537297 157665 net.cpp:210] Setting up relu6
+I1109 13:17:12.537348 157665 net.cpp:217] Top shape: 32 4096 (131072)
+I1109 13:17:12.537386 157665 net.cpp:225] Memory required for data: 263990784
+I1109 13:17:12.537418 157665 layer_factory.hpp:114] Creating layer drop6
+I1109 13:17:12.537499 157665 net.cpp:160] Creating Layer drop6
+I1109 13:17:12.537528 157665 net.cpp:596] drop6 <- fc6
+I1109 13:17:12.537566 157665 net.cpp:557] drop6 -> fc6 (in-place)
+I1109 13:17:12.537632 157665 net.cpp:210] Setting up drop6
+I1109 13:17:12.537655 157665 net.cpp:217] Top shape: 32 4096 (131072)
+I1109 13:17:12.537685 157665 net.cpp:225] Memory required for data: 264515072
+I1109 13:17:12.537709 157665 layer_factory.hpp:114] Creating layer fc7
+I1109 13:17:12.537758 157665 net.cpp:160] Creating Layer fc7
+I1109 13:17:12.537781 157665 net.cpp:596] fc7 <- fc6
+I1109 13:17:12.537830 157665 net.cpp:570] fc7 -> fc7
+I1109 13:17:13.324362 157665 net.cpp:210] Setting up fc7
+I1109 13:17:13.324484 157665 net.cpp:217] Top shape: 32 4096 (131072)
+I1109 13:17:13.324534 157665 net.cpp:225] Memory required for data: 265039360
+I1109 13:17:13.324635 157665 layer_factory.hpp:114] Creating layer relu7
+I1109 13:17:13.324765 157665 net.cpp:160] Creating Layer relu7
+I1109 13:17:13.324857 157665 net.cpp:596] relu7 <- fc7
+I1109 13:17:13.324923 157665 net.cpp:557] relu7 -> fc7 (in-place)
+I1109 13:17:13.325057 157665 net.cpp:210] Setting up relu7
+I1109 13:17:13.325095 157665 net.cpp:217] Top shape: 32 4096 (131072)
+I1109 13:17:13.325158 157665 net.cpp:225] Memory required for data: 265563648
+I1109 13:17:13.325186 157665 layer_factory.hpp:114] Creating layer drop7
+I1109 13:17:13.325238 157665 net.cpp:160] Creating Layer drop7
+I1109 13:17:13.325263 157665 net.cpp:596] drop7 <- fc7
+I1109 13:17:13.325297 157665 net.cpp:557] drop7 -> fc7 (in-place)
+I1109 13:17:13.325431 157665 net.cpp:210] Setting up drop7
+I1109 13:17:13.325461 157665 net.cpp:217] Top shape: 32 4096 (131072)
+I1109 13:17:13.325491 157665 net.cpp:225] Memory required for data: 266087936
+I1109 13:17:13.325513 157665 layer_factory.hpp:114] Creating layer fc8
+I1109 13:17:13.325569 157665 net.cpp:160] Creating Layer fc8
+I1109 13:17:13.325592 157665 net.cpp:596] fc8 <- fc7
+I1109 13:17:13.325637 157665 net.cpp:570] fc8 -> fc8
+I1109 13:17:13.517598 157665 net.cpp:210] Setting up fc8
+I1109 13:17:13.517716 157665 net.cpp:217] Top shape: 32 1000 (32000)
+I1109 13:17:13.517760 157665 net.cpp:225] Memory required for data: 266215936
+I1109 13:17:13.517849 157665 layer_factory.hpp:114] Creating layer loss
+I1109 13:17:13.517971 157665 net.cpp:160] Creating Layer loss
+I1109 13:17:13.518021 157665 net.cpp:596] loss <- fc8
+I1109 13:17:13.518059 157665 net.cpp:596] loss <- label
+I1109 13:17:13.518110 157665 net.cpp:570] loss -> loss
+I1109 13:17:13.518225 157665 layer_factory.hpp:114] Creating layer loss
+I1109 13:17:13.538326 157665 net.cpp:210] Setting up loss
+I1109 13:17:13.538408 157665 net.cpp:217] Top shape: (1)
+I1109 13:17:13.538452 157665 net.cpp:220]     with loss weight 1
+I1109 13:17:13.538560 157665 net.cpp:225] Memory required for data: 266215940
+I1109 13:17:13.538597 157665 net.cpp:287] loss needs backward computation.
+I1109 13:17:13.538627 157665 net.cpp:287] fc8 needs backward computation.
+I1109 13:17:13.538651 157665 net.cpp:287] drop7 needs backward computation.
+I1109 13:17:13.538673 157665 net.cpp:287] relu7 needs backward computation.
+I1109 13:17:13.538697 157665 net.cpp:287] fc7 needs backward computation.
+I1109 13:17:13.538736 157665 net.cpp:287] drop6 needs backward computation.
+I1109 13:17:13.538765 157665 net.cpp:287] relu6 needs backward computation.
+I1109 13:17:13.538789 157665 net.cpp:287] fc6 needs backward computation.
+I1109 13:17:13.538815 157665 net.cpp:287] pool5 needs backward computation.
+I1109 13:17:13.538839 157665 net.cpp:287] relu5 needs backward computation.
+I1109 13:17:13.538872 157665 net.cpp:287] conv5 needs backward computation.
+I1109 13:17:13.538899 157665 net.cpp:287] relu4 needs backward computation.
+I1109 13:17:13.538924 157665 net.cpp:287] conv4 needs backward computation.
+I1109 13:17:13.538946 157665 net.cpp:287] relu3 needs backward computation.
+I1109 13:17:13.538969 157665 net.cpp:287] conv3 needs backward computation.
+I1109 13:17:13.538995 157665 net.cpp:287] pool2 needs backward computation.
+I1109 13:17:13.539021 157665 net.cpp:287] norm2 needs backward computation.
+I1109 13:17:13.539046 157665 net.cpp:287] relu2 needs backward computation.
+I1109 13:17:13.539065 157665 net.cpp:287] conv2 needs backward computation.
+I1109 13:17:13.539085 157665 net.cpp:287] pool1 needs backward computation.
+I1109 13:17:13.539105 157665 net.cpp:287] norm1 needs backward computation.
+I1109 13:17:13.539126 157665 net.cpp:287] relu1 needs backward computation.
+I1109 13:17:13.539145 157665 net.cpp:287] conv1 needs backward computation.
+I1109 13:17:13.539176 157665 net.cpp:289] data does not need backward computation.
+I1109 13:17:13.539198 157665 net.cpp:331] This network produces output loss
+I1109 13:17:13.539250 157665 net.cpp:345] Network initialization done.
+I1109 13:17:13.539625 157665 caffe.cpp:450] Performing Forward
+I1109 13:17:13.895608 157665 caffe.cpp:455] Initial loss: 7.04866
+I1109 13:17:13.895715 157665 caffe.cpp:457] Performing Backward
+I1109 13:17:14.009670 157665 caffe.cpp:466] *** Benchmark begins ***
+I1109 13:17:14.009749 157665 caffe.cpp:467] Testing for 100 iterations.
+I1109 13:17:15.229984 157665 caffe.cpp:481] LIKWID_MARKER_INIT
+I1109 13:17:15.701757 157665 caffe.cpp:533] Iteration: 1 forward-backward time: 470 ms.
+I1109 13:17:16.171696 157665 caffe.cpp:533] Iteration: 2 forward-backward time: 469 ms.
+I1109 13:17:16.638473 157665 caffe.cpp:533] Iteration: 3 forward-backward time: 466 ms.
+I1109 13:17:17.101842 157665 caffe.cpp:533] Iteration: 4 forward-backward time: 463 ms.
+I1109 13:17:17.572926 157665 caffe.cpp:533] Iteration: 5 forward-backward time: 471 ms.
+I1109 13:17:18.040741 157665 caffe.cpp:533] Iteration: 6 forward-backward time: 467 ms.
+I1109 13:17:18.507062 157665 caffe.cpp:533] Iteration: 7 forward-backward time: 466 ms.
+I1109 13:17:18.972908 157665 caffe.cpp:533] Iteration: 8 forward-backward time: 465 ms.
+I1109 13:17:19.445750 157665 caffe.cpp:533] Iteration: 9 forward-backward time: 472 ms.
+I1109 13:17:19.912482 157665 caffe.cpp:533] Iteration: 10 forward-backward time: 466 ms.
+I1109 13:17:20.386430 157665 caffe.cpp:533] Iteration: 11 forward-backward time: 473 ms.
+I1109 13:17:20.851277 157665 caffe.cpp:533] Iteration: 12 forward-backward time: 464 ms.
+I1109 13:17:21.314513 157665 caffe.cpp:533] Iteration: 13 forward-backward time: 463 ms.
+I1109 13:17:21.783898 157665 caffe.cpp:533] Iteration: 14 forward-backward time: 469 ms.
+I1109 13:17:22.247360 157665 caffe.cpp:533] Iteration: 15 forward-backward time: 463 ms.
+I1109 13:17:22.711212 157665 caffe.cpp:533] Iteration: 16 forward-backward time: 463 ms.
+I1109 13:17:23.174978 157665 caffe.cpp:533] Iteration: 17 forward-backward time: 463 ms.
+I1109 13:17:23.640533 157665 caffe.cpp:533] Iteration: 18 forward-backward time: 465 ms.
+I1109 13:17:24.103796 157665 caffe.cpp:533] Iteration: 19 forward-backward time: 463 ms.
+I1109 13:17:24.566835 157665 caffe.cpp:533] Iteration: 20 forward-backward time: 462 ms.
+I1109 13:17:25.029685 157665 caffe.cpp:533] Iteration: 21 forward-backward time: 462 ms.
+I1109 13:17:25.493928 157665 caffe.cpp:533] Iteration: 22 forward-backward time: 464 ms.
+I1109 13:17:25.956985 157665 caffe.cpp:533] Iteration: 23 forward-backward time: 462 ms.
+I1109 13:17:26.420737 157665 caffe.cpp:533] Iteration: 24 forward-backward time: 463 ms.
+I1109 13:17:26.883644 157665 caffe.cpp:533] Iteration: 25 forward-backward time: 462 ms.
+I1109 13:17:27.348395 157665 caffe.cpp:533] Iteration: 26 forward-backward time: 464 ms.
+I1109 13:17:27.814574 157665 caffe.cpp:533] Iteration: 27 forward-backward time: 466 ms.
+I1109 13:17:28.279902 157665 caffe.cpp:533] Iteration: 28 forward-backward time: 465 ms.
+I1109 13:17:28.743424 157665 caffe.cpp:533] Iteration: 29 forward-backward time: 463 ms.
+I1109 13:17:29.207496 157665 caffe.cpp:533] Iteration: 30 forward-backward time: 464 ms.
+I1109 13:17:29.670687 157665 caffe.cpp:533] Iteration: 31 forward-backward time: 463 ms.
+I1109 13:17:30.134397 157665 caffe.cpp:533] Iteration: 32 forward-backward time: 463 ms.
+I1109 13:17:30.598604 157665 caffe.cpp:533] Iteration: 33 forward-backward time: 464 ms.
+I1109 13:17:31.060768 157665 caffe.cpp:533] Iteration: 34 forward-backward time: 462 ms.
+I1109 13:17:31.524991 157665 caffe.cpp:533] Iteration: 35 forward-backward time: 464 ms.
+I1109 13:17:31.989595 157665 caffe.cpp:533] Iteration: 36 forward-backward time: 464 ms.
+I1109 13:17:32.453732 157665 caffe.cpp:533] Iteration: 37 forward-backward time: 464 ms.
+I1109 13:17:32.916334 157665 caffe.cpp:533] Iteration: 38 forward-backward time: 462 ms.
+I1109 13:17:33.380767 157665 caffe.cpp:533] Iteration: 39 forward-backward time: 464 ms.
+I1109 13:17:33.846084 157665 caffe.cpp:533] Iteration: 40 forward-backward time: 465 ms.
+I1109 13:17:34.310719 157665 caffe.cpp:533] Iteration: 41 forward-backward time: 464 ms.
+I1109 13:17:34.774930 157665 caffe.cpp:533] Iteration: 42 forward-backward time: 464 ms.
+I1109 13:17:35.239456 157665 caffe.cpp:533] Iteration: 43 forward-backward time: 464 ms.
+I1109 13:17:35.704133 157665 caffe.cpp:533] Iteration: 44 forward-backward time: 464 ms.
+I1109 13:17:36.169180 157665 caffe.cpp:533] Iteration: 45 forward-backward time: 464 ms.
+I1109 13:17:36.634284 157665 caffe.cpp:533] Iteration: 46 forward-backward time: 465 ms.
+I1109 13:17:37.098652 157665 caffe.cpp:533] Iteration: 47 forward-backward time: 464 ms.
+I1109 13:17:37.561162 157665 caffe.cpp:533] Iteration: 48 forward-backward time: 462 ms.
+I1109 13:17:38.027120 157665 caffe.cpp:533] Iteration: 49 forward-backward time: 465 ms.
+I1109 13:17:38.489444 157665 caffe.cpp:533] Iteration: 50 forward-backward time: 462 ms.
+I1109 13:17:38.953833 157665 caffe.cpp:533] Iteration: 51 forward-backward time: 464 ms.
+I1109 13:17:39.418553 157665 caffe.cpp:533] Iteration: 52 forward-backward time: 464 ms.
+I1109 13:17:39.886984 157665 caffe.cpp:533] Iteration: 53 forward-backward time: 468 ms.
+I1109 13:17:40.356087 157665 caffe.cpp:533] Iteration: 54 forward-backward time: 469 ms.
+I1109 13:17:40.825162 157665 caffe.cpp:533] Iteration: 55 forward-backward time: 468 ms.
+I1109 13:17:41.289630 157665 caffe.cpp:533] Iteration: 56 forward-backward time: 464 ms.
+I1109 13:17:41.755939 157665 caffe.cpp:533] Iteration: 57 forward-backward time: 466 ms.
+I1109 13:17:42.219346 157665 caffe.cpp:533] Iteration: 58 forward-backward time: 463 ms.
+I1109 13:17:42.683473 157665 caffe.cpp:533] Iteration: 59 forward-backward time: 464 ms.
+I1109 13:17:43.145882 157665 caffe.cpp:533] Iteration: 60 forward-backward time: 462 ms.
+I1109 13:17:43.610214 157665 caffe.cpp:533] Iteration: 61 forward-backward time: 464 ms.
+I1109 13:17:44.078914 157665 caffe.cpp:533] Iteration: 62 forward-backward time: 468 ms.
+I1109 13:17:44.542026 157665 caffe.cpp:533] Iteration: 63 forward-backward time: 463 ms.
+I1109 13:17:45.005596 157665 caffe.cpp:533] Iteration: 64 forward-backward time: 463 ms.
+I1109 13:17:45.467862 157665 caffe.cpp:533] Iteration: 65 forward-backward time: 462 ms.
+I1109 13:17:45.932818 157665 caffe.cpp:533] Iteration: 66 forward-backward time: 464 ms.
+I1109 13:17:46.395498 157665 caffe.cpp:533] Iteration: 67 forward-backward time: 462 ms.
+I1109 13:17:46.859680 157665 caffe.cpp:533] Iteration: 68 forward-backward time: 464 ms.
+I1109 13:17:47.321738 157665 caffe.cpp:533] Iteration: 69 forward-backward time: 461 ms.
+I1109 13:17:47.789510 157665 caffe.cpp:533] Iteration: 70 forward-backward time: 467 ms.
+I1109 13:17:48.253862 157665 caffe.cpp:533] Iteration: 71 forward-backward time: 464 ms.
+I1109 13:17:48.717772 157665 caffe.cpp:533] Iteration: 72 forward-backward time: 463 ms.
+I1109 13:17:49.192556 157665 caffe.cpp:533] Iteration: 73 forward-backward time: 474 ms.
+I1109 13:17:49.658761 157665 caffe.cpp:533] Iteration: 74 forward-backward time: 466 ms.
+I1109 13:17:50.121616 157665 caffe.cpp:533] Iteration: 75 forward-backward time: 462 ms.
+I1109 13:17:50.586005 157665 caffe.cpp:533] Iteration: 76 forward-backward time: 464 ms.
+I1109 13:17:51.048471 157665 caffe.cpp:533] Iteration: 77 forward-backward time: 462 ms.
+I1109 13:17:51.513463 157665 caffe.cpp:533] Iteration: 78 forward-backward time: 464 ms.
+I1109 13:17:51.977381 157665 caffe.cpp:533] Iteration: 79 forward-backward time: 463 ms.
+I1109 13:17:52.441854 157665 caffe.cpp:533] Iteration: 80 forward-backward time: 464 ms.
+I1109 13:17:52.904449 157665 caffe.cpp:533] Iteration: 81 forward-backward time: 462 ms.
+I1109 13:17:53.369891 157665 caffe.cpp:533] Iteration: 82 forward-backward time: 465 ms.
+I1109 13:17:53.833072 157665 caffe.cpp:533] Iteration: 83 forward-backward time: 463 ms.
+I1109 13:17:54.298130 157665 caffe.cpp:533] Iteration: 84 forward-backward time: 464 ms.
+I1109 13:17:54.760473 157665 caffe.cpp:533] Iteration: 85 forward-backward time: 462 ms.
+I1109 13:17:55.224025 157665 caffe.cpp:533] Iteration: 86 forward-backward time: 463 ms.
+I1109 13:17:55.688891 157665 caffe.cpp:533] Iteration: 87 forward-backward time: 464 ms.
+I1109 13:17:56.153861 157665 caffe.cpp:533] Iteration: 88 forward-backward time: 464 ms.
+I1109 13:17:56.618559 157665 caffe.cpp:533] Iteration: 89 forward-backward time: 464 ms.
+I1109 13:17:57.082201 157665 caffe.cpp:533] Iteration: 90 forward-backward time: 463 ms.
+I1109 13:17:57.545141 157665 caffe.cpp:533] Iteration: 91 forward-backward time: 462 ms.
+I1109 13:17:58.009524 157665 caffe.cpp:533] Iteration: 92 forward-backward time: 464 ms.
+I1109 13:17:58.473690 157665 caffe.cpp:533] Iteration: 93 forward-backward time: 464 ms.
+I1109 13:17:58.936501 157665 caffe.cpp:533] Iteration: 94 forward-backward time: 462 ms.
+I1109 13:17:59.403059 157665 caffe.cpp:533] Iteration: 95 forward-backward time: 466 ms.
+I1109 13:17:59.867826 157665 caffe.cpp:533] Iteration: 96 forward-backward time: 464 ms.
+I1109 13:18:00.333822 157665 caffe.cpp:533] Iteration: 97 forward-backward time: 465 ms.
+I1109 13:18:00.794631 157665 caffe.cpp:533] Iteration: 98 forward-backward time: 460 ms.
+I1109 13:18:01.259196 157665 caffe.cpp:533] Iteration: 99 forward-backward time: 464 ms.
+I1109 13:18:01.723439 157665 caffe.cpp:533] Iteration: 100 forward-backward time: 464 ms.
+I1109 13:18:01.723520 157665 caffe.cpp:540] Average time per layer: 
+I1109 13:18:01.723624 157665 caffe.cpp:543]       data	forward: 240.741 ms.
+I1109 13:18:01.723670 157665 caffe.cpp:547]       data	backward: 0.00901 ms.
+I1109 13:18:01.723706 157665 caffe.cpp:543]      conv1	forward: 3.18735 ms.
+I1109 13:18:01.723738 157665 caffe.cpp:547]      conv1	backward: 2.56067 ms.
+I1109 13:18:01.723770 157665 caffe.cpp:543]      relu1	forward: 0.2685 ms.
+I1109 13:18:01.723801 157665 caffe.cpp:547]      relu1	backward: 0.49403 ms.
+I1109 13:18:01.723832 157665 caffe.cpp:543]      norm1	forward: 1.22941 ms.
+I1109 13:18:01.723865 157665 caffe.cpp:547]      norm1	backward: 0.76249 ms.
+I1109 13:18:01.723893 157665 caffe.cpp:543]      pool1	forward: 0.40853 ms.
+I1109 13:18:01.723917 157665 caffe.cpp:547]      pool1	backward: 0.72863 ms.
+I1109 13:18:01.723942 157665 caffe.cpp:543]      conv2	forward: 3.1094 ms.
+I1109 13:18:01.723964 157665 caffe.cpp:547]      conv2	backward: 7.03043 ms.
+I1109 13:18:01.723987 157665 caffe.cpp:543]      relu2	forward: 0.13567 ms.
+I1109 13:18:01.724011 157665 caffe.cpp:547]      relu2	backward: 0.32343 ms.
+I1109 13:18:01.724035 157665 caffe.cpp:543]      norm2	forward: 0.83034 ms.
+I1109 13:18:01.724058 157665 caffe.cpp:547]      norm2	backward: 0.63095 ms.
+I1109 13:18:01.724081 157665 caffe.cpp:543]      pool2	forward: 0.32136 ms.
+I1109 13:18:01.724104 157665 caffe.cpp:547]      pool2	backward: 0.77289 ms.
+I1109 13:18:01.724128 157665 caffe.cpp:543]      conv3	forward: 2.3172 ms.
+I1109 13:18:01.724150 157665 caffe.cpp:547]      conv3	backward: 5.52226 ms.
+I1109 13:18:01.724174 157665 caffe.cpp:543]      relu3	forward: 0.07679 ms.
+I1109 13:18:01.724197 157665 caffe.cpp:547]      relu3	backward: 0.55655 ms.
+I1109 13:18:01.724220 157665 caffe.cpp:543]      conv4	forward: 1.78254 ms.
+I1109 13:18:01.724243 157665 caffe.cpp:547]      conv4	backward: 4.25756 ms.
+I1109 13:18:01.724267 157665 caffe.cpp:543]      relu4	forward: 0.08771 ms.
+I1109 13:18:01.724289 157665 caffe.cpp:547]      relu4	backward: 0.36813 ms.
+I1109 13:18:01.724313 157665 caffe.cpp:543]      conv5	forward: 1.30507 ms.
+I1109 13:18:01.724354 157665 caffe.cpp:547]      conv5	backward: 2.80667 ms.
+I1109 13:18:01.724376 157665 caffe.cpp:543]      relu5	forward: 0.07362 ms.
+I1109 13:18:01.724400 157665 caffe.cpp:547]      relu5	backward: 0.08107 ms.
+I1109 13:18:01.724424 157665 caffe.cpp:543]      pool5	forward: 0.10309 ms.
+I1109 13:18:01.724448 157665 caffe.cpp:547]      pool5	backward: 0.28347 ms.
+I1109 13:18:01.724472 157665 caffe.cpp:543]        fc6	forward: 2.42145 ms.
+I1109 13:18:01.724494 157665 caffe.cpp:547]        fc6	backward: 4.26269 ms.
+I1109 13:18:01.724516 157665 caffe.cpp:543]      relu6	forward: 0.06092 ms.
+I1109 13:18:01.724540 157665 caffe.cpp:547]      relu6	backward: 0.05618 ms.
+I1109 13:18:01.724563 157665 caffe.cpp:543]      drop6	forward: 0.1389 ms.
+I1109 13:18:01.724592 157665 caffe.cpp:547]      drop6	backward: 0.04518 ms.
+I1109 13:18:01.724617 157665 caffe.cpp:543]        fc7	forward: 1.39197 ms.
+I1109 13:18:01.724639 157665 caffe.cpp:547]        fc7	backward: 3.34692 ms.
+I1109 13:18:01.724663 157665 caffe.cpp:543]      relu7	forward: 0.06061 ms.
+I1109 13:18:01.724686 157665 caffe.cpp:547]      relu7	backward: 0.05642 ms.
+I1109 13:18:01.724709 157665 caffe.cpp:543]      drop7	forward: 0.09502 ms.
+I1109 13:18:01.724738 157665 caffe.cpp:547]      drop7	backward: 0.05012 ms.
+I1109 13:18:01.724762 157665 caffe.cpp:543]        fc8	forward: 0.84692 ms.
+I1109 13:18:01.724807 157665 caffe.cpp:547]        fc8	backward: 1.06813 ms.
+I1109 13:18:01.724833 157665 caffe.cpp:543]       loss	forward: 1.27368 ms.
+I1109 13:18:01.724860 157665 caffe.cpp:547]       loss	backward: 0.1295 ms.
+I1109 13:18:01.724895 157665 caffe.cpp:553] Average Forward pass: 344.684 ms.
+I1109 13:18:01.724920 157665 caffe.cpp:556] Average Backward pass: 120.102 ms.
+I1109 13:18:01.724946 157665 caffe.cpp:558] Average Forward-Backward: 477.15 ms.
+I1109 13:18:01.724972 157665 caffe.cpp:561] Total Time: 47715 ms.
+I1109 13:18:01.724997 157665 caffe.cpp:562] *** Benchmark ends ***
+I1109 13:18:01.725061 157665 caffe.cpp:565] LIKWID_MARKER_CLOSE
+--------------------------------------------------------------------------------
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region loss_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.028680,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,8821284
+CPU_CLK_UNHALTED_CORE,FIXC1,49214570
+CPU_CLK_UNHALTED_REF,FIXC2,45933720
+EDC_RPQ_INSERTS,EDBOX0C0,38314
+EDC_RPQ_INSERTS,EDBOX1C0,38293
+EDC_RPQ_INSERTS,EDBOX2C0,37835
+EDC_RPQ_INSERTS,EDBOX3C0,38565
+EDC_RPQ_INSERTS,EDBOX4C0,37581
+EDC_RPQ_INSERTS,EDBOX5C0,38250
+EDC_RPQ_INSERTS,EDBOX6C0,37771
+EDC_RPQ_INSERTS,EDBOX7C0,38680
+EDC_WPQ_INSERTS,EDBOX0C1,23243
+EDC_WPQ_INSERTS,EDBOX1C1,23832
+EDC_WPQ_INSERTS,EDBOX2C1,23916
+EDC_WPQ_INSERTS,EDBOX3C1,23170
+EDC_WPQ_INSERTS,EDBOX4C1,23366
+EDC_WPQ_INSERTS,EDBOX5C1,23539
+EDC_WPQ_INSERTS,EDBOX6C1,23429
+EDC_WPQ_INSERTS,EDBOX7C1,23460
+TABLE,Region loss_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0287,
+Runtime unhalted [s],0.0352,
+Clock [MHz],1496.5355,
+CPI,5.5791,
+Memory read bandwidth [MBytes/s],681.2564,
+Memory read data volume [GBytes],0.0195,
+Memory writeback bandwidth [MBytes/s],419.4241,
+Memory writeback data volume [GBytes],0.0120,
+Memory bandwidth [MBytes/s],1100.6805,
+Memory data volume [GBytes],0.0316,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu2_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.035476,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,9073261
+CPU_CLK_UNHALTED_CORE,FIXC1,62710530
+CPU_CLK_UNHALTED_REF,FIXC2,58529970
+EDC_RPQ_INSERTS,EDBOX0C0,8407356
+EDC_RPQ_INSERTS,EDBOX1C0,8394113
+EDC_RPQ_INSERTS,EDBOX2C0,8406926
+EDC_RPQ_INSERTS,EDBOX3C0,8394054
+EDC_RPQ_INSERTS,EDBOX4C0,8415254
+EDC_RPQ_INSERTS,EDBOX5C0,8402579
+EDC_RPQ_INSERTS,EDBOX6C0,8415630
+EDC_RPQ_INSERTS,EDBOX7C0,8401760
+EDC_WPQ_INSERTS,EDBOX0C1,4549277
+EDC_WPQ_INSERTS,EDBOX1C1,4534722
+EDC_WPQ_INSERTS,EDBOX2C1,4543983
+EDC_WPQ_INSERTS,EDBOX3C1,4535256
+EDC_WPQ_INSERTS,EDBOX4C1,4546792
+EDC_WPQ_INSERTS,EDBOX5C1,4532834
+EDC_WPQ_INSERTS,EDBOX6C1,4543214
+EDC_WPQ_INSERTS,EDBOX7C1,4531165
+TABLE,Region relu2_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0355,
+Runtime unhalted [s],0.0449,
+Clock [MHz],1496.5358,
+CPI,6.9116,
+Memory read bandwidth [MBytes/s],121300.0714,
+Memory read data volume [GBytes],4.3032,
+Memory writeback bandwidth [MBytes/s],65518.0948,
+Memory writeback data volume [GBytes],2.3243,
+Memory bandwidth [MBytes/s],186818.1662,
+Memory data volume [GBytes],6.6275,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region pool5_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.030703,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,24129400
+CPU_CLK_UNHALTED_CORE,FIXC1,53088120
+CPU_CLK_UNHALTED_REF,FIXC2,49548790
+EDC_RPQ_INSERTS,EDBOX0C0,1607322
+EDC_RPQ_INSERTS,EDBOX1C0,1609372
+EDC_RPQ_INSERTS,EDBOX2C0,1607128
+EDC_RPQ_INSERTS,EDBOX3C0,1610390
+EDC_RPQ_INSERTS,EDBOX4C0,1608554
+EDC_RPQ_INSERTS,EDBOX5C0,1611155
+EDC_RPQ_INSERTS,EDBOX6C0,1609853
+EDC_RPQ_INSERTS,EDBOX7C0,1612046
+EDC_WPQ_INSERTS,EDBOX0C1,431068
+EDC_WPQ_INSERTS,EDBOX1C1,427249
+EDC_WPQ_INSERTS,EDBOX2C1,432543
+EDC_WPQ_INSERTS,EDBOX3C1,426144
+EDC_WPQ_INSERTS,EDBOX4C1,433133
+EDC_WPQ_INSERTS,EDBOX5C1,428817
+EDC_WPQ_INSERTS,EDBOX6C1,435048
+EDC_WPQ_INSERTS,EDBOX7C1,429025
+TABLE,Region pool5_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0307,
+Runtime unhalted [s],0.0380,
+Clock [MHz],1496.5431,
+CPI,2.2001,
+Memory read bandwidth [MBytes/s],26839.0929,
+Memory read data volume [GBytes],0.8241,
+Memory writeback bandwidth [MBytes/s],7176.8417,
+Memory writeback data volume [GBytes],0.2204,
+Memory bandwidth [MBytes/s],34015.9346,
+Memory data volume [GBytes],1.0444,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu6_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.008100,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,3859453
+CPU_CLK_UNHALTED_CORE,FIXC1,19534790
+CPU_CLK_UNHALTED_REF,FIXC2,18232260
+EDC_RPQ_INSERTS,EDBOX0C0,86235
+EDC_RPQ_INSERTS,EDBOX1C0,85292
+EDC_RPQ_INSERTS,EDBOX2C0,86140
+EDC_RPQ_INSERTS,EDBOX3C0,85304
+EDC_RPQ_INSERTS,EDBOX4C0,86311
+EDC_RPQ_INSERTS,EDBOX5C0,85233
+EDC_RPQ_INSERTS,EDBOX6C0,86250
+EDC_RPQ_INSERTS,EDBOX7C0,85296
+EDC_WPQ_INSERTS,EDBOX0C1,21651
+EDC_WPQ_INSERTS,EDBOX1C1,21519
+EDC_WPQ_INSERTS,EDBOX2C1,21334
+EDC_WPQ_INSERTS,EDBOX3C1,21429
+EDC_WPQ_INSERTS,EDBOX4C1,20828
+EDC_WPQ_INSERTS,EDBOX5C1,20981
+EDC_WPQ_INSERTS,EDBOX6C1,21783
+EDC_WPQ_INSERTS,EDBOX7C1,20907
+TABLE,Region relu6_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0081,
+Runtime unhalted [s],0.0140,
+Clock [MHz],1496.5567,
+CPI,5.0615,
+Memory read bandwidth [MBytes/s],5420.5569,
+Memory read data volume [GBytes],0.0439,
+Memory writeback bandwidth [MBytes/s],1346.5805,
+Memory writeback data volume [GBytes],0.0109,
+Memory bandwidth [MBytes/s],6767.1374,
+Memory data volume [GBytes],0.0548,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu4_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.010686,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,5479450
+CPU_CLK_UNHALTED_CORE,FIXC1,23163460
+CPU_CLK_UNHALTED_REF,FIXC2,21619370
+EDC_RPQ_INSERTS,EDBOX0C0,1239009
+EDC_RPQ_INSERTS,EDBOX1C0,1237931
+EDC_RPQ_INSERTS,EDBOX2C0,1238491
+EDC_RPQ_INSERTS,EDBOX3C0,1237114
+EDC_RPQ_INSERTS,EDBOX4C0,1238181
+EDC_RPQ_INSERTS,EDBOX5C0,1237661
+EDC_RPQ_INSERTS,EDBOX6C0,1238438
+EDC_RPQ_INSERTS,EDBOX7C0,1237179
+EDC_WPQ_INSERTS,EDBOX0C1,257485
+EDC_WPQ_INSERTS,EDBOX1C1,237932
+EDC_WPQ_INSERTS,EDBOX2C1,257483
+EDC_WPQ_INSERTS,EDBOX3C1,238746
+EDC_WPQ_INSERTS,EDBOX4C1,257659
+EDC_WPQ_INSERTS,EDBOX5C1,238258
+EDC_WPQ_INSERTS,EDBOX6C1,257657
+EDC_WPQ_INSERTS,EDBOX7C1,237933
+TABLE,Region relu4_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0107,
+Runtime unhalted [s],0.0166,
+Clock [MHz],1496.5297,
+CPI,4.2273,
+Memory read bandwidth [MBytes/s],59316.4573,
+Memory read data volume [GBytes],0.6339,
+Memory writeback bandwidth [MBytes/s],11877.3791,
+Memory writeback data volume [GBytes],0.1269,
+Memory bandwidth [MBytes/s],71193.8364,
+Memory data volume [GBytes],0.7608,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu2_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.015955,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,8116288
+CPU_CLK_UNHALTED_CORE,FIXC1,32331440
+CPU_CLK_UNHALTED_REF,FIXC2,30175660
+EDC_RPQ_INSERTS,EDBOX0C0,3556662
+EDC_RPQ_INSERTS,EDBOX1C0,3562362
+EDC_RPQ_INSERTS,EDBOX2C0,3555574
+EDC_RPQ_INSERTS,EDBOX3C0,3560609
+EDC_RPQ_INSERTS,EDBOX4C0,3562769
+EDC_RPQ_INSERTS,EDBOX5C0,3565377
+EDC_RPQ_INSERTS,EDBOX6C0,3562654
+EDC_RPQ_INSERTS,EDBOX7C0,3567426
+EDC_WPQ_INSERTS,EDBOX0C1,1380909
+EDC_WPQ_INSERTS,EDBOX1C1,1323314
+EDC_WPQ_INSERTS,EDBOX2C1,1381463
+EDC_WPQ_INSERTS,EDBOX3C1,1324760
+EDC_WPQ_INSERTS,EDBOX4C1,1394569
+EDC_WPQ_INSERTS,EDBOX5C1,1336105
+EDC_WPQ_INSERTS,EDBOX6C1,1395709
+EDC_WPQ_INSERTS,EDBOX7C1,1336717
+TABLE,Region relu2_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0160,
+Runtime unhalted [s],0.0231,
+Clock [MHz],1496.5568,
+CPI,3.9835,
+Memory read bandwidth [MBytes/s],114297.0498,
+Memory read data volume [GBytes],1.8236,
+Memory writeback bandwidth [MBytes/s],43617.5672,
+Memory writeback data volume [GBytes],0.6959,
+Memory bandwidth [MBytes/s],157914.6170,
+Memory data volume [GBytes],2.5195,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region norm2_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.066530,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,27373280
+CPU_CLK_UNHALTED_CORE,FIXC1,107199600
+CPU_CLK_UNHALTED_REF,FIXC2,100052900
+EDC_RPQ_INSERTS,EDBOX0C0,25517790
+EDC_RPQ_INSERTS,EDBOX1C0,25696540
+EDC_RPQ_INSERTS,EDBOX2C0,25518220
+EDC_RPQ_INSERTS,EDBOX3C0,25698680
+EDC_RPQ_INSERTS,EDBOX4C0,25536850
+EDC_RPQ_INSERTS,EDBOX5C0,25717620
+EDC_RPQ_INSERTS,EDBOX6C0,25541420
+EDC_RPQ_INSERTS,EDBOX7C0,25715260
+EDC_WPQ_INSERTS,EDBOX0C1,14201870
+EDC_WPQ_INSERTS,EDBOX1C1,14228930
+EDC_WPQ_INSERTS,EDBOX2C1,14206500
+EDC_WPQ_INSERTS,EDBOX3C1,14230380
+EDC_WPQ_INSERTS,EDBOX4C1,14208710
+EDC_WPQ_INSERTS,EDBOX5C1,14237300
+EDC_WPQ_INSERTS,EDBOX6C1,14212840
+EDC_WPQ_INSERTS,EDBOX7C1,14232440
+TABLE,Region norm2_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0665,
+Runtime unhalted [s],0.0767,
+Clock [MHz],1496.5403,
+CPI,3.9162,
+Memory read bandwidth [MBytes/s],197149.1659,
+Memory read data volume [GBytes],13.1163,
+Memory writeback bandwidth [MBytes/s],109433.1297,
+Memory writeback data volume [GBytes],7.2806,
+Memory bandwidth [MBytes/s],306582.2956,
+Memory data volume [GBytes],20.3969,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu6_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.007333,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,3744930
+CPU_CLK_UNHALTED_CORE,FIXC1,18091380
+CPU_CLK_UNHALTED_REF,FIXC2,16885370
+EDC_RPQ_INSERTS,EDBOX0C0,99653
+EDC_RPQ_INSERTS,EDBOX1C0,99817
+EDC_RPQ_INSERTS,EDBOX2C0,99815
+EDC_RPQ_INSERTS,EDBOX3C0,99829
+EDC_RPQ_INSERTS,EDBOX4C0,100915
+EDC_RPQ_INSERTS,EDBOX5C0,100746
+EDC_RPQ_INSERTS,EDBOX6C0,100381
+EDC_RPQ_INSERTS,EDBOX7C0,100677
+EDC_WPQ_INSERTS,EDBOX0C1,30802
+EDC_WPQ_INSERTS,EDBOX1C1,31841
+EDC_WPQ_INSERTS,EDBOX2C1,30583
+EDC_WPQ_INSERTS,EDBOX3C1,31849
+EDC_WPQ_INSERTS,EDBOX4C1,30006
+EDC_WPQ_INSERTS,EDBOX5C1,31300
+EDC_WPQ_INSERTS,EDBOX6C1,29728
+EDC_WPQ_INSERTS,EDBOX7C1,31524
+TABLE,Region relu6_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0073,
+Runtime unhalted [s],0.0130,
+Clock [MHz],1496.5322,
+CPI,4.8309,
+Memory read bandwidth [MBytes/s],6997.6772,
+Memory read data volume [GBytes],0.0513,
+Memory writeback bandwidth [MBytes/s],2161.1181,
+Memory writeback data volume [GBytes],0.0158,
+Memory bandwidth [MBytes/s],9158.7953,
+Memory data volume [GBytes],0.0672,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region conv1_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.259357,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,517175900
+CPU_CLK_UNHALTED_CORE,FIXC1,389318600
+CPU_CLK_UNHALTED_REF,FIXC2,363364100
+EDC_RPQ_INSERTS,EDBOX0C0,47934960
+EDC_RPQ_INSERTS,EDBOX1C0,48931820
+EDC_RPQ_INSERTS,EDBOX2C0,47932950
+EDC_RPQ_INSERTS,EDBOX3C0,48948640
+EDC_RPQ_INSERTS,EDBOX4C0,47957370
+EDC_RPQ_INSERTS,EDBOX5C0,48956890
+EDC_RPQ_INSERTS,EDBOX6C0,47956080
+EDC_RPQ_INSERTS,EDBOX7C0,48960620
+EDC_WPQ_INSERTS,EDBOX0C1,4066504
+EDC_WPQ_INSERTS,EDBOX1C1,4063596
+EDC_WPQ_INSERTS,EDBOX2C1,4068831
+EDC_WPQ_INSERTS,EDBOX3C1,4063570
+EDC_WPQ_INSERTS,EDBOX4C1,3979219
+EDC_WPQ_INSERTS,EDBOX5C1,3977090
+EDC_WPQ_INSERTS,EDBOX6C1,3978908
+EDC_WPQ_INSERTS,EDBOX7C1,3978311
+TABLE,Region conv1_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.2594,
+Runtime unhalted [s],0.2787,
+Clock [MHz],1496.5391,
+CPI,0.7528,
+Memory read bandwidth [MBytes/s],95640.7064,
+Memory read data volume [GBytes],24.8051,
+Memory writeback bandwidth [MBytes/s],7939.8923,
+Memory writeback data volume [GBytes],2.0593,
+Memory bandwidth [MBytes/s],103580.5987,
+Memory data volume [GBytes],26.8643,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region conv5_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.283749,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,554334700
+CPU_CLK_UNHALTED_CORE,FIXC1,427034700
+CPU_CLK_UNHALTED_REF,FIXC2,398565900
+EDC_RPQ_INSERTS,EDBOX0C0,9122513
+EDC_RPQ_INSERTS,EDBOX1C0,9175056
+EDC_RPQ_INSERTS,EDBOX2C0,9123550
+EDC_RPQ_INSERTS,EDBOX3C0,9171277
+EDC_RPQ_INSERTS,EDBOX4C0,9121281
+EDC_RPQ_INSERTS,EDBOX5C0,9176807
+EDC_RPQ_INSERTS,EDBOX6C0,9124103
+EDC_RPQ_INSERTS,EDBOX7C0,9175847
+EDC_WPQ_INSERTS,EDBOX0C1,4389708
+EDC_WPQ_INSERTS,EDBOX1C1,4373338
+EDC_WPQ_INSERTS,EDBOX2C1,4389711
+EDC_WPQ_INSERTS,EDBOX3C1,4377322
+EDC_WPQ_INSERTS,EDBOX4C1,4378112
+EDC_WPQ_INSERTS,EDBOX5C1,4361884
+EDC_WPQ_INSERTS,EDBOX6C1,4371679
+EDC_WPQ_INSERTS,EDBOX7C1,4358239
+TABLE,Region conv5_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.2837,
+Runtime unhalted [s],0.3057,
+Clock [MHz],1496.5387,
+CPI,0.7704,
+Memory read bandwidth [MBytes/s],16508.2031,
+Memory read data volume [GBytes],4.6842,
+Memory writeback bandwidth [MBytes/s],7894.2966,
+Memory writeback data volume [GBytes],2.2400,
+Memory bandwidth [MBytes/s],24402.4997,
+Memory data volume [GBytes],6.9242,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region pool2_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.080703,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,17494730
+CPU_CLK_UNHALTED_CORE,FIXC1,127635900
+CPU_CLK_UNHALTED_REF,FIXC2,119126500
+EDC_RPQ_INSERTS,EDBOX0C0,11515240
+EDC_RPQ_INSERTS,EDBOX1C0,11548060
+EDC_RPQ_INSERTS,EDBOX2C0,11517570
+EDC_RPQ_INSERTS,EDBOX3C0,11546630
+EDC_RPQ_INSERTS,EDBOX4C0,11527660
+EDC_RPQ_INSERTS,EDBOX5C0,11560730
+EDC_RPQ_INSERTS,EDBOX6C0,11526000
+EDC_RPQ_INSERTS,EDBOX7C0,11560030
+EDC_WPQ_INSERTS,EDBOX0C1,5521807
+EDC_WPQ_INSERTS,EDBOX1C1,5540170
+EDC_WPQ_INSERTS,EDBOX2C1,5521459
+EDC_WPQ_INSERTS,EDBOX3C1,5534366
+EDC_WPQ_INSERTS,EDBOX4C1,5548055
+EDC_WPQ_INSERTS,EDBOX5C1,5565787
+EDC_WPQ_INSERTS,EDBOX6C1,5550150
+EDC_WPQ_INSERTS,EDBOX7C1,5567268
+TABLE,Region pool2_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0807,
+Runtime unhalted [s],0.0914,
+Clock [MHz],1496.5437,
+CPI,7.2957,
+Memory read bandwidth [MBytes/s],73198.1245,
+Memory read data volume [GBytes],5.9073,
+Memory writeback bandwidth [MBytes/s],35170.1044,
+Memory writeback data volume [GBytes],2.8383,
+Memory bandwidth [MBytes/s],108368.2289,
+Memory data volume [GBytes],8.7457,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region fc8_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.110933,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,58644660
+CPU_CLK_UNHALTED_CORE,FIXC1,168593200
+CPU_CLK_UNHALTED_REF,FIXC2,157353600
+EDC_RPQ_INSERTS,EDBOX0C0,12706430
+EDC_RPQ_INSERTS,EDBOX1C0,12352510
+EDC_RPQ_INSERTS,EDBOX2C0,12704640
+EDC_RPQ_INSERTS,EDBOX3C0,12355790
+EDC_RPQ_INSERTS,EDBOX4C0,12706880
+EDC_RPQ_INSERTS,EDBOX5C0,12350500
+EDC_RPQ_INSERTS,EDBOX6C0,12713220
+EDC_RPQ_INSERTS,EDBOX7C0,12355760
+EDC_WPQ_INSERTS,EDBOX0C1,3425930
+EDC_WPQ_INSERTS,EDBOX1C1,3349281
+EDC_WPQ_INSERTS,EDBOX2C1,3425997
+EDC_WPQ_INSERTS,EDBOX3C1,3350347
+EDC_WPQ_INSERTS,EDBOX4C1,3424090
+EDC_WPQ_INSERTS,EDBOX5C1,3349423
+EDC_WPQ_INSERTS,EDBOX6C1,3428965
+EDC_WPQ_INSERTS,EDBOX7C1,3346787
+TABLE,Region fc8_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.1109,
+Runtime unhalted [s],0.1207,
+Clock [MHz],1496.5399,
+CPI,2.8748,
+Memory read bandwidth [MBytes/s],57834.0402,
+Memory read data volume [GBytes],6.4157,
+Memory writeback bandwidth [MBytes/s],15635.0791,
+Memory writeback data volume [GBytes],1.7345,
+Memory bandwidth [MBytes/s],73469.1193,
+Memory data volume [GBytes],8.1502,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region pool1_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.076347,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,17042890
+CPU_CLK_UNHALTED_CORE,FIXC1,122749700
+CPU_CLK_UNHALTED_REF,FIXC2,114566700
+EDC_RPQ_INSERTS,EDBOX0C0,19569380
+EDC_RPQ_INSERTS,EDBOX1C0,19614540
+EDC_RPQ_INSERTS,EDBOX2C0,19574090
+EDC_RPQ_INSERTS,EDBOX3C0,19614620
+EDC_RPQ_INSERTS,EDBOX4C0,19603930
+EDC_RPQ_INSERTS,EDBOX5C0,19643150
+EDC_RPQ_INSERTS,EDBOX6C0,19599780
+EDC_RPQ_INSERTS,EDBOX7C0,19644630
+EDC_WPQ_INSERTS,EDBOX0C1,10743340
+EDC_WPQ_INSERTS,EDBOX1C1,10762000
+EDC_WPQ_INSERTS,EDBOX2C1,10747870
+EDC_WPQ_INSERTS,EDBOX3C1,10761740
+EDC_WPQ_INSERTS,EDBOX4C1,10813530
+EDC_WPQ_INSERTS,EDBOX5C1,10829220
+EDC_WPQ_INSERTS,EDBOX6C1,10811230
+EDC_WPQ_INSERTS,EDBOX7C1,10831210
+TABLE,Region pool1_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0763,
+Runtime unhalted [s],0.0879,
+Clock [MHz],1496.5353,
+CPI,7.2024,
+Memory read bandwidth [MBytes/s],131495.3404,
+Memory read data volume [GBytes],10.0393,
+Memory writeback bandwidth [MBytes/s],72343.2885,
+Memory writeback data volume [GBytes],5.5232,
+Memory bandwidth [MBytes/s],203838.6288,
+Memory data volume [GBytes],15.5625,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region fc7_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.143045,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,125632300
+CPU_CLK_UNHALTED_CORE,FIXC1,214879100
+CPU_CLK_UNHALTED_REF,FIXC2,200553900
+EDC_RPQ_INSERTS,EDBOX0C0,43443520
+EDC_RPQ_INSERTS,EDBOX1C0,45687510
+EDC_RPQ_INSERTS,EDBOX2C0,43418000
+EDC_RPQ_INSERTS,EDBOX3C0,45692080
+EDC_RPQ_INSERTS,EDBOX4C0,43407820
+EDC_RPQ_INSERTS,EDBOX5C0,45721680
+EDC_RPQ_INSERTS,EDBOX6C0,43436030
+EDC_RPQ_INSERTS,EDBOX7C0,45725310
+EDC_WPQ_INSERTS,EDBOX0C1,2368950
+EDC_WPQ_INSERTS,EDBOX1C1,2284057
+EDC_WPQ_INSERTS,EDBOX2C1,2347587
+EDC_WPQ_INSERTS,EDBOX3C1,2283510
+EDC_WPQ_INSERTS,EDBOX4C1,2387665
+EDC_WPQ_INSERTS,EDBOX5C1,2314010
+EDC_WPQ_INSERTS,EDBOX6C1,2402708
+EDC_WPQ_INSERTS,EDBOX7C1,2311735
+TABLE,Region fc7_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.1430,
+Runtime unhalted [s],0.1538,
+Clock [MHz],1496.5389,
+CPI,1.7104,
+Memory read bandwidth [MBytes/s],159516.5493,
+Memory read data volume [GBytes],22.8180,
+Memory writeback bandwidth [MBytes/s],8366.6972,
+Memory writeback data volume [GBytes],1.1968,
+Memory bandwidth [MBytes/s],167883.2466,
+Memory data volume [GBytes],24.0149,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu3_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.058779,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,9010862
+CPU_CLK_UNHALTED_CORE,FIXC1,96918100
+CPU_CLK_UNHALTED_REF,FIXC2,90456670
+EDC_RPQ_INSERTS,EDBOX0C0,5693340
+EDC_RPQ_INSERTS,EDBOX1C0,5717759
+EDC_RPQ_INSERTS,EDBOX2C0,5691753
+EDC_RPQ_INSERTS,EDBOX3C0,5715977
+EDC_RPQ_INSERTS,EDBOX4C0,5698255
+EDC_RPQ_INSERTS,EDBOX5C0,5723805
+EDC_RPQ_INSERTS,EDBOX6C0,5698336
+EDC_RPQ_INSERTS,EDBOX7C0,5724032
+EDC_WPQ_INSERTS,EDBOX0C1,1482760
+EDC_WPQ_INSERTS,EDBOX1C1,1491887
+EDC_WPQ_INSERTS,EDBOX2C1,1481840
+EDC_WPQ_INSERTS,EDBOX3C1,1494586
+EDC_WPQ_INSERTS,EDBOX4C1,1496576
+EDC_WPQ_INSERTS,EDBOX5C1,1509521
+EDC_WPQ_INSERTS,EDBOX6C1,1495984
+EDC_WPQ_INSERTS,EDBOX7C1,1507519
+TABLE,Region relu3_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0588,
+Runtime unhalted [s],0.0694,
+Clock [MHz],1496.5431,
+CPI,10.7557,
+Memory read bandwidth [MBytes/s],49719.2611,
+Memory read data volume [GBytes],2.9224,
+Memory writeback bandwidth [MBytes/s],13023.0707,
+Memory writeback data volume [GBytes],0.7655,
+Memory bandwidth [MBytes/s],62742.3318,
+Memory data volume [GBytes],3.6879,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region conv2_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.706650,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,1478275000
+CPU_CLK_UNHALTED_CORE,FIXC1,1036895000
+CPU_CLK_UNHALTED_REF,FIXC2,967768700
+EDC_RPQ_INSERTS,EDBOX0C0,27664950
+EDC_RPQ_INSERTS,EDBOX1C0,27750840
+EDC_RPQ_INSERTS,EDBOX2C0,27668680
+EDC_RPQ_INSERTS,EDBOX3C0,27752460
+EDC_RPQ_INSERTS,EDBOX4C0,27684400
+EDC_RPQ_INSERTS,EDBOX5C0,27758810
+EDC_RPQ_INSERTS,EDBOX6C0,27681280
+EDC_RPQ_INSERTS,EDBOX7C0,27761040
+EDC_WPQ_INSERTS,EDBOX0C1,6696188
+EDC_WPQ_INSERTS,EDBOX1C1,6674157
+EDC_WPQ_INSERTS,EDBOX2C1,6713886
+EDC_WPQ_INSERTS,EDBOX3C1,6676844
+EDC_WPQ_INSERTS,EDBOX4C1,6700734
+EDC_WPQ_INSERTS,EDBOX5C1,6670882
+EDC_WPQ_INSERTS,EDBOX6C1,6711523
+EDC_WPQ_INSERTS,EDBOX7C1,6680191
+TABLE,Region conv2_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.7066,
+Runtime unhalted [s],0.7424,
+Clock [MHz],1496.5394,
+CPI,0.7014,
+Memory read bandwidth [MBytes/s],20081.0068,
+Memory read data volume [GBytes],14.1902,
+Memory writeback bandwidth [MBytes/s],4847.6097,
+Memory writeback data volume [GBytes],3.4256,
+Memory bandwidth [MBytes/s],24928.6165,
+Memory data volume [GBytes],17.6158,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region pool2_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.034987,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,14769150
+CPU_CLK_UNHALTED_CORE,FIXC1,60771240
+CPU_CLK_UNHALTED_REF,FIXC2,56719540
+EDC_RPQ_INSERTS,EDBOX0C0,6100697
+EDC_RPQ_INSERTS,EDBOX1C0,6101631
+EDC_RPQ_INSERTS,EDBOX2C0,6103283
+EDC_RPQ_INSERTS,EDBOX3C0,6099183
+EDC_RPQ_INSERTS,EDBOX4C0,6143777
+EDC_RPQ_INSERTS,EDBOX5C0,6144377
+EDC_RPQ_INSERTS,EDBOX6C0,6142144
+EDC_RPQ_INSERTS,EDBOX7C0,6143852
+EDC_WPQ_INSERTS,EDBOX0C1,3886406
+EDC_WPQ_INSERTS,EDBOX1C1,3896409
+EDC_WPQ_INSERTS,EDBOX2C1,3889050
+EDC_WPQ_INSERTS,EDBOX3C1,3893606
+EDC_WPQ_INSERTS,EDBOX4C1,3869539
+EDC_WPQ_INSERTS,EDBOX5C1,3872834
+EDC_WPQ_INSERTS,EDBOX6C1,3869042
+EDC_WPQ_INSERTS,EDBOX7C1,3877923
+TABLE,Region pool2_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0350,
+Runtime unhalted [s],0.0435,
+Clock [MHz],1496.5469,
+CPI,4.1147,
+Memory read bandwidth [MBytes/s],89594.4428,
+Memory read data volume [GBytes],3.1347,
+Memory writeback bandwidth [MBytes/s],56806.8251,
+Memory writeback data volume [GBytes],1.9875,
+Memory bandwidth [MBytes/s],146401.2679,
+Memory data volume [GBytes],5.1222,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu7_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.007398,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,3811515
+CPU_CLK_UNHALTED_CORE,FIXC1,17897970
+CPU_CLK_UNHALTED_REF,FIXC2,16704630
+EDC_RPQ_INSERTS,EDBOX0C0,76483
+EDC_RPQ_INSERTS,EDBOX1C0,75099
+EDC_RPQ_INSERTS,EDBOX2C0,77246
+EDC_RPQ_INSERTS,EDBOX3C0,74893
+EDC_RPQ_INSERTS,EDBOX4C0,77963
+EDC_RPQ_INSERTS,EDBOX5C0,77029
+EDC_RPQ_INSERTS,EDBOX6C0,77223
+EDC_RPQ_INSERTS,EDBOX7C0,76437
+EDC_WPQ_INSERTS,EDBOX0C1,42736
+EDC_WPQ_INSERTS,EDBOX1C1,43058
+EDC_WPQ_INSERTS,EDBOX2C1,42298
+EDC_WPQ_INSERTS,EDBOX3C1,43791
+EDC_WPQ_INSERTS,EDBOX4C1,42331
+EDC_WPQ_INSERTS,EDBOX5C1,43607
+EDC_WPQ_INSERTS,EDBOX6C1,42302
+EDC_WPQ_INSERTS,EDBOX7C1,43432
+TABLE,Region relu7_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0074,
+Runtime unhalted [s],0.0128,
+Clock [MHz],1496.5521,
+CPI,4.6958,
+Memory read bandwidth [MBytes/s],5297.4109,
+Memory read data volume [GBytes],0.0392,
+Memory writeback bandwidth [MBytes/s],2971.9664,
+Memory writeback data volume [GBytes],0.0220,
+Memory bandwidth [MBytes/s],8269.3773,
+Memory data volume [GBytes],0.0612,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region drop6_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.006539,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,3642696
+CPU_CLK_UNHALTED_CORE,FIXC1,17464630
+CPU_CLK_UNHALTED_REF,FIXC2,16300350
+EDC_RPQ_INSERTS,EDBOX0C0,106365
+EDC_RPQ_INSERTS,EDBOX1C0,104966
+EDC_RPQ_INSERTS,EDBOX2C0,106539
+EDC_RPQ_INSERTS,EDBOX3C0,104931
+EDC_RPQ_INSERTS,EDBOX4C0,107105
+EDC_RPQ_INSERTS,EDBOX5C0,105632
+EDC_RPQ_INSERTS,EDBOX6C0,106752
+EDC_RPQ_INSERTS,EDBOX7C0,105474
+EDC_WPQ_INSERTS,EDBOX0C1,52438
+EDC_WPQ_INSERTS,EDBOX1C1,57631
+EDC_WPQ_INSERTS,EDBOX2C1,52976
+EDC_WPQ_INSERTS,EDBOX3C1,56232
+EDC_WPQ_INSERTS,EDBOX4C1,52479
+EDC_WPQ_INSERTS,EDBOX5C1,56679
+EDC_WPQ_INSERTS,EDBOX6C1,52462
+EDC_WPQ_INSERTS,EDBOX7C1,56419
+TABLE,Region drop6_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0065,
+Runtime unhalted [s],0.0125,
+Clock [MHz],1496.5368,
+CPI,4.7944,
+Memory read bandwidth [MBytes/s],8297.0546,
+Memory read data volume [GBytes],0.0543,
+Memory writeback bandwidth [MBytes/s],4280.0057,
+Memory writeback data volume [GBytes],0.0280,
+Memory bandwidth [MBytes/s],12577.0603,
+Memory data volume [GBytes],0.0822,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region drop7_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.011073,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,6033854
+CPU_CLK_UNHALTED_CORE,FIXC1,22760600
+CPU_CLK_UNHALTED_REF,FIXC2,21243400
+EDC_RPQ_INSERTS,EDBOX0C0,108386
+EDC_RPQ_INSERTS,EDBOX1C0,107756
+EDC_RPQ_INSERTS,EDBOX2C0,109303
+EDC_RPQ_INSERTS,EDBOX3C0,108364
+EDC_RPQ_INSERTS,EDBOX4C0,108732
+EDC_RPQ_INSERTS,EDBOX5C0,107917
+EDC_RPQ_INSERTS,EDBOX6C0,108587
+EDC_RPQ_INSERTS,EDBOX7C0,108277
+EDC_WPQ_INSERTS,EDBOX0C1,46293
+EDC_WPQ_INSERTS,EDBOX1C1,48384
+EDC_WPQ_INSERTS,EDBOX2C1,45500
+EDC_WPQ_INSERTS,EDBOX3C1,48487
+EDC_WPQ_INSERTS,EDBOX4C1,45081
+EDC_WPQ_INSERTS,EDBOX5C1,48135
+EDC_WPQ_INSERTS,EDBOX6C1,45260
+EDC_WPQ_INSERTS,EDBOX7C1,48135
+TABLE,Region drop7_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0111,
+Runtime unhalted [s],0.0163,
+Clock [MHz],1496.5272,
+CPI,3.7721,
+Memory read bandwidth [MBytes/s],5012.8968,
+Memory read data volume [GBytes],0.0555,
+Memory writeback bandwidth [MBytes/s],2168.9924,
+Memory writeback data volume [GBytes],0.0240,
+Memory bandwidth [MBytes/s],7181.8892,
+Memory data volume [GBytes],0.0795,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region conv5_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.134073,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,286655500
+CPU_CLK_UNHALTED_CORE,FIXC1,207169100
+CPU_CLK_UNHALTED_REF,FIXC2,193357900
+EDC_RPQ_INSERTS,EDBOX0C0,4692643
+EDC_RPQ_INSERTS,EDBOX1C0,4716186
+EDC_RPQ_INSERTS,EDBOX2C0,4693124
+EDC_RPQ_INSERTS,EDBOX3C0,4712842
+EDC_RPQ_INSERTS,EDBOX4C0,4697415
+EDC_RPQ_INSERTS,EDBOX5C0,4715367
+EDC_RPQ_INSERTS,EDBOX6C0,4696511
+EDC_RPQ_INSERTS,EDBOX7C0,4712820
+EDC_WPQ_INSERTS,EDBOX0C1,4297166
+EDC_WPQ_INSERTS,EDBOX1C1,4299352
+EDC_WPQ_INSERTS,EDBOX2C1,4297412
+EDC_WPQ_INSERTS,EDBOX3C1,4298353
+EDC_WPQ_INSERTS,EDBOX4C1,4296553
+EDC_WPQ_INSERTS,EDBOX5C1,4298524
+EDC_WPQ_INSERTS,EDBOX6C1,4297485
+EDC_WPQ_INSERTS,EDBOX7C1,4300666
+TABLE,Region conv5_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.1341,
+Runtime unhalted [s],0.1483,
+Clock [MHz],1496.5389,
+CPI,0.7227,
+Memory read bandwidth [MBytes/s],17966.0224,
+Memory read data volume [GBytes],2.4088,
+Memory writeback bandwidth [MBytes/s],16413.9642,
+Memory writeback data volume [GBytes],2.2007,
+Memory bandwidth [MBytes/s],34379.9866,
+Memory data volume [GBytes],4.6094,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region norm2_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.086484,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,37382340
+CPU_CLK_UNHALTED_CORE,FIXC1,136719900
+CPU_CLK_UNHALTED_REF,FIXC2,127605300
+EDC_RPQ_INSERTS,EDBOX0C0,18296670
+EDC_RPQ_INSERTS,EDBOX1C0,18308050
+EDC_RPQ_INSERTS,EDBOX2C0,18296760
+EDC_RPQ_INSERTS,EDBOX3C0,18314030
+EDC_RPQ_INSERTS,EDBOX4C0,18339300
+EDC_RPQ_INSERTS,EDBOX5C0,18359100
+EDC_RPQ_INSERTS,EDBOX6C0,18339510
+EDC_RPQ_INSERTS,EDBOX7C0,18352040
+EDC_WPQ_INSERTS,EDBOX0C1,14266920
+EDC_WPQ_INSERTS,EDBOX1C1,14282360
+EDC_WPQ_INSERTS,EDBOX2C1,14268360
+EDC_WPQ_INSERTS,EDBOX3C1,14281640
+EDC_WPQ_INSERTS,EDBOX4C1,14337540
+EDC_WPQ_INSERTS,EDBOX5C1,14356610
+EDC_WPQ_INSERTS,EDBOX6C1,14335280
+EDC_WPQ_INSERTS,EDBOX7C1,14349670
+TABLE,Region norm2_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0865,
+Runtime unhalted [s],0.0979,
+Clock [MHz],1496.5387,
+CPI,3.6573,
+Memory read bandwidth [MBytes/s],108490.6577,
+Memory read data volume [GBytes],9.3827,
+Memory writeback bandwidth [MBytes/s],84716.0450,
+Memory writeback data volume [GBytes],7.3266,
+Memory bandwidth [MBytes/s],193206.7027,
+Memory data volume [GBytes],16.7094,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region conv1_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.322280,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,462402700
+CPU_CLK_UNHALTED_CORE,FIXC1,481323500
+CPU_CLK_UNHALTED_REF,FIXC2,449235100
+EDC_RPQ_INSERTS,EDBOX0C0,28466010
+EDC_RPQ_INSERTS,EDBOX1C0,28487740
+EDC_RPQ_INSERTS,EDBOX2C0,28465230
+EDC_RPQ_INSERTS,EDBOX3C0,28494440
+EDC_RPQ_INSERTS,EDBOX4C0,28487510
+EDC_RPQ_INSERTS,EDBOX5C0,28515120
+EDC_RPQ_INSERTS,EDBOX6C0,28489080
+EDC_RPQ_INSERTS,EDBOX7C0,28507630
+EDC_WPQ_INSERTS,EDBOX0C1,13533060
+EDC_WPQ_INSERTS,EDBOX1C1,13555480
+EDC_WPQ_INSERTS,EDBOX2C1,13532990
+EDC_WPQ_INSERTS,EDBOX3C1,13558580
+EDC_WPQ_INSERTS,EDBOX4C1,13543560
+EDC_WPQ_INSERTS,EDBOX5C1,13563840
+EDC_WPQ_INSERTS,EDBOX6C1,13543310
+EDC_WPQ_INSERTS,EDBOX7C1,13560560
+TABLE,Region conv1_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.3223,
+Runtime unhalted [s],0.3446,
+Clock [MHz],1496.5400,
+CPI,1.0409,
+Memory read bandwidth [MBytes/s],45260.0459,
+Memory read data volume [GBytes],14.5864,
+Memory writeback bandwidth [MBytes/s],21524.8977,
+Memory writeback data volume [GBytes],6.9370,
+Memory bandwidth [MBytes/s],66784.9435,
+Memory data volume [GBytes],21.5235,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region data_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.002556,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,2738778
+CPU_CLK_UNHALTED_CORE,FIXC1,8636048
+CPU_CLK_UNHALTED_REF,FIXC2,8060164
+EDC_RPQ_INSERTS,EDBOX0C0,160
+EDC_RPQ_INSERTS,EDBOX1C0,166
+EDC_RPQ_INSERTS,EDBOX2C0,161
+EDC_RPQ_INSERTS,EDBOX3C0,152
+EDC_RPQ_INSERTS,EDBOX4C0,165
+EDC_RPQ_INSERTS,EDBOX5C0,155
+EDC_RPQ_INSERTS,EDBOX6C0,163
+EDC_RPQ_INSERTS,EDBOX7C0,182
+EDC_WPQ_INSERTS,EDBOX0C1,121
+EDC_WPQ_INSERTS,EDBOX1C1,147
+EDC_WPQ_INSERTS,EDBOX2C1,122
+EDC_WPQ_INSERTS,EDBOX3C1,159
+EDC_WPQ_INSERTS,EDBOX4C1,134
+EDC_WPQ_INSERTS,EDBOX5C1,123
+EDC_WPQ_INSERTS,EDBOX6C1,115
+EDC_WPQ_INSERTS,EDBOX7C1,151
+TABLE,Region data_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0026,
+Runtime unhalted [s],0.0062,
+Clock [MHz],1496.5668,
+CPI,3.1532,
+Memory read bandwidth [MBytes/s],32.6471,
+Memory read data volume [GBytes],0.0001,
+Memory writeback bandwidth [MBytes/s],26.8387,
+Memory writeback data volume [GBytes],0.0001,
+Memory bandwidth [MBytes/s],59.4858,
+Memory data volume [GBytes],0.0002,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region conv3_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.235289,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,565071600
+CPU_CLK_UNHALTED_CORE,FIXC1,357100000
+CPU_CLK_UNHALTED_REF,FIXC2,333293200
+EDC_RPQ_INSERTS,EDBOX0C0,7399334
+EDC_RPQ_INSERTS,EDBOX1C0,7468507
+EDC_RPQ_INSERTS,EDBOX2C0,7409201
+EDC_RPQ_INSERTS,EDBOX3C0,7466415
+EDC_RPQ_INSERTS,EDBOX4C0,7433931
+EDC_RPQ_INSERTS,EDBOX5C0,7500187
+EDC_RPQ_INSERTS,EDBOX6C0,7435273
+EDC_RPQ_INSERTS,EDBOX7C0,7491037
+EDC_WPQ_INSERTS,EDBOX0C1,4832426
+EDC_WPQ_INSERTS,EDBOX1C1,4822999
+EDC_WPQ_INSERTS,EDBOX2C1,4828983
+EDC_WPQ_INSERTS,EDBOX3C1,4823820
+EDC_WPQ_INSERTS,EDBOX4C1,4765224
+EDC_WPQ_INSERTS,EDBOX5C1,4758648
+EDC_WPQ_INSERTS,EDBOX6C1,4768668
+EDC_WPQ_INSERTS,EDBOX7C1,4760060
+TABLE,Region conv3_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.2353,
+Runtime unhalted [s],0.2557,
+Clock [MHz],1496.5400,
+CPI,0.6320,
+Memory read bandwidth [MBytes/s],16212.5956,
+Memory read data volume [GBytes],3.8146,
+Memory writeback bandwidth [MBytes/s],10434.3633,
+Memory writeback data volume [GBytes],2.4551,
+Memory bandwidth [MBytes/s],26646.9589,
+Memory data volume [GBytes],6.2697,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu5_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.009114,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,4895536
+CPU_CLK_UNHALTED_CORE,FIXC1,20168910
+CPU_CLK_UNHALTED_REF,FIXC2,18824060
+EDC_RPQ_INSERTS,EDBOX0C0,627457
+EDC_RPQ_INSERTS,EDBOX1C0,627521
+EDC_RPQ_INSERTS,EDBOX2C0,627404
+EDC_RPQ_INSERTS,EDBOX3C0,626795
+EDC_RPQ_INSERTS,EDBOX4C0,627120
+EDC_RPQ_INSERTS,EDBOX5C0,627170
+EDC_RPQ_INSERTS,EDBOX6C0,628256
+EDC_RPQ_INSERTS,EDBOX7C0,628130
+EDC_WPQ_INSERTS,EDBOX0C1,225900
+EDC_WPQ_INSERTS,EDBOX1C1,203206
+EDC_WPQ_INSERTS,EDBOX2C1,226897
+EDC_WPQ_INSERTS,EDBOX3C1,203924
+EDC_WPQ_INSERTS,EDBOX4C1,227492
+EDC_WPQ_INSERTS,EDBOX5C1,204025
+EDC_WPQ_INSERTS,EDBOX6C1,224912
+EDC_WPQ_INSERTS,EDBOX7C1,202602
+TABLE,Region relu5_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0091,
+Runtime unhalted [s],0.0144,
+Clock [MHz],1496.5598,
+CPI,4.1199,
+Memory read bandwidth [MBytes/s],35249.4328,
+Memory read data volume [GBytes],0.3213,
+Memory writeback bandwidth [MBytes/s],12070.5317,
+Memory writeback data volume [GBytes],0.1100,
+Memory bandwidth [MBytes/s],47319.9645,
+Memory data volume [GBytes],0.4313,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu3_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.009586,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,5112831
+CPU_CLK_UNHALTED_CORE,FIXC1,21723720
+CPU_CLK_UNHALTED_REF,FIXC2,20275400
+EDC_RPQ_INSERTS,EDBOX0C0,1355653
+EDC_RPQ_INSERTS,EDBOX1C0,1354786
+EDC_RPQ_INSERTS,EDBOX2C0,1356540
+EDC_RPQ_INSERTS,EDBOX3C0,1354212
+EDC_RPQ_INSERTS,EDBOX4C0,1356536
+EDC_RPQ_INSERTS,EDBOX5C0,1354297
+EDC_RPQ_INSERTS,EDBOX6C0,1355700
+EDC_RPQ_INSERTS,EDBOX7C0,1354253
+EDC_WPQ_INSERTS,EDBOX0C1,126059
+EDC_WPQ_INSERTS,EDBOX1C1,118782
+EDC_WPQ_INSERTS,EDBOX2C1,126621
+EDC_WPQ_INSERTS,EDBOX3C1,118195
+EDC_WPQ_INSERTS,EDBOX4C1,127286
+EDC_WPQ_INSERTS,EDBOX5C1,118961
+EDC_WPQ_INSERTS,EDBOX6C1,127797
+EDC_WPQ_INSERTS,EDBOX7C1,119602
+TABLE,Region relu3_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0096,
+Runtime unhalted [s],0.0156,
+Clock [MHz],1496.5447,
+CPI,4.2489,
+Memory read bandwidth [MBytes/s],72385.1520,
+Memory read data volume [GBytes],0.6939,
+Memory writeback bandwidth [MBytes/s],6564.9039,
+Memory writeback data volume [GBytes],0.0629,
+Memory bandwidth [MBytes/s],78950.0559,
+Memory data volume [GBytes],0.7568,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu1_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.029702,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,10287500
+CPU_CLK_UNHALTED_CORE,FIXC1,53560770
+CPU_CLK_UNHALTED_REF,FIXC2,49990140
+EDC_RPQ_INSERTS,EDBOX0C0,6779711
+EDC_RPQ_INSERTS,EDBOX1C0,6778616
+EDC_RPQ_INSERTS,EDBOX2C0,6780057
+EDC_RPQ_INSERTS,EDBOX3C0,6778900
+EDC_RPQ_INSERTS,EDBOX4C0,6781844
+EDC_RPQ_INSERTS,EDBOX5C0,6780786
+EDC_RPQ_INSERTS,EDBOX6C0,6781716
+EDC_RPQ_INSERTS,EDBOX7C0,6780649
+EDC_WPQ_INSERTS,EDBOX0C1,2858359
+EDC_WPQ_INSERTS,EDBOX1C1,2856988
+EDC_WPQ_INSERTS,EDBOX2C1,2859896
+EDC_WPQ_INSERTS,EDBOX3C1,2852606
+EDC_WPQ_INSERTS,EDBOX4C1,2873020
+EDC_WPQ_INSERTS,EDBOX5C1,2872174
+EDC_WPQ_INSERTS,EDBOX6C1,2876105
+EDC_WPQ_INSERTS,EDBOX7C1,2870677
+TABLE,Region relu1_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0297,
+Runtime unhalted [s],0.0383,
+Clock [MHz],1496.5368,
+CPI,5.2064,
+Memory read bandwidth [MBytes/s],116875.9991,
+Memory read data volume [GBytes],3.4715,
+Memory writeback bandwidth [MBytes/s],49385.4147,
+Memory writeback data volume [GBytes],1.4669,
+Memory bandwidth [MBytes/s],166261.4138,
+Memory data volume [GBytes],4.9384,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu4_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.039929,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,7791279
+CPU_CLK_UNHALTED_CORE,FIXC1,67388840
+CPU_CLK_UNHALTED_REF,FIXC2,62895970
+EDC_RPQ_INSERTS,EDBOX0C0,5762416
+EDC_RPQ_INSERTS,EDBOX1C0,5785662
+EDC_RPQ_INSERTS,EDBOX2C0,5762517
+EDC_RPQ_INSERTS,EDBOX3C0,5787832
+EDC_RPQ_INSERTS,EDBOX4C0,5764377
+EDC_RPQ_INSERTS,EDBOX5C0,5787616
+EDC_RPQ_INSERTS,EDBOX6C0,5762113
+EDC_RPQ_INSERTS,EDBOX7C0,5786891
+EDC_WPQ_INSERTS,EDBOX0C1,2026851
+EDC_WPQ_INSERTS,EDBOX1C1,2034190
+EDC_WPQ_INSERTS,EDBOX2C1,2025223
+EDC_WPQ_INSERTS,EDBOX3C1,2031826
+EDC_WPQ_INSERTS,EDBOX4C1,2035280
+EDC_WPQ_INSERTS,EDBOX5C1,2041681
+EDC_WPQ_INSERTS,EDBOX6C1,2034955
+EDC_WPQ_INSERTS,EDBOX7C1,2042417
+TABLE,Region relu4_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0399,
+Runtime unhalted [s],0.0482,
+Clock [MHz],1496.5461,
+CPI,8.6493,
+Memory read bandwidth [MBytes/s],74050.4624,
+Memory read data volume [GBytes],2.9568,
+Memory writeback bandwidth [MBytes/s],26082.1531,
+Memory writeback data volume [GBytes],1.0414,
+Memory bandwidth [MBytes/s],100132.6155,
+Memory data volume [GBytes],3.9982,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region conv3_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.555588,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,1083127000
+CPU_CLK_UNHALTED_CORE,FIXC1,826671400
+CPU_CLK_UNHALTED_REF,FIXC2,771559900
+EDC_RPQ_INSERTS,EDBOX0C0,18481210
+EDC_RPQ_INSERTS,EDBOX1C0,18497200
+EDC_RPQ_INSERTS,EDBOX2C0,18489760
+EDC_RPQ_INSERTS,EDBOX3C0,18507760
+EDC_RPQ_INSERTS,EDBOX4C0,18498520
+EDC_RPQ_INSERTS,EDBOX5C0,18510560
+EDC_RPQ_INSERTS,EDBOX6C0,18492980
+EDC_RPQ_INSERTS,EDBOX7C0,18500590
+EDC_WPQ_INSERTS,EDBOX0C1,4732782
+EDC_WPQ_INSERTS,EDBOX1C1,4715096
+EDC_WPQ_INSERTS,EDBOX2C1,4732106
+EDC_WPQ_INSERTS,EDBOX3C1,4716538
+EDC_WPQ_INSERTS,EDBOX4C1,4726816
+EDC_WPQ_INSERTS,EDBOX5C1,4704068
+EDC_WPQ_INSERTS,EDBOX6C1,4724882
+EDC_WPQ_INSERTS,EDBOX7C1,4702851
+TABLE,Region conv3_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.5556,
+Runtime unhalted [s],0.5918,
+Clock [MHz],1496.5396,
+CPI,0.7632,
+Memory read bandwidth [MBytes/s],17046.1492,
+Memory read data volume [GBytes],9.4706,
+Memory writeback bandwidth [MBytes/s],4349.1412,
+Memory writeback data volume [GBytes],2.4163,
+Memory bandwidth [MBytes/s],21395.2903,
+Memory data volume [GBytes],11.8870,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu7_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.007868,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,3831304
+CPU_CLK_UNHALTED_CORE,FIXC1,18065150
+CPU_CLK_UNHALTED_REF,FIXC2,16860200
+EDC_RPQ_INSERTS,EDBOX0C0,81990
+EDC_RPQ_INSERTS,EDBOX1C0,81491
+EDC_RPQ_INSERTS,EDBOX2C0,82115
+EDC_RPQ_INSERTS,EDBOX3C0,81810
+EDC_RPQ_INSERTS,EDBOX4C0,81813
+EDC_RPQ_INSERTS,EDBOX5C0,81474
+EDC_RPQ_INSERTS,EDBOX6C0,81951
+EDC_RPQ_INSERTS,EDBOX7C0,81763
+EDC_WPQ_INSERTS,EDBOX0C1,26861
+EDC_WPQ_INSERTS,EDBOX1C1,27284
+EDC_WPQ_INSERTS,EDBOX2C1,27782
+EDC_WPQ_INSERTS,EDBOX3C1,26986
+EDC_WPQ_INSERTS,EDBOX4C1,26846
+EDC_WPQ_INSERTS,EDBOX5C1,26742
+EDC_WPQ_INSERTS,EDBOX6C1,26516
+EDC_WPQ_INSERTS,EDBOX7C1,27274
+TABLE,Region relu7_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0079,
+Runtime unhalted [s],0.0129,
+Clock [MHz],1496.5933,
+CPI,4.7151,
+Memory read bandwidth [MBytes/s],5323.4049,
+Memory read data volume [GBytes],0.0419,
+Memory writeback bandwidth [MBytes/s],1759.4625,
+Memory writeback data volume [GBytes],0.0138,
+Memory bandwidth [MBytes/s],7082.8674,
+Memory data volume [GBytes],0.0557,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region drop7_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.007039,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,3626359
+CPU_CLK_UNHALTED_CORE,FIXC1,17672760
+CPU_CLK_UNHALTED_REF,FIXC2,16494270
+EDC_RPQ_INSERTS,EDBOX0C0,112047
+EDC_RPQ_INSERTS,EDBOX1C0,113354
+EDC_RPQ_INSERTS,EDBOX2C0,112671
+EDC_RPQ_INSERTS,EDBOX3C0,113688
+EDC_RPQ_INSERTS,EDBOX4C0,111988
+EDC_RPQ_INSERTS,EDBOX5C0,113275
+EDC_RPQ_INSERTS,EDBOX6C0,111806
+EDC_RPQ_INSERTS,EDBOX7C0,113527
+EDC_WPQ_INSERTS,EDBOX0C1,87645
+EDC_WPQ_INSERTS,EDBOX1C1,88798
+EDC_WPQ_INSERTS,EDBOX2C1,86840
+EDC_WPQ_INSERTS,EDBOX3C1,89109
+EDC_WPQ_INSERTS,EDBOX4C1,87448
+EDC_WPQ_INSERTS,EDBOX5C1,89763
+EDC_WPQ_INSERTS,EDBOX6C1,87346
+EDC_WPQ_INSERTS,EDBOX7C1,88854
+TABLE,Region drop7_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0070,
+Runtime unhalted [s],0.0127,
+Clock [MHz],1496.5672,
+CPI,4.8734,
+Memory read bandwidth [MBytes/s],8204.2980,
+Memory read data volume [GBytes],0.0578,
+Memory writeback bandwidth [MBytes/s],6417.2213,
+Memory writeback data volume [GBytes],0.0452,
+Memory bandwidth [MBytes/s],14621.5193,
+Memory data volume [GBytes],0.1029,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region fc6_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.429613,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,410302000
+CPU_CLK_UNHALTED_CORE,FIXC1,632082800
+CPU_CLK_UNHALTED_REF,FIXC2,589944100
+EDC_RPQ_INSERTS,EDBOX0C0,121022000
+EDC_RPQ_INSERTS,EDBOX1C0,119652800
+EDC_RPQ_INSERTS,EDBOX2C0,120996600
+EDC_RPQ_INSERTS,EDBOX3C0,119662800
+EDC_RPQ_INSERTS,EDBOX4C0,121130800
+EDC_RPQ_INSERTS,EDBOX5C0,119748400
+EDC_RPQ_INSERTS,EDBOX6C0,121083400
+EDC_RPQ_INSERTS,EDBOX7C0,119753200
+EDC_WPQ_INSERTS,EDBOX0C1,35833470
+EDC_WPQ_INSERTS,EDBOX1C1,35847320
+EDC_WPQ_INSERTS,EDBOX2C1,35830300
+EDC_WPQ_INSERTS,EDBOX3C1,35840600
+EDC_WPQ_INSERTS,EDBOX4C1,35878430
+EDC_WPQ_INSERTS,EDBOX5C1,35880250
+EDC_WPQ_INSERTS,EDBOX6C1,35872670
+EDC_WPQ_INSERTS,EDBOX7C1,35877590
+TABLE,Region fc6_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.4296,
+Runtime unhalted [s],0.4525,
+Clock [MHz],1496.5390,
+CPI,1.5405,
+Memory read bandwidth [MBytes/s],143466.8613,
+Memory read data volume [GBytes],61.6352,
+Memory writeback bandwidth [MBytes/s],42734.0161,
+Memory writeback data volume [GBytes],18.3591,
+Memory bandwidth [MBytes/s],186200.8774,
+Memory data volume [GBytes],79.9943,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region fc8_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.088464,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,48448600
+CPU_CLK_UNHALTED_CORE,FIXC1,137923900
+CPU_CLK_UNHALTED_REF,FIXC2,128728900
+EDC_RPQ_INSERTS,EDBOX0C0,10435250
+EDC_RPQ_INSERTS,EDBOX1C0,10655740
+EDC_RPQ_INSERTS,EDBOX2C0,10439060
+EDC_RPQ_INSERTS,EDBOX3C0,10664670
+EDC_RPQ_INSERTS,EDBOX4C0,10438460
+EDC_RPQ_INSERTS,EDBOX5C0,10651100
+EDC_RPQ_INSERTS,EDBOX6C0,10437550
+EDC_RPQ_INSERTS,EDBOX7C0,10662030
+EDC_WPQ_INSERTS,EDBOX0C1,2212519
+EDC_WPQ_INSERTS,EDBOX1C1,2245710
+EDC_WPQ_INSERTS,EDBOX2C1,2222180
+EDC_WPQ_INSERTS,EDBOX3C1,2244686
+EDC_WPQ_INSERTS,EDBOX4C1,2214247
+EDC_WPQ_INSERTS,EDBOX5C1,2237447
+EDC_WPQ_INSERTS,EDBOX6C1,2214131
+EDC_WPQ_INSERTS,EDBOX7C1,2244288
+TABLE,Region fc8_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0885,
+Runtime unhalted [s],0.0987,
+Clock [MHz],1496.5403,
+CPI,2.8468,
+Memory read bandwidth [MBytes/s],61048.1895,
+Memory read data volume [GBytes],5.4006,
+Memory writeback bandwidth [MBytes/s],12903.0262,
+Memory writeback data volume [GBytes],1.1415,
+Memory bandwidth [MBytes/s],73951.2158,
+Memory data volume [GBytes],6.5420,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region fc6_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.249429,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,261741900
+CPU_CLK_UNHALTED_CORE,FIXC1,365296800
+CPU_CLK_UNHALTED_REF,FIXC2,340943800
+EDC_RPQ_INSERTS,EDBOX0C0,69681650
+EDC_RPQ_INSERTS,EDBOX1C0,71307210
+EDC_RPQ_INSERTS,EDBOX2C0,69631310
+EDC_RPQ_INSERTS,EDBOX3C0,71390610
+EDC_RPQ_INSERTS,EDBOX4C0,70017740
+EDC_RPQ_INSERTS,EDBOX5C0,71705890
+EDC_RPQ_INSERTS,EDBOX6C0,69987450
+EDC_RPQ_INSERTS,EDBOX7C0,71733880
+EDC_WPQ_INSERTS,EDBOX0C1,5734125
+EDC_WPQ_INSERTS,EDBOX1C1,5762412
+EDC_WPQ_INSERTS,EDBOX2C1,5709889
+EDC_WPQ_INSERTS,EDBOX3C1,5786098
+EDC_WPQ_INSERTS,EDBOX4C1,5885851
+EDC_WPQ_INSERTS,EDBOX5C1,5919770
+EDC_WPQ_INSERTS,EDBOX6C1,5883662
+EDC_WPQ_INSERTS,EDBOX7C1,5922634
+TABLE,Region fc6_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.2494,
+Runtime unhalted [s],0.2615,
+Clock [MHz],1496.5389,
+CPI,1.3956,
+Memory read bandwidth [MBytes/s],145087.9342,
+Memory read data volume [GBytes],36.1892,
+Memory writeback bandwidth [MBytes/s],11958.0395,
+Memory writeback data volume [GBytes],2.9827,
+Memory bandwidth [MBytes/s],157045.9737,
+Memory data volume [GBytes],39.1719,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu1_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.052373,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,11898470
+CPU_CLK_UNHALTED_CORE,FIXC1,86943530
+CPU_CLK_UNHALTED_REF,FIXC2,81147610
+EDC_RPQ_INSERTS,EDBOX0C0,13904810
+EDC_RPQ_INSERTS,EDBOX1C0,13899740
+EDC_RPQ_INSERTS,EDBOX2C0,13904650
+EDC_RPQ_INSERTS,EDBOX3C0,13901790
+EDC_RPQ_INSERTS,EDBOX4C0,13939750
+EDC_RPQ_INSERTS,EDBOX5C0,13934500
+EDC_RPQ_INSERTS,EDBOX6C0,13939600
+EDC_RPQ_INSERTS,EDBOX7C0,13935980
+EDC_WPQ_INSERTS,EDBOX0C1,7408363
+EDC_WPQ_INSERTS,EDBOX1C1,7390272
+EDC_WPQ_INSERTS,EDBOX2C1,7411383
+EDC_WPQ_INSERTS,EDBOX3C1,7394672
+EDC_WPQ_INSERTS,EDBOX4C1,7430730
+EDC_WPQ_INSERTS,EDBOX5C1,7412665
+EDC_WPQ_INSERTS,EDBOX6C1,7428626
+EDC_WPQ_INSERTS,EDBOX7C1,7410371
+TABLE,Region relu1_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0524,
+Runtime unhalted [s],0.0622,
+Clock [MHz],1496.5336,
+CPI,7.3071,
+Memory read bandwidth [MBytes/s],136084.5038,
+Memory read data volume [GBytes],7.1271,
+Memory writeback bandwidth [MBytes/s],72449.6563,
+Memory writeback data volume [GBytes],3.7944,
+Memory bandwidth [MBytes/s],208534.1601,
+Memory data volume [GBytes],10.9215,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region relu5_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.010289,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,4515091
+CPU_CLK_UNHALTED_CORE,FIXC1,24062690
+CPU_CLK_UNHALTED_REF,FIXC2,22458770
+EDC_RPQ_INSERTS,EDBOX0C0,1223038
+EDC_RPQ_INSERTS,EDBOX1C0,1225008
+EDC_RPQ_INSERTS,EDBOX2C0,1221837
+EDC_RPQ_INSERTS,EDBOX3C0,1224567
+EDC_RPQ_INSERTS,EDBOX4C0,1226839
+EDC_RPQ_INSERTS,EDBOX5C0,1228261
+EDC_RPQ_INSERTS,EDBOX6C0,1226228
+EDC_RPQ_INSERTS,EDBOX7C0,1227536
+EDC_WPQ_INSERTS,EDBOX0C1,747469
+EDC_WPQ_INSERTS,EDBOX1C1,754190
+EDC_WPQ_INSERTS,EDBOX2C1,745936
+EDC_WPQ_INSERTS,EDBOX3C1,753018
+EDC_WPQ_INSERTS,EDBOX4C1,746516
+EDC_WPQ_INSERTS,EDBOX5C1,753215
+EDC_WPQ_INSERTS,EDBOX6C1,748168
+EDC_WPQ_INSERTS,EDBOX7C1,752222
+TABLE,Region relu5_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0103,
+Runtime unhalted [s],0.0172,
+Clock [MHz],1496.5221,
+CPI,5.3294,
+Memory read bandwidth [MBytes/s],60980.9340,
+Memory read data volume [GBytes],0.6274,
+Memory writeback bandwidth [MBytes/s],37327.2103,
+Memory writeback data volume [GBytes],0.3840,
+Memory bandwidth [MBytes/s],98308.1443,
+Memory data volume [GBytes],1.0115,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region norm1_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.079965,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,46235490
+CPU_CLK_UNHALTED_CORE,FIXC1,124351100
+CPU_CLK_UNHALTED_REF,FIXC2,116060700
+EDC_RPQ_INSERTS,EDBOX0C0,37725730
+EDC_RPQ_INSERTS,EDBOX1C0,37787210
+EDC_RPQ_INSERTS,EDBOX2C0,37726600
+EDC_RPQ_INSERTS,EDBOX3C0,37784450
+EDC_RPQ_INSERTS,EDBOX4C0,37750020
+EDC_RPQ_INSERTS,EDBOX5C0,37810690
+EDC_RPQ_INSERTS,EDBOX6C0,37751990
+EDC_RPQ_INSERTS,EDBOX7C0,37813300
+EDC_WPQ_INSERTS,EDBOX0C1,21755080
+EDC_WPQ_INSERTS,EDBOX1C1,21779760
+EDC_WPQ_INSERTS,EDBOX2C1,21750390
+EDC_WPQ_INSERTS,EDBOX3C1,21787880
+EDC_WPQ_INSERTS,EDBOX4C1,21747500
+EDC_WPQ_INSERTS,EDBOX5C1,21779730
+EDC_WPQ_INSERTS,EDBOX6C1,21756500
+EDC_WPQ_INSERTS,EDBOX7C1,21794570
+TABLE,Region norm1_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0800,
+Runtime unhalted [s],0.0890,
+Clock [MHz],1496.5436,
+CPI,2.6895,
+Memory read bandwidth [MBytes/s],241824.7021,
+Memory read data volume [GBytes],19.3376,
+Memory writeback bandwidth [MBytes/s],139381.4802,
+Memory writeback data volume [GBytes],11.1457,
+Memory bandwidth [MBytes/s],381206.1823,
+Memory data volume [GBytes],30.4833,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region pool5_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.011929,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,5878190
+CPU_CLK_UNHALTED_CORE,FIXC1,24291770
+CPU_CLK_UNHALTED_REF,FIXC2,22672800
+EDC_RPQ_INSERTS,EDBOX0C0,481528
+EDC_RPQ_INSERTS,EDBOX1C0,481192
+EDC_RPQ_INSERTS,EDBOX2C0,481124
+EDC_RPQ_INSERTS,EDBOX3C0,481291
+EDC_RPQ_INSERTS,EDBOX4C0,481526
+EDC_RPQ_INSERTS,EDBOX5C0,481602
+EDC_RPQ_INSERTS,EDBOX6C0,481803
+EDC_RPQ_INSERTS,EDBOX7C0,481236
+EDC_WPQ_INSERTS,EDBOX0C1,548655
+EDC_WPQ_INSERTS,EDBOX1C1,548934
+EDC_WPQ_INSERTS,EDBOX2C1,548559
+EDC_WPQ_INSERTS,EDBOX3C1,548770
+EDC_WPQ_INSERTS,EDBOX4C1,548775
+EDC_WPQ_INSERTS,EDBOX5C1,548878
+EDC_WPQ_INSERTS,EDBOX6C1,548759
+EDC_WPQ_INSERTS,EDBOX7C1,548694
+TABLE,Region pool5_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0119,
+Runtime unhalted [s],0.0174,
+Clock [MHz],1496.5076,
+CPI,4.1325,
+Memory read bandwidth [MBytes/s],20662.0976,
+Memory read data volume [GBytes],0.2465,
+Memory writeback bandwidth [MBytes/s],23552.3219,
+Memory writeback data volume [GBytes],0.2810,
+Memory bandwidth [MBytes/s],44214.4195,
+Memory data volume [GBytes],0.5274,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region loss_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.143433,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,91920240
+CPU_CLK_UNHALTED_CORE,FIXC1,209251000
+CPU_CLK_UNHALTED_REF,FIXC2,195301100
+EDC_RPQ_INSERTS,EDBOX0C0,81077
+EDC_RPQ_INSERTS,EDBOX1C0,81679
+EDC_RPQ_INSERTS,EDBOX2C0,81110
+EDC_RPQ_INSERTS,EDBOX3C0,81678
+EDC_RPQ_INSERTS,EDBOX4C0,81255
+EDC_RPQ_INSERTS,EDBOX5C0,81739
+EDC_RPQ_INSERTS,EDBOX6C0,81430
+EDC_RPQ_INSERTS,EDBOX7C0,81823
+EDC_WPQ_INSERTS,EDBOX0C1,162225
+EDC_WPQ_INSERTS,EDBOX1C1,153732
+EDC_WPQ_INSERTS,EDBOX2C1,161839
+EDC_WPQ_INSERTS,EDBOX3C1,155025
+EDC_WPQ_INSERTS,EDBOX4C1,165325
+EDC_WPQ_INSERTS,EDBOX5C1,153751
+EDC_WPQ_INSERTS,EDBOX6C1,162165
+EDC_WPQ_INSERTS,EDBOX7C1,154469
+TABLE,Region loss_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.1434,
+Runtime unhalted [s],0.1498,
+Clock [MHz],1496.5381,
+CPI,2.2764,
+Memory read bandwidth [MBytes/s],290.8308,
+Memory read data volume [GBytes],0.0417,
+Memory writeback bandwidth [MBytes/s],566.0218,
+Memory writeback data volume [GBytes],0.0812,
+Memory bandwidth [MBytes/s],856.8527,
+Memory data volume [GBytes],0.1229,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region pool1_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.044091,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,21361450
+CPU_CLK_UNHALTED_CORE,FIXC1,75003320
+CPU_CLK_UNHALTED_REF,FIXC2,70003070
+EDC_RPQ_INSERTS,EDBOX0C0,10331470
+EDC_RPQ_INSERTS,EDBOX1C0,10329060
+EDC_RPQ_INSERTS,EDBOX2C0,10332070
+EDC_RPQ_INSERTS,EDBOX3C0,10329020
+EDC_RPQ_INSERTS,EDBOX4C0,10341780
+EDC_RPQ_INSERTS,EDBOX5C0,10340400
+EDC_RPQ_INSERTS,EDBOX6C0,10338420
+EDC_RPQ_INSERTS,EDBOX7C0,10336430
+EDC_WPQ_INSERTS,EDBOX0C1,5749138
+EDC_WPQ_INSERTS,EDBOX1C1,5761247
+EDC_WPQ_INSERTS,EDBOX2C1,5751905
+EDC_WPQ_INSERTS,EDBOX3C1,5759086
+EDC_WPQ_INSERTS,EDBOX4C1,5716904
+EDC_WPQ_INSERTS,EDBOX5C1,5728842
+EDC_WPQ_INSERTS,EDBOX6C1,5711818
+EDC_WPQ_INSERTS,EDBOX7C1,5730837
+TABLE,Region pool1_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0441,
+Runtime unhalted [s],0.0537,
+Clock [MHz],1496.5400,
+CPI,3.5112,
+Memory read bandwidth [MBytes/s],120012.4652,
+Memory read data volume [GBytes],5.2914,
+Memory writeback bandwidth [MBytes/s],66640.4872,
+Memory writeback data volume [GBytes],2.9382,
+Memory bandwidth [MBytes/s],186652.9524,
+Memory data volume [GBytes],8.2297,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region conv4_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.181807,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,426381700
+CPU_CLK_UNHALTED_CORE,FIXC1,275992200
+CPU_CLK_UNHALTED_REF,FIXC2,257592800
+EDC_RPQ_INSERTS,EDBOX0C0,5961329
+EDC_RPQ_INSERTS,EDBOX1C0,5980391
+EDC_RPQ_INSERTS,EDBOX2C0,5962436
+EDC_RPQ_INSERTS,EDBOX3C0,5982066
+EDC_RPQ_INSERTS,EDBOX4C0,5964401
+EDC_RPQ_INSERTS,EDBOX5C0,5985712
+EDC_RPQ_INSERTS,EDBOX6C0,5965877
+EDC_RPQ_INSERTS,EDBOX7C0,5985362
+EDC_WPQ_INSERTS,EDBOX0C1,4961186
+EDC_WPQ_INSERTS,EDBOX1C1,4962049
+EDC_WPQ_INSERTS,EDBOX2C1,4959621
+EDC_WPQ_INSERTS,EDBOX3C1,4961477
+EDC_WPQ_INSERTS,EDBOX4C1,4958948
+EDC_WPQ_INSERTS,EDBOX5C1,4960532
+EDC_WPQ_INSERTS,EDBOX6C1,4957674
+EDC_WPQ_INSERTS,EDBOX7C1,4961604
+TABLE,Region conv4_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.1818,
+Runtime unhalted [s],0.1976,
+Clock [MHz],1496.5390,
+CPI,0.6473,
+Memory read bandwidth [MBytes/s],16822.2976,
+Memory read data volume [GBytes],3.0584,
+Memory writeback bandwidth [MBytes/s],13969.3379,
+Memory writeback data volume [GBytes],2.5397,
+Memory bandwidth [MBytes/s],30791.6355,
+Memory data volume [GBytes],5.5981,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region drop6_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.015768,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,7628327
+CPU_CLK_UNHALTED_CORE,FIXC1,25870420
+CPU_CLK_UNHALTED_REF,FIXC2,24146010
+EDC_RPQ_INSERTS,EDBOX0C0,113630
+EDC_RPQ_INSERTS,EDBOX1C0,111823
+EDC_RPQ_INSERTS,EDBOX2C0,113898
+EDC_RPQ_INSERTS,EDBOX3C0,112631
+EDC_RPQ_INSERTS,EDBOX4C0,113572
+EDC_RPQ_INSERTS,EDBOX5C0,112606
+EDC_RPQ_INSERTS,EDBOX6C0,113824
+EDC_RPQ_INSERTS,EDBOX7C0,112754
+EDC_WPQ_INSERTS,EDBOX0C1,44479
+EDC_WPQ_INSERTS,EDBOX1C1,43786
+EDC_WPQ_INSERTS,EDBOX2C1,44036
+EDC_WPQ_INSERTS,EDBOX3C1,44477
+EDC_WPQ_INSERTS,EDBOX4C1,41303
+EDC_WPQ_INSERTS,EDBOX5C1,43521
+EDC_WPQ_INSERTS,EDBOX6C1,42143
+EDC_WPQ_INSERTS,EDBOX7C1,43543
+TABLE,Region drop6_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.0158,
+Runtime unhalted [s],0.0185,
+Clock [MHz],1496.5218,
+CPI,3.3914,
+Memory read bandwidth [MBytes/s],3672.1803,
+Memory read data volume [GBytes],0.0579,
+Memory writeback bandwidth [MBytes/s],1409.5839,
+Memory writeback data volume [GBytes],0.0222,
+Memory bandwidth [MBytes/s],5081.7642,
+Memory data volume [GBytes],0.0801,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region fc7_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.338412,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,190080700
+CPU_CLK_UNHALTED_CORE,FIXC1,486892900
+CPU_CLK_UNHALTED_REF,FIXC2,454432300
+EDC_RPQ_INSERTS,EDBOX0C0,66426290
+EDC_RPQ_INSERTS,EDBOX1C0,67152400
+EDC_RPQ_INSERTS,EDBOX2C0,66426970
+EDC_RPQ_INSERTS,EDBOX3C0,67160800
+EDC_RPQ_INSERTS,EDBOX4C0,66472700
+EDC_RPQ_INSERTS,EDBOX5C0,67189130
+EDC_RPQ_INSERTS,EDBOX6C0,66484840
+EDC_RPQ_INSERTS,EDBOX7C0,67196210
+EDC_WPQ_INSERTS,EDBOX0C1,15520920
+EDC_WPQ_INSERTS,EDBOX1C1,15490780
+EDC_WPQ_INSERTS,EDBOX2C1,15517890
+EDC_WPQ_INSERTS,EDBOX3C1,15492420
+EDC_WPQ_INSERTS,EDBOX4C1,15549360
+EDC_WPQ_INSERTS,EDBOX5C1,15523570
+EDC_WPQ_INSERTS,EDBOX6C1,15556970
+EDC_WPQ_INSERTS,EDBOX7C1,15523540
+TABLE,Region fc7_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.3384,
+Runtime unhalted [s],0.3486,
+Clock [MHz],1496.5430,
+CPI,2.5615,
+Memory read bandwidth [MBytes/s],101085.7419,
+Memory read data volume [GBytes],34.2086,
+Memory writeback bandwidth [MBytes/s],23483.9067,
+Memory writeback data volume [GBytes],7.9472,
+Memory bandwidth [MBytes/s],124569.6486,
+Memory data volume [GBytes],42.1558,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region norm1_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.126448,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,55908200
+CPU_CLK_UNHALTED_CORE,FIXC1,195437100
+CPU_CLK_UNHALTED_REF,FIXC2,182408200
+EDC_RPQ_INSERTS,EDBOX0C0,29625530
+EDC_RPQ_INSERTS,EDBOX1C0,29635920
+EDC_RPQ_INSERTS,EDBOX2C0,29629240
+EDC_RPQ_INSERTS,EDBOX3C0,29634060
+EDC_RPQ_INSERTS,EDBOX4C0,29648940
+EDC_RPQ_INSERTS,EDBOX5C0,29655520
+EDC_RPQ_INSERTS,EDBOX6C0,29649570
+EDC_RPQ_INSERTS,EDBOX7C0,29656050
+EDC_WPQ_INSERTS,EDBOX0C1,23631910
+EDC_WPQ_INSERTS,EDBOX1C1,23629580
+EDC_WPQ_INSERTS,EDBOX2C1,23631160
+EDC_WPQ_INSERTS,EDBOX3C1,23635190
+EDC_WPQ_INSERTS,EDBOX4C1,23663590
+EDC_WPQ_INSERTS,EDBOX5C1,23663400
+EDC_WPQ_INSERTS,EDBOX6C1,23661420
+EDC_WPQ_INSERTS,EDBOX7C1,23660330
+TABLE,Region norm1_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.1264,
+Runtime unhalted [s],0.1399,
+Clock [MHz],1496.5374,
+CPI,3.4957,
+Memory read bandwidth [MBytes/s],120022.5952,
+Memory read data volume [GBytes],15.1766,
+Memory writeback bandwidth [MBytes/s],95749.1739,
+Memory writeback data volume [GBytes],12.1073,
+Memory bandwidth [MBytes/s],215771.7691,
+Memory data volume [GBytes],27.2839,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region conv2_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.314635,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,733314100
+CPU_CLK_UNHALTED_CORE,FIXC1,471814200
+CPU_CLK_UNHALTED_REF,FIXC2,440360200
+EDC_RPQ_INSERTS,EDBOX0C0,9271334
+EDC_RPQ_INSERTS,EDBOX1C0,9284051
+EDC_RPQ_INSERTS,EDBOX2C0,9275468
+EDC_RPQ_INSERTS,EDBOX3C0,9285808
+EDC_RPQ_INSERTS,EDBOX4C0,9305592
+EDC_RPQ_INSERTS,EDBOX5C0,9310815
+EDC_RPQ_INSERTS,EDBOX6C0,9309346
+EDC_RPQ_INSERTS,EDBOX7C0,9314419
+EDC_WPQ_INSERTS,EDBOX0C1,7079105
+EDC_WPQ_INSERTS,EDBOX1C1,7081681
+EDC_WPQ_INSERTS,EDBOX2C1,7077640
+EDC_WPQ_INSERTS,EDBOX3C1,7082085
+EDC_WPQ_INSERTS,EDBOX4C1,7066870
+EDC_WPQ_INSERTS,EDBOX5C1,7073190
+EDC_WPQ_INSERTS,EDBOX6C1,7065928
+EDC_WPQ_INSERTS,EDBOX7C1,7072137
+TABLE,Region conv2_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.3146,
+Runtime unhalted [s],0.3378,
+Clock [MHz],1496.5385,
+CPI,0.6434,
+Memory read bandwidth [MBytes/s],15124.9506,
+Memory read data volume [GBytes],4.7588,
+Memory writeback bandwidth [MBytes/s],11512.7492,
+Memory writeback data volume [GBytes],3.6223,
+Memory bandwidth [MBytes/s],26637.6998,
+Memory data volume [GBytes],8.3812,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region conv4_backward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],0.429005,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,861444800
+CPU_CLK_UNHALTED_CORE,FIXC1,636562300
+CPU_CLK_UNHALTED_REF,FIXC2,594125100
+EDC_RPQ_INSERTS,EDBOX0C0,12286650
+EDC_RPQ_INSERTS,EDBOX1C0,12396300
+EDC_RPQ_INSERTS,EDBOX2C0,12291320
+EDC_RPQ_INSERTS,EDBOX3C0,12391020
+EDC_RPQ_INSERTS,EDBOX4C0,12299080
+EDC_RPQ_INSERTS,EDBOX5C0,12395800
+EDC_RPQ_INSERTS,EDBOX6C0,12290430
+EDC_RPQ_INSERTS,EDBOX7C0,12400100
+EDC_WPQ_INSERTS,EDBOX0C1,4758778
+EDC_WPQ_INSERTS,EDBOX1C1,4739732
+EDC_WPQ_INSERTS,EDBOX2C1,4760452
+EDC_WPQ_INSERTS,EDBOX3C1,4735029
+EDC_WPQ_INSERTS,EDBOX4C1,4756902
+EDC_WPQ_INSERTS,EDBOX5C1,4730847
+EDC_WPQ_INSERTS,EDBOX6C1,4757775
+EDC_WPQ_INSERTS,EDBOX7C1,4738144
+TABLE,Region conv4_backward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],0.4290,
+Runtime unhalted [s],0.4557,
+Clock [MHz],1496.5387,
+CPI,0.7389,
+Memory read bandwidth [MBytes/s],14731.8537,
+Memory read data volume [GBytes],6.3200,
+Memory writeback bandwidth [MBytes/s],5665.5934,
+Memory writeback data volume [GBytes],2.4306,
+Memory bandwidth [MBytes/s],20397.4472,
+Memory data volume [GBytes],8.7506,
+STRUCT,Info,3
+CPU name:,Intel(R) Xeon Phi(TM) CPU 7250 @ 1.40GHz,
+CPU type:,Intel Xeon Phi (Knights Landing) (Co)Processor,
+CPU clock:,1.396770124 GHz,
+TABLE,Region data_forward,Group 1 Raw,HBM,19
+Region Info,Core 0,
+RDTSC Runtime [s],24.082290,
+call count,100,
+Event,Counter,Core 0
+INSTR_RETIRED_ANY,FIXC0,33969230000
+CPU_CLK_UNHALTED_CORE,FIXC1,35777220000
+CPU_CLK_UNHALTED_REF,FIXC2,33383630000
+EDC_RPQ_INSERTS,EDBOX0C0,3895124
+EDC_RPQ_INSERTS,EDBOX1C0,3895135
+EDC_RPQ_INSERTS,EDBOX2C0,3895676
+EDC_RPQ_INSERTS,EDBOX3C0,3894345
+EDC_RPQ_INSERTS,EDBOX4C0,3895649
+EDC_RPQ_INSERTS,EDBOX5C0,3895189
+EDC_RPQ_INSERTS,EDBOX6C0,3895976
+EDC_RPQ_INSERTS,EDBOX7C0,3896480
+EDC_WPQ_INSERTS,EDBOX0C1,3809857
+EDC_WPQ_INSERTS,EDBOX1C1,3812812
+EDC_WPQ_INSERTS,EDBOX2C1,3812096
+EDC_WPQ_INSERTS,EDBOX3C1,3812769
+EDC_WPQ_INSERTS,EDBOX4C1,3804209
+EDC_WPQ_INSERTS,EDBOX5C1,3806103
+EDC_WPQ_INSERTS,EDBOX6C1,3803898
+EDC_WPQ_INSERTS,EDBOX7C1,3807505
+TABLE,Region data_forward,Group 1 Metric,HBM,10
+Metric,Core 0,
+Runtime (RDTSC) [s],24.0823,
+Runtime unhalted [s],25.6143,
+Clock [MHz],1496.9179,
+CPI,1.0532,
+Memory read bandwidth [MBytes/s],82.8189,
+Memory read data volume [GBytes],1.9945,
+Memory writeback bandwidth [MBytes/s],80.9737,
+Memory writeback data volume [GBytes],1.9500,
+Memory bandwidth [MBytes/s],163.7926,
+Memory data volume [GBytes],3.9445,
