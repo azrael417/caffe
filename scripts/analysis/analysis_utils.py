@@ -371,7 +371,7 @@ def plot_roofline_points(points_list,res_path='',title_prefix='', labels_markers
     plt.savefig(os.path.join(res_path,'roofline.jpg'), format='jpg',bbox_inches='tight', dpi=900)
     return ax
 
-def generate_roofline(time_file_loc, sde_files_loc, likwid_file_loc, res_path=''
+def generate_roofline_sde(time_file_loc, sde_files_loc, likwid_file_loc, res_path=''
                       ,sort_data=False, title_prefix='', threshold=1.):
     df = get_df(glb(time_file_loc))
     """Generate roofline figure from SDE, LIKWID, and timing measurements"""
@@ -400,12 +400,12 @@ def generate_roofline(time_file_loc, sde_files_loc, likwid_file_loc, res_path=''
         if(m is not None): df['HW perf group'] = m.group(1)
 
         for layer in layers:
-            mem_vol_re = re.compile('('+layer+')_(forward|backward).*?Memory data volume \[GBytes\],(\d+(.\d+)?)',re.DOTALL)
-            m = mem_vol_re.findall(txt)
-            if(m is not None):
-                for t in m:
-                    exp_layer = t[0]+' '+t[1]
-                    plt_df.loc[exp_layer, 'GB memory volume'] = float(t[2])/likwid_entry['iterations']
+            for di in ['forward', 'backward']:
+                exp_layer = layer+' '+di
+                mem_vol_re = re.compile(layer+'_'+di+'.*?Memory data volume \[MBytes\],(\d+(.\d+)?)',re.DOTALL)
+                m = mem_vol_re.search(txt)
+                if(m is not None):
+                    plt_df.loc[exp_layer, 'GB memory volume'] = float(m.group(1))/likwid_entry['iterations']/1e3
 
     # get the flops from the SDE tests
     for f in glb(sde_files_loc):
@@ -435,8 +435,7 @@ def generate_roofline(time_file_loc, sde_files_loc, likwid_file_loc, res_path=''
     if(sort_data): plt_filt = plt_filt.sort_index()
     plt_filt.index = plt_filt.index.str.cat(plt_filt['time percent'].map('{:02.0f}'.format), sep=' ')
     data_points = zip(plt_filt.index.tolist(),plt_filt.AI.tolist(),plt_filt['GFlop/s'].tolist())
-
     #for d in data_points: print d
     ax = plot_roofline_points(data_points, res_path=res_path, title_prefix=title_prefix+' (filtered layers <'+str(threshold)+'%)'
                        , labels_markers={'conv':'.', 'fc':'^', 'norm=':'x', 'pool':'*', 'loss':'v'})
-    return ax
+    return ax, plt_df
