@@ -201,8 +201,8 @@ def plot_pie(files_loc, threshold, res_path='', title_postfix='', sort_data=True
     
     df['time per iteration'] = df['time per iteration'] - df['data forward avg time']
     df['time per iteration'] = df['time per iteration'] - df['data backward avg time']
-    df.drop('data forward avg time', axis=1)
-    df.drop('data backward avg time', axis=1)
+    df.drop('data forward avg time', axis=1, inplace=True)
+    df.drop('data backward avg time', axis=1, inplace=True)
 
     df_filt = group_small_entries(df, threshold)
     df_filt = normalize_time(df_filt)
@@ -214,6 +214,9 @@ def plot_pie(files_loc, threshold, res_path='', title_postfix='', sort_data=True
     plt_data = plt_data[plt_data.index != 'data forward avg time']
     plt_data = plt_data[plt_data.index != 'data backward avg time']
 
+    layers_names = {s:s.replace(' avg time','') for s in plt_data.index.values}
+    plt_data.rename(index=layers_names, inplace=True)
+    
     if(sort_data):
         plt_data= plt_data.sort_index()
         plt_data.sort_values(by=plt_data.columns.values[0], inplace=True, ascending=False)
