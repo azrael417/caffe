@@ -63,6 +63,8 @@ snappy_dir=$(module show snappy 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{
 netcdf_dir=$(module show netcdf/4.4.1 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
 mkl_dnn_dir="${CAFFE_ROOT}/src/external/mkl/mklml_lnx_2017.0.0.20160801"
 
+echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${mkl_dnn_dir}/lib" > ${CAFFE_ROOT}/install_cori-knl/set_mkl_path.sh
+
 #-DAtlas_BLAS_LIBRARY=${mkl_dir}/lib/intel64/libmkl_core.a \
 #-DAtlas_CBLAS_INCLUDE_DIR=${mkl_dir}/include \
 #-DAtlas_CLAPACK_INCLUDE_DIR=${mkl_dir}/include \
