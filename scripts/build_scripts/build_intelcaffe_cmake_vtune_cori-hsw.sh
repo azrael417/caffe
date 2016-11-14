@@ -1,6 +1,7 @@
 #!/bin/bash
 
-#. ../environment.sh
+# IntelCaffe repo. has to be located under the CAFFE_ROOT directory, using the name 'src'
+CAFFE_ROOT='/project/projectdirs/mpccc/tmalas/intelcaffe'
 
 #clean env
 #module unload PrgEnv-gnu
@@ -15,10 +16,12 @@ intelcaffe_version="0.9999_mkl"
 #cd ..
 
 #load all required modules
-module swap craype-mic-knl craype-haswell
+module unload craype-mic-knl
+module load craype-haswell
 module load PrgEnv-intel
 module load cmake/3.5.2
-module load intel/17.0.0.098
+module unload intel
+module load intel/16.0.3.210.nersc
 module load cray-memkind
 #source /opt/intel/impi/5.1.3.210/bin64/mpivars.sh
 
@@ -59,7 +62,9 @@ lmdb_dir=$(module show lmdb 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{spli
 leveldb_dir=$(module show leveldb 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
 snappy_dir=$(module show snappy 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
 netcdf_dir=$(module show netcdf/4.4.1 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
-mkl_dir=$(echo ${MKLROOT})
+
+#mkl_dir=$(echo ${MKLROOT})
+mkl_dnn_dir="${CAFFE_ROOT}/src/external/mkl/mklml_lnx_2017.0.0.20160801"
 
 #-DAtlas_BLAS_LIBRARY=${mkl_dir}/lib/intel64/libmkl_core.a \
 #-DAtlas_CBLAS_INCLUDE_DIR=${mkl_dir}/include \
@@ -97,10 +102,10 @@ cmake -G "Unix Makefiles" \
         -DBoost_THREAD_LIBRARY_DEBUG=${boost_dir}/lib/libboost_thread.so \
         -DBoost_THREAD_LIBRARY_RELEASE=${boost_dir}/lib/libboost_thread.so \
         -DCMAKE_CXX_COMPILER="${CXX}" \
-        -DCMAKE_CXX_FLAGS="-g -O3 -std=c++11 -mkl -xCORE-AVX2" \
+        -DCMAKE_CXX_FLAGS="-g -O3 -std=c++11 -mkl -xCORE-AVX2 -I${mkl_dnn_dir}/include" \
         -DCMAKE_C_COMPILER="${CC}" \
-        -DCMAKE_C_FLAGS="-g -O3 -std=c99 -mkl -xCORE-AVX2" \
-        -DCMAKE_INSTALL_PREFIX="/project/projectdirs/mpccc/tkurth/NESAP/intelcaffe/install_cori-hsw" \
+        -DCMAKE_C_FLAGS="-g -O3 -std=c99 -mkl -xCORE-AVX2 -I${mkl_dnn_dir}/include" \
+        -DCMAKE_INSTALL_PREFIX="${CAFFE_ROOT}/install_cori-hsw" \
         -DCMAKE_LINKER="${CXX}" \
         -DCMAKE_SHARED_LINKER_FLAGS="${LDFLAGS}" \
         -DCMAKE_MODULE_LINKER_FLAGS="${LDFLAGS}" \
@@ -141,6 +146,7 @@ cmake -G "Unix Makefiles" \
         -DUSE_LMDB=ON \
         -DUSE_OPENCV=OFF \
         -DUSE_OPENMP=ON \
+        -DUSE_MPI=ON \
         .
 
     #build
