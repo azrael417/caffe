@@ -2,6 +2,7 @@
 
 # IntelCaffe repo. has to be located under the CAFFE_ROOT directory, using the name 'src'
 CAFFE_ROOT='/project/projectdirs/mpccc/tmalas/intelcaffe'
+TAU_ROOT='/global/common/cori/software/tau/2.26/hsw/intel/craycnl'
 
 #clean env
 #module unload PrgEnv-gnu
@@ -15,10 +16,10 @@ intelcaffe_version="0.9999_mkl"
 #git checkout tags/v${intelcaffe_version}
 #cd ..
 
-export TAU_MAKEFILE=/global/common/cori/software/tau/2.26b1/hsw/intel/craycnl/lib/Makefile.tau-intel-papi-ompt-mpi-pdt-openmp
+export TAU_MAKEFILE=${TAU_ROOT}/lib/Makefile.tau-intel-papi-ompt-mpi-pdt-openmp
 
 #load all required modules
-module load tau/2.26b1
+module load tau/2.26
 module swap craype-haswell craype-mic-knl
 module load PrgEnv-intel
 module load cmake/3.5.2
@@ -66,7 +67,6 @@ snappy_dir=$(module show snappy 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{
 netcdf_dir=$(module show netcdf/4.4.1 2>&1 > /dev/null | grep LD_LIBRARY_PATH | awk '{split($3,a,"/lib"); print a[1]}' | sed 's|/usr/common/software|/global/common/cori/software|g')
 mkl_dnn_dir="${CAFFE_ROOT}/src/external/mkl/mklml_lnx_2017.0.0.20160801"
 
-echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${mkl_dnn_dir}/lib" > ${CAFFE_ROOT}/install_tau_cori-knl/set_mkl_path.sh
 
 #-DAtlas_BLAS_LIBRARY=${mkl_dir}/lib/intel64/libmkl_core.a \
 #-DAtlas_CBLAS_INCLUDE_DIR=${mkl_dir}/include \
@@ -74,8 +74,8 @@ echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${mkl_dnn_dir}/lib" > ${CAFFE_ROOT
 #-DAtlas_LAPACK_LIBRARY=${mkl_dir}/lib/libmkl_core.so \
 #-DAtlas_CBLAS_LIBRARY=${mkl_dir}/lib/libmkl_core.so \
 
-CC=/global/common/cori/software/tau/2.26b1/hsw/intel/craycnl/bin/tau_cc.sh
-CXX=/global/common/cori/software/tau/2.26b1/hsw/intel/craycnl/bin/tau_cxx.sh
+CC=${TAU_ROOT}/bin/tau_cc.sh
+CXX=${TAU_ROOT}/bin/tau_cxx.sh
 #LDFLAGS="-Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -L${netcdf_dir}/lib -lnetcdf -lmemkind"
 LDFLAGS="-L${netcdf_dir}/lib -lnetcdf -lmemkind"
 
@@ -156,6 +156,9 @@ cmake -G "Unix Makefiles" \
     make -j10
     make install
 cd ..
+
+echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${mkl_dnn_dir}/lib" > ${CAFFE_ROOT}/install_tau_cori-knl/set_mkl_path.sh
+
 #variables
 #export CRAYPE_LINK_TYPE=dynamic
 #CMAKE_BUILD_TYPE="Debug"
