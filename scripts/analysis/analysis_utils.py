@@ -344,15 +344,19 @@ def plot_roofline_points(points_list,res_path='',title_prefix='', labels_markers
     #line4,=plt.plot(xopt, ytlpilp, '-', linewidth=3,color='red',label='TLP with ILP')
     #line4m,=plt.plot(xopt, ytlponly, '--', linewidth=3,color='red',label='TLP only')
 
+    banned_colors = ['yellow','gold','pink','mistyrose','navajowhite','palegreen','greenyellow',
+                     'seashell','papayawhip','blanchedalmond','chartreuse','white', 'ivory', 'lawngreen',
+                    'lime', 'burlywood', 'mediumspringgreen', 'peachpuff', 'springgreen', 'aquamarine']
     
-    c_list = colors.cnames.values()
+    c_list = [(k,v) for k,v in colors.cnames.iteritems() if all(k!=b for b in banned_colors)]
     for ind, (label, x, y) in enumerate(points_list):
         marker='v'
         for k,v in labels_markers.iteritems():
             if(k in label):
                 marker=v
                 break
-        ax.scatter(x,y,marker=marker, linewidth=5,s=area,alpha=0.5, label=label, color=c_list[ind])
+#        label = label+' '+c_list[ind][0]  # print colors to exclude the undesired
+        ax.scatter(x,y,marker=marker, linewidth=5,s=area,alpha=0.5, label=label, color=c_list[ind][1])
 
     for tick in ax.xaxis.get_major_ticks():
         tick.set_pad(20)
@@ -440,7 +444,7 @@ def generate_roofline_sde(time_file_loc, sde_files_loc, likwid_file_loc, res_pat
                        , labels_markers={'conv':'.', 'fc':'^', 'norm=':'x', 'pool':'*', 'loss':'v'})
     return ax, plt_df
 
-def generate_roofline_likwid(time_file_loc, sde_files_loc, likwid_file_loc, res_path=''
+def generate_roofline_likwid(time_file_loc, likwid_file_loc, res_path=''
                       ,sort_data=False, title_prefix='', threshold=1.):
     df = get_df(glb(time_file_loc))
     """Generate roofline figure from SDE, LIKWID, and timing measurements"""
