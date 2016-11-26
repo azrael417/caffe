@@ -114,10 +114,11 @@ TYPED_TEST(HDF5OutputLayerTest, TestForward) {
                           H5P_DEFAULT);
   ASSERT_GE(file_id, 0)<< "Failed to open HDF5 file" <<
       this->input_file_name_;
-  hdf5_load_nd_dataset(file_id, HDF5_DATA_DATASET_NAME, 0, 4,
-                       this->blob_data_);
-  hdf5_load_nd_dataset(file_id, HDF5_DATA_LABEL_NAME, 0, 4,
-                       this->blob_label_);
+  //hdf5_load_nd_dataset(file_id, HDF5_DATA_DATASET_NAME, 0, 4, this->blob_data_);
+  hdf5_load_nd_dataset(file_id, "data_0", 0, 4, blob_data);
+  //hdf5_load_nd_dataset(file_id, HDF5_DATA_LABEL_NAME, 0, 4, this->blob_label_);
+  hdf5_load_nd_dataset(file_id, "label_0", 0, 4, blob_label);
+  this->CheckBlobEqual(*(this->blob_label_), *blob_label);
   herr_t status = H5Fclose(file_id);
   EXPECT_GE(status, 0)<< "Failed to close HDF5 file " <<
       this->input_file_name_;
@@ -126,6 +127,8 @@ TYPED_TEST(HDF5OutputLayerTest, TestForward) {
 
   LayerParameter param;
   param.mutable_hdf5_output_param()->set_file_name(this->output_file_name_);
+  param.add_bottom("data");
+  param.add_bottom("label"); 
   // This code block ensures that the layer is deconstructed and
   //   the output hdf5 file is closed.
   {
