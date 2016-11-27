@@ -54,14 +54,12 @@ namespace caffe {
 	// gcc bug.
 	// http://www.cplusplus.com/forum/beginner/31576/
 	template<>
-	map<const string, weak_ptr<DataReader<Datum>::Body> > DataReader<Datum>::bodies_;
-	static boost::mutex bodies_mutex_;
+	map<const string, weak_ptr<DataReader<Datum>::Body> > DataReader<Datum>::bodies_
+		= map<const string, weak_ptr<DataReader<Datum>::Body> >();
 	template <>
-	map<const string, weak_ptr<DataReader<AnnotatedDatum>::Body> >
-		DataReader<AnnotatedDatum>::bodies_
-			= map<const string, weak_ptr<DataReader<AnnotatedDatum>::Body> >();
+	map<const string, weak_ptr<DataReader<AnnotatedDatum>::Body> > DataReader<AnnotatedDatum>::bodies_
+		= map<const string, weak_ptr<DataReader<AnnotatedDatum>::Body> >();
 	static boost::mutex bodies_mutex_;
-
 
 	template<typename T>
 	DataReader<T>::DataReader(const LayerParameter& param)
@@ -165,9 +163,9 @@ namespace caffe {
 		CHECK(qp);
 
 		T* t = qp->free_.pop();
-		t->ParseFromString(dbw->value());
 		// TODO deserialize in-place instead of copy?
 		//*data = dbw->value();
+		t->ParseFromString(dbw->value());
 		qp->full_.push(t);
 
 		dbw->Next();
@@ -210,8 +208,7 @@ namespace caffe {
 
 	template <typename T>
 	void DataReader<T>::DBShuffle::ShuffleImages() {
-		caffe::rng_t* prefetch_rng =
-			static_cast<caffe::rng_t*>(prefetch_rng_->generator());
+		caffe::rng_t* prefetch_rng = static_cast<caffe::rng_t*>(prefetch_rng_->generator());
 		shuffle(image_pointers_.begin(), image_pointers_.end(), prefetch_rng);
 	}
 
