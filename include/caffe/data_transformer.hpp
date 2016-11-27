@@ -138,10 +138,8 @@ namespace caffe {
 		*    set_cpu_data() is used. See data_layer.cpp for an example.
 		*/
 
-		void Transform(const Datum& datum, Blob<Dtype>* transformed_blob)
-			{Transform(datum, transformed_blob, rand_num_);}
-		void Transform(const Datum& datum, Blob<Dtype>* transformed_blob,
-		RandNumbers& rand_num);
+		void Transform(const Datum& datum, Blob<Dtype>* transformed_blob){Transform(datum, transformed_blob, rand_num_);}
+		void Transform(const Datum& datum, Blob<Dtype>* transformed_blob, RandNumbers& rand_num);
 
 		/**
 		* @brief Applies the transformation defined in the data layer's
@@ -153,9 +151,7 @@ namespace caffe {
 		*    This is destination blob. It can be part of top blob's data if
 		*    set_cpu_data() is used. See memory_layer.cpp for an example.
 		*/
-		void Transform(const vector<Datum> & datum_vector,
-		Blob<Dtype>* transformed_blob);
-				
+		void Transform(const vector<Datum> & datum_vector, Blob<Dtype>* transformed_blob);
 	
 		//******************************************************************************
 		//******************** START MODIFICATIONS FOR ANNOTATED DATA ******************
@@ -172,20 +168,10 @@ namespace caffe {
 		* @param transformed_anno_vec
 		*    This is destination annotation.
 		*/
-		void Transform(const AnnotatedDatum& anno_datum,
-		Blob<Dtype>* transformed_blob,
-		RepeatedPtrField<AnnotationGroup>* transformed_anno_vec);
-		void Transform(const AnnotatedDatum& anno_datum,
-		Blob<Dtype>* transformed_blob,
-		RepeatedPtrField<AnnotationGroup>* transformed_anno_vec,
-		bool* do_mirror);
-		void Transform(const AnnotatedDatum& anno_datum,
-		Blob<Dtype>* transformed_blob,
-		vector<AnnotationGroup>* transformed_anno_vec,
-		bool* do_mirror);
-		void Transform(const AnnotatedDatum& anno_datum,
-		Blob<Dtype>* transformed_blob,
-		vector<AnnotationGroup>* transformed_anno_vec);
+		void Transform(const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob, RepeatedPtrField<AnnotationGroup>* transformed_anno_vec);
+		void Transform(const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob, RepeatedPtrField<AnnotationGroup>* transformed_anno_vec, bool* do_mirror);
+		void Transform(const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob, vector<AnnotationGroup>* transformed_anno_vec, bool* do_mirror);
+		void Transform(const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob, vector<AnnotationGroup>* transformed_anno_vec);
 
 		/**
 		* @brief Transform the annotation according to the transformation applied
@@ -202,16 +188,12 @@ namespace caffe {
 		* @param transformed_anno_group_all
 		*    Stores all transformed AnnotationGroup.
 		*/
-		void TransformAnnotation(
-			const AnnotatedDatum& anno_datum, const bool do_resize,
-		const NormalizedBBox& crop_bbox, const bool do_mirror,
-		RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all);
+		void TransformAnnotation(const AnnotatedDatum& anno_datum, const bool do_resize, const NormalizedBBox& crop_bbox, const bool do_mirror, RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all);
 
 		/**
 		* @brief Crops the datum according to bbox.
 		*/
-		void CropImage(const Datum& datum, const NormalizedBBox& bbox,
-		Datum* crop_datum);
+		void CropImage(const Datum& datum, const NormalizedBBox& bbox, Datum* crop_datum);
 
 		/**
 		* @brief Crops the datum and AnnotationGroup according to bbox.
@@ -249,8 +231,7 @@ namespace caffe {
 		*    This is destination blob. It can be part of top blob's data if
 		*    set_cpu_data() is used. See memory_layer.cpp for an example.
 		*/
-		void Transform(const vector<cv::Mat> & mat_vector,
-		Blob<Dtype>* transformed_blob);
+		void Transform(const vector<cv::Mat> & mat_vector,Blob<Dtype>* transformed_blob);
 
 		/**
 		* @brief Applies the transformation defined in the data layer's
@@ -263,8 +244,7 @@ namespace caffe {
 		*    set_cpu_data() is used. See image_data_layer.cpp for an example.
 		*/
 
-		void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob)
-			{Transform(cv_img, transformed_blob, rand_num_);}
+		void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob){Transform(cv_img, transformed_blob, rand_num_);}
 		void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob, RandNumbers& rand_num);
 														 
 														 
@@ -293,12 +273,10 @@ namespace caffe {
 		/**
 		* @brief Expand img to include mean value as background.
 		*/
-		void ExpandImage(const cv::Mat& img, const float expand_ratio,
-		NormalizedBBox* expand_bbox, cv::Mat* expand_img);
+		void ExpandImage(const cv::Mat& img, const float expand_ratio, NormalizedBBox* expand_bbox, cv::Mat* expand_img);
 
 		void TransformInv(const Blob<Dtype>* blob, vector<cv::Mat>* cv_imgs);
-		void TransformInv(const Dtype* data, cv::Mat* cv_img, const int height,
-		const int width, const int channels);
+		void TransformInv(const Dtype* data, cv::Mat* cv_img, const int height, const int width, const int channels);
 		
 		//******************************************************************************
 		//******************** END MODIFICATIONS FOR ANNOTATED DATA ********************
@@ -377,14 +355,12 @@ namespace caffe {
 		//******************** START MODIFICATIONS FOR ANNOTATED DATA ******************
 		//******************************************************************************
 		// Transform and return the transformation information.
-		void Transform(const Datum& datum, Dtype* transformed_data,
-		NormalizedBBox* crop_bbox, bool* do_mirror);
+		void Transform(const Datum& datum, Dtype* transformed_data, NormalizedBBox* crop_bbox, bool* do_mirror);
 		/**
 		* @brief Applies the transformation defined in the data layer's
 		* transform_param block to the data and return transform information.
 		*/
-		void Transform(const Datum& datum, Blob<Dtype>* transformed_blob,
-		NormalizedBBox* crop_bbox, bool* do_mirror);
+		void Transform(const Datum& datum, Blob<Dtype>* transformed_blob, NormalizedBBox* crop_bbox, bool* do_mirror);
 		//******************************************************************************
 		//******************** END MODIFICATIONS FOR ANNOTATED DATA ********************
 		//******************************************************************************
