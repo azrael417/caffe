@@ -125,8 +125,10 @@ size_t BlockingQueue<T>::size() const {
 
 template class BlockingQueue<Batch<float>*>;
 template class BlockingQueue<Batch<double>*>;
-template class BlockingQueue<std::string*>;
-template class BlockingQueue<shared_ptr<DataReader::QueuePair> >;
+template class BlockingQueue<Datum*>;
+template class BlockingQueue<AnnotatedDatum*>;
+template class BlockingQueue<shared_ptr<DataReader<Datum>::QueuePair> >;
+template class BlockingQueue<shared_ptr<DataReader<AnnotatedDatum>::QueuePair> >;
 template class BlockingQueue<P2PSync<float>*>;
 template class BlockingQueue<P2PSync<double>*>;
 template class BlockingQueue<Element*>;
