@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
-#include "caffe/data_reader.hpp"
+//#include "caffe/data_reader.hpp"
 #include "caffe/data_transformer.hpp"
 #include "caffe/util/io.hpp"
 
@@ -52,7 +52,7 @@ namespace caffe {
 	template<typename Dtype>
 	DataTransformer<Dtype>::DataTransformer(const TransformationParameter& param,
 	Phase phase)
-	: param_(param), phase_(phase), data_reader_used(NULL) {
+	: param_(param), phase_(phase) {
 		// check if we want to use mean_file
 		if (param_.has_mean_file()) {
 			CHECK_EQ(param_.mean_value_size(), 0) <<
@@ -1277,7 +1277,7 @@ namespace caffe {
 		}
 	}
 	
-	emplate<typename Dtype>
+	template<typename Dtype>
 		void DataTransformer<Dtype>::TransformInv(const Dtype* data, cv::Mat* cv_img,
 	const int height, const int width,
 	const int channels) {
@@ -1438,7 +1438,9 @@ namespace caffe {
 		img.copyTo((*expand_img)(bbox_roi));
 	}
 #endif
-
+	//******************************************************************************
+	//******************** END MODIFICATIONS FOR ANNOTATED DATA ******************
+	//******************************************************************************
 
 	INSTANTIATE_CLASS(DataTransformer);
 

@@ -349,7 +349,7 @@ namespace caffe {
 		vector<Dtype> mean_values_;
 
 		// Data reader used if any to get data
-		DataReader* data_reader_used;
+		//DataReader* data_reader_used;
 		
 		//******************************************************************************
 		//******************** START MODIFICATIONS FOR ANNOTATED DATA ******************
