@@ -64,7 +64,7 @@ namespace caffe {
 	const vector<Blob<Dtype>*>& top) {
 		const int batch_size = this->layer_param_.data_param().batch_size();
 		// Read a data point, and use it to initialize the top blob.
-		Datum& datum = *(reader_.full().preek());
+		Datum& datum = *(reader_.full().peek());
 		//datum.ParseFromString(*(reader_.full().peek()));
 
 		// Use data_transformer to infer the expected blob shape from datum.
@@ -147,7 +147,8 @@ namespace caffe {
 #ifdef _OPENMP
 			PreclcRandomNumbers precalculated_rand_numbers;
 			this->data_transformer_->GenerateRandNumbers(precalculated_rand_numbers);
-#pragma omp task firstprivate(offset, precalculated_rand_numbers, data, item_id)
+			//making datum shared can lead to an opemp bug, I might have to revisit this!
+#pragma omp task firstprivate(offset, precalculated_rand_numbers, item_id) shared(datum)
 #endif
 			{
 				//Datum datum;

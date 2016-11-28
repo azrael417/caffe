@@ -54,7 +54,7 @@ using google::protobuf::RepeatedPtrField;
 
 namespace caffe {
 
-	class DataReader;
+	//class DataReader;
 
 	class RandNumbers {
 	public:
