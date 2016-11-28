@@ -87,7 +87,7 @@ namespace caffe {
 		class DBWrapper  {
 		public:
 			explicit DBWrapper(const LayerParameter& param);
-			virtual T value() = 0;
+			virtual string value() = 0;
 			virtual void Next() = 0;
 		protected:
 			shared_ptr<db::DB> db;
@@ -97,8 +97,8 @@ namespace caffe {
 		class DBShuffle: public DBWrapper {
 		public:
 			explicit DBShuffle(const LayerParameter& param);
-			virtual T value() {
-				return T(string(static_cast<const char*>(current_image_->first),current_image_->second));
+			virtual string value() {
+				return string(static_cast<const char*>(current_image_->first),current_image_->second);
 			}
 			virtual void Next();
 		protected:
@@ -112,7 +112,7 @@ namespace caffe {
 		class DBSequential: public DBWrapper {
 		public:
 			explicit DBSequential(const LayerParameter& param): DBWrapper(param)  {}
-			virtual T value()  { return cursor->value(); }
+			virtual string value()  { return cursor->value(); }
 			virtual void Next();
 		};
 
