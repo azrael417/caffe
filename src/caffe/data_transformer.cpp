@@ -44,7 +44,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //#include "caffe/data_reader.hpp"
 #include "caffe/data_transformer.hpp"
+#include "caffe/util/bbox_util.hpp"
+#include "caffe/util/im_transforms.hpp"
 #include "caffe/util/io.hpp"
+#include "caffe/util/math_functions.hpp"
+#include "caffe/util/rng.hpp"
 
 
 namespace caffe {

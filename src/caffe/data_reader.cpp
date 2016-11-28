@@ -181,11 +181,10 @@ namespace caffe {
 
 	template <typename T>
 	DataReader<T>::DBShuffle::DBShuffle(const LayerParameter& param):DBWrapper(param) {
-		CHECK(param.data_param().backend() != DataParameter_DB_LEVELDB)
-			<< "LevelDB doesn't support shuffle";
-		while (cursor->valid()) {
+		CHECK(param.data_param().backend() != DataParameter_DB_LEVELDB) << "LevelDB doesn't support shuffle";
+		while (DBWrapper::cursor->valid()) {
 			image_pointers_.push_back(cursor->valuePointer());
-			cursor->Next();
+			DBWrapper::cursor->Next();
 		}
 		CHECK(!image_pointers_.empty());
 		current_image_ = image_pointers_.begin();
