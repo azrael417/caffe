@@ -73,17 +73,17 @@ MKLURL="https://github.com/intel/caffe/releases/download/$GITHUB_RELEASE_TAG/$AR
 reg='^[0-9]+$'
 VERSION_LINE=`GetVersionName $MKLROOT`
 # Check if MKLROOT is set if positive then set one will be used..
-if [ -z $MKLROOT ] || [ $VERSION_LINE -lt $VERSION_MATCH ]; then
+#if [ -z $MKLROOT ] || [ $VERSION_LINE -lt $VERSION_MATCH ]; then
 	# ..if MKLROOT is not set then check if we have MKL downloaded in proper version
     VERSION_LINE=`GetVersionName $DST/$MKL_CONTENT_DIR`
-    if [ $VERSION_LINE -lt $VERSION_MATCH ] ; then
+#    if [ $VERSION_LINE -lt $VERSION_MATCH ] ; then
       #...If it is not then downloaded and unpacked
       wget --no-check-certificate -P $DST $MKLURL -O $DST/$ARCHIVE_BASENAME
       tar -xzf $DST/$ARCHIVE_BASENAME -C $DST
-    fi
+#    fi
   FindLibrary $1
   MKLROOT=$PWD/`echo $LOCALMKL | sed -e 's/lib.*$//'`
-fi
+#fi
 
 # Check what MKL lib we have in MKLROOT
 if [ -z `find $MKLROOT -name libmkl_rt.so -print -quit` ]; then

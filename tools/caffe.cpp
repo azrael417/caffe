@@ -55,6 +55,11 @@ namespace bp = boost::python;
 #include "caffe/multinode/multinode.hpp"
 #include "caffe/util/signal_handler.h"
 
+#define LIKWID_PERFMON 1
+#ifdef LIKWID_PERFMON
+#include <likwid.h>
+#endif
+
 using caffe::Blob;
 using caffe::Caffe;
 using caffe::Net;
@@ -485,28 +490,60 @@ int time() {
       LOG(INFO) << "Profiling Layer: " << 
                    layers[FLAGS_prof_layer]->layer_param().name() << " backward";
   }
+#ifdef LIKWID_PERFMON
+  LOG(INFO) << "Invoking LIKWID_MARKER_INIT";
+  LIKWID_MARKER_INIT;
+#endif
+  #pragma omp parallel
+  {
+      LIKWID_MARKER_THREADINIT;
+  }
+  std::vector<std::string> layers_name_f, layers_name_b;
+  std::string tmp_str;
+  for (int i = 0; i < layers.size(); ++i) {
+    tmp_str=layers[i]->layer_param().name()+"_forward";
+    layers_name_f.push_back(tmp_str);
+    tmp_str=layers[i]->layer_param().name()+"_backward";
+    layers_name_b.push_back(tmp_str);
+  }
 
   for (int j = 0; j < FLAGS_iterations; ++j) {
     Timer iter_timer;
     iter_timer.Start();
     forward_timer.Start();
     for (int i = 0; i < layers.size(); ++i) {
+#ifdef LIKWID_PERFMON
+  #pragma omp parallel
+      LIKWID_MARKER_START(layers_name_f[i].c_str());
+#endif
       timer.Start();
       if(FLAGS_prof_forward_direction & i==FLAGS_prof_layer) __SSC_MARK(0x111);
       layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
       if(FLAGS_prof_forward_direction & i==FLAGS_prof_layer) __SSC_MARK(0x222);
       forward_time_per_layer[i] += timer.MicroSeconds();
+#ifdef LIKWID_PERFMON
+  #pragma omp parallel
+      LIKWID_MARKER_STOP(layers_name_f[i].c_str());
+#endif
     }
     forward_time += forward_timer.MicroSeconds();
     if (!FLAGS_forward_only) {
       backward_timer.Start();
       for (int i = layers.size() - 1; i >= 0; --i) {
+#ifdef LIKWID_PERFMON
+  #pragma omp parallel
+      LIKWID_MARKER_START(layers_name_b[i].c_str());
+#endif
         timer.Start();
         if(!FLAGS_prof_forward_direction & i==FLAGS_prof_layer) __SSC_MARK(0x111);
         layers[i]->Backward(top_vecs[i], bottom_need_backward[i],
                             bottom_vecs[i]);
         if(!FLAGS_prof_forward_direction & i==FLAGS_prof_layer) __SSC_MARK(0x222);
         backward_time_per_layer[i] += timer.MicroSeconds();
+#ifdef LIKWID_PERFMON
+  #pragma omp parallel
+      LIKWID_MARKER_STOP(layers_name_b[i].c_str());
+#endif
       }
       backward_time += backward_timer.MicroSeconds();
       LOG(INFO) << "Iteration: " << j + 1 << " forward-backward time: "
@@ -539,6 +576,11 @@ int time() {
   }
   LOG(INFO) << "Total Time: " << total_timer.MilliSeconds() << " ms.";
   LOG(INFO) << "*** Benchmark ends ***";
+
+#ifdef LIKWID_PERFMON
+    LOG(INFO) << "Invoking LIKWID_MARKER_CLOSE";
+    LIKWID_MARKER_CLOSE;
+#endif
   return 0;
 }
 RegisterBrewFunction(time);
