@@ -54,9 +54,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace caffe {
 
 	template<typename Dtype>
-	DataTransformer<Dtype>::DataTransformer(const TransformationParameter& param,
-	Phase phase)
-	: param_(param), phase_(phase) {
+	DataTransformer<Dtype>::DataTransformer(const TransformationParameter& param, Phase phase) : param_(param), phase_(phase) {
 		// check if we want to use mean_file
 		if (param_.has_mean_file()) {
 			CHECK_EQ(param_.mean_value_size(), 0) <<
@@ -89,8 +87,7 @@ namespace caffe {
 
 	template<typename Dtype>
 
-	void DataTransformer<Dtype>::Transform(const Datum& datum,
-	Dtype* transformed_data, RandNumbers& rand_num) {
+	void DataTransformer<Dtype>::Transform(const Datum& datum, Dtype* transformed_data, RandNumbers& rand_num) {
 		const bool do_mirror = param_.mirror() && rand_num(2);
 		const string& data = datum.data();
 		const bool has_uint8 = data.size() > 0;
@@ -143,10 +140,8 @@ namespace caffe {
 	}
 
 	template<typename Dtype>
-	template<bool has_uint8, bool do_mirror, bool has_mean_file,
-	bool has_mean_values>
-		void DataTransformer<Dtype>::Transform(const Datum& datum,
-	Dtype* transformed_data, RandNumbers& rand_num) {
+	template<bool has_uint8, bool do_mirror, bool has_mean_file, bool has_mean_values>
+	void DataTransformer<Dtype>::Transform(const Datum& datum, Dtype* transformed_data, RandNumbers& rand_num) {
 		const string& data = datum.data();
 		const int datum_channels = datum.channels();
 		const int datum_height = datum.height();
@@ -236,8 +231,7 @@ namespace caffe {
 	}
 
 	template<typename Dtype>
-	void DataTransformer<Dtype>::Transform(const Datum& datum,
-	Blob<Dtype>* transformed_blob, RandNumbers& rand_num) {
+	void DataTransformer<Dtype>::Transform(const Datum& datum, Blob<Dtype>* transformed_blob, RandNumbers& rand_num) {
 		// If datum is encoded, decoded and transform the cv::image.
 		if (datum.encoded()) {
 #ifdef USE_OPENCV
@@ -290,8 +284,7 @@ namespace caffe {
 	}
 
 	template<typename Dtype>
-	void DataTransformer<Dtype>::Transform(const vector<Datum> & datum_vector,
-	Blob<Dtype>* transformed_blob) {
+	void DataTransformer<Dtype>::Transform(const vector<Datum> & datum_vector, Blob<Dtype>* transformed_blob) {
 		const int datum_num = datum_vector.size();
 		const int num = transformed_blob->num();
 		const int channels = transformed_blob->channels();
@@ -311,8 +304,7 @@ namespace caffe {
 
 #ifdef USE_OPENCV
 	template<typename Dtype>
-	void DataTransformer<Dtype>::Transform(const vector<cv::Mat> & mat_vector,
-	Blob<Dtype>* transformed_blob) {
+	void DataTransformer<Dtype>::Transform(const vector<cv::Mat> & mat_vector, Blob<Dtype>* transformed_blob) {
 		const int mat_num = mat_vector.size();
 		const int num = transformed_blob->num();
 		const int channels = transformed_blob->channels();
@@ -331,8 +323,7 @@ namespace caffe {
 	}
 
 	template<typename Dtype>
-	void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
-	Blob<Dtype>* transformed_blob, RandNumbers& rand_num) {
+	void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob, RandNumbers& rand_num) {
 		const bool do_mirror = param_.mirror() && rand_num(2);
 		const bool has_mean_file = param_.has_mean_file();
 		const bool has_mean_values = mean_values_.size() > 0;
@@ -363,8 +354,7 @@ namespace caffe {
 
 	template<typename Dtype>
 	template<bool do_mirror, bool has_mean_file, bool has_mean_values>
-	void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
-	Blob<Dtype>* transformed_blob, RandNumbers& rand_num) {
+	void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob, RandNumbers& rand_num) {
 		const int crop_size = param_.crop_size();
 		const int img_channels = cv_img.channels();
 		const int img_height = cv_img.rows;
@@ -463,8 +453,7 @@ namespace caffe {
 #endif  // USE_OPENCV
 
 	template<typename Dtype>
-	void DataTransformer<Dtype>::Transform(Blob<Dtype>* input_blob,
-	Blob<Dtype>* transformed_blob) {
+	void DataTransformer<Dtype>::Transform(Blob<Dtype>* input_blob, Blob<Dtype>* transformed_blob) {
 		const int crop_size = param_.crop_size();
 		const int input_num = input_blob->num();
 		const int input_channels = input_blob->channels();
@@ -673,7 +662,7 @@ namespace caffe {
 	//******************** START MODIFICATIONS FOR ANNOTATED DATA ******************
 	//******************************************************************************
 	template<typename Dtype>
-	void DataTransformer<Dtype>::Transform(const Datum& datum,Dtype* transformed_data, NormalizedBBox* crop_bbox, bool* do_mirror) {
+	void DataTransformer<Dtype>::Transform(const Datum& datum,Dtype* transformed_data, NormalizedBBox* crop_bbox, bool* do_mirror, RandNumbers& rand_num) {
 		const string& data = datum.data();
 		const int datum_channels = datum.channels();
 		const int datum_height = datum.height();
@@ -681,7 +670,7 @@ namespace caffe {
 
 		const int crop_size = param_.crop_size();
 		const Dtype scale = param_.scale();
-		*do_mirror = param_.mirror() && Rand(2);
+		*do_mirror = param_.mirror() && rand_num(2);
 		const bool has_mean_file = param_.has_mean_file();
 		const bool has_uint8 = data.size() > 0;
 		const bool has_mean_values = mean_values_.size() > 0;
@@ -718,8 +707,8 @@ namespace caffe {
 			width = crop_size;
 			// We only do random crop when we do training.
 			if (phase_ == TRAIN) {
-				h_off = Rand(datum_height - crop_size + 1);
-				w_off = Rand(datum_width - crop_size + 1);
+				h_off = rand_num(datum_height - crop_size + 1);
+				w_off = rand_num(datum_width - crop_size + 1);
 			} else {
 				h_off = (datum_height - crop_size) / 2;
 				w_off = (datum_width - crop_size) / 2;
@@ -766,10 +755,7 @@ namespace caffe {
 	}
 
 	template<typename Dtype>
-	void DataTransformer<Dtype>::Transform(const Datum& datum,
-	Blob<Dtype>* transformed_blob,
-	NormalizedBBox* crop_bbox,
-	bool* do_mirror) {
+	void DataTransformer<Dtype>::Transform(const Datum& datum, Blob<Dtype>* transformed_blob, NormalizedBBox* crop_bbox, bool* do_mirror, RandNumbers& rand_num) {
 		// If datum is encoded, decoded and transform the cv::image.
 		if (datum.encoded()) {
 #ifdef USE_OPENCV
@@ -783,7 +769,7 @@ namespace caffe {
 				cv_img = DecodeDatumToCVMatNative(datum);
 			}
 			// Transform the cv::image into blob.
-			return Transform(cv_img, transformed_blob, crop_bbox, do_mirror);
+			return Transform(cv_img, transformed_blob, crop_bbox, do_mirror, rand_num);
 #else
 			LOG(FATAL) << "Encoded datum requires OpenCV; compile with USE_OPENCV.";
 #endif  // USE_OPENCV
@@ -818,15 +804,12 @@ namespace caffe {
 		}
 
 		Dtype* transformed_data = transformed_blob->mutable_cpu_data();
-		Transform(datum, transformed_data, crop_bbox, do_mirror);
+		Transform(datum, transformed_data, crop_bbox, do_mirror, rand_num);
 	}
 	
 	
 	template<typename Dtype>
-	void DataTransformer<Dtype>::Transform(
-		const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob,
-	RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all,
-	bool* do_mirror) {
+	void DataTransformer<Dtype>::Transform(const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob, RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all, bool* do_mirror) {
 		// Transform datum.
 		const Datum& datum = anno_datum.datum();
 		NormalizedBBox crop_bbox;
@@ -839,18 +822,14 @@ namespace caffe {
 	}
 
 	template<typename Dtype>
-	void DataTransformer<Dtype>::Transform(
-		const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob,
-	RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all) {
+	void DataTransformer<Dtype>::Transform(const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob, RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all) {
 		bool do_mirror;
 		Transform(anno_datum, transformed_blob, transformed_anno_group_all,
 		&do_mirror);
 	}
 
 	template<typename Dtype>
-	void DataTransformer<Dtype>::Transform(
-		const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob,
-	vector<AnnotationGroup>* transformed_anno_vec, bool* do_mirror) {
+	void DataTransformer<Dtype>::Transform(const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob, vector<AnnotationGroup>* transformed_anno_vec, bool* do_mirror) {
 		RepeatedPtrField<AnnotationGroup> transformed_anno_group_all;
 		Transform(anno_datum, transformed_blob, &transformed_anno_group_all,
 		do_mirror);
@@ -868,10 +847,7 @@ namespace caffe {
 	}
 
 	template<typename Dtype>
-	void DataTransformer<Dtype>::TransformAnnotation(
-		const AnnotatedDatum& anno_datum, const bool do_resize,
-	const NormalizedBBox& crop_bbox, const bool do_mirror,
-	RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all) {
+	void DataTransformer<Dtype>::TransformAnnotation(const AnnotatedDatum& anno_datum, const bool do_resize, const NormalizedBBox& crop_bbox, const bool do_mirror, RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all) {
 		const int img_height = anno_datum.datum().height();
 		const int img_width = anno_datum.datum().width();
 		if (anno_datum.type() == AnnotatedDatum_AnnotationType_BBOX) {
@@ -928,9 +904,7 @@ namespace caffe {
 	}
 
 	template<typename Dtype>
-	void DataTransformer<Dtype>::CropImage(const Datum& datum,
-	const NormalizedBBox& bbox,
-	Datum* crop_datum) {
+	void DataTransformer<Dtype>::CropImage(const Datum& datum, const NormalizedBBox& bbox, Datum* crop_datum) {
 		// If datum is encoded, decode and crop the cv::image.
 		if (datum.encoded()) {
 #ifdef USE_OPENCV
@@ -997,9 +971,7 @@ namespace caffe {
 	}
 
 	template<typename Dtype>
-	void DataTransformer<Dtype>::CropImage(const AnnotatedDatum& anno_datum,
-	const NormalizedBBox& bbox,
-	AnnotatedDatum* cropped_anno_datum) {
+	void DataTransformer<Dtype>::CropImage(const AnnotatedDatum& anno_datum, const NormalizedBBox& bbox, AnnotatedDatum* cropped_anno_datum) {
 		// Crop the datum.
 		CropImage(anno_datum.datum(), bbox, cropped_anno_datum->mutable_datum());
 		cropped_anno_datum->set_type(anno_datum.type());
@@ -1014,10 +986,7 @@ namespace caffe {
 	}
 
 	template<typename Dtype>
-	void DataTransformer<Dtype>::ExpandImage(const Datum& datum,
-	const float expand_ratio,
-	NormalizedBBox* expand_bbox,
-	Datum* expand_datum) {
+	void DataTransformer<Dtype>::ExpandImage(const Datum& datum, const float expand_ratio, NormalizedBBox* expand_bbox, Datum* expand_datum) {
 		// If datum is encoded, decode and crop the cv::image.
 		if (datum.encoded()) {
 #ifdef USE_OPENCV
@@ -1088,8 +1057,7 @@ namespace caffe {
 	}
 
 	template<typename Dtype>
-	void DataTransformer<Dtype>::ExpandImage(const AnnotatedDatum& anno_datum,
-	AnnotatedDatum* expanded_anno_datum) {
+	void DataTransformer<Dtype>::ExpandImage(const AnnotatedDatum& anno_datum, AnnotatedDatum* expanded_anno_datum) {
 		if (!param_.has_expand_param()) {
 			expanded_anno_datum->CopyFrom(anno_datum);
 			return;
@@ -1158,7 +1126,7 @@ namespace caffe {
 	
 #ifdef USE_OPENCV
 	template<typename Dtype>
-	void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob, NormalizedBBox* crop_bbox, bool* do_mirror) {
+	void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob, NormalizedBBox* crop_bbox, bool* do_mirror, RandNumbers& rand_num) {
 		// Check dimensions.
 		const int img_channels = cv_img.channels();
 		const int channels = transformed_blob->channels();
@@ -1173,7 +1141,7 @@ namespace caffe {
 
 		const int crop_size = param_.crop_size();
 		const Dtype scale = param_.scale();
-		*do_mirror = param_.mirror() && Rand(2);
+		*do_mirror = param_.mirror() && rand_num(2);
 		const bool has_mean_file = param_.has_mean_file();
 		const bool has_mean_values = mean_values_.size() > 0;
 
@@ -1223,8 +1191,8 @@ namespace caffe {
 			CHECK_EQ(crop_w, width);
 			// We only do random crop when we do training.
 			if (phase_ == TRAIN) {
-				h_off = Rand(img_height - crop_h + 1);
-				w_off = Rand(img_width - crop_w + 1);
+				h_off = rand_num(img_height - crop_h + 1);
+				w_off = rand_num(img_width - crop_w + 1);
 			} else {
 				h_off = (img_height - crop_h) / 2;
 				w_off = (img_width - crop_w) / 2;
@@ -1282,9 +1250,7 @@ namespace caffe {
 	}
 	
 	template<typename Dtype>
-		void DataTransformer<Dtype>::TransformInv(const Dtype* data, cv::Mat* cv_img,
-	const int height, const int width,
-	const int channels) {
+	void DataTransformer<Dtype>::TransformInv(const Dtype* data, cv::Mat* cv_img, const int height, const int width, const int channels) {
 		const Dtype scale = param_.scale();
 		const bool has_mean_file = param_.has_mean_file();
 		const bool has_mean_values = mean_values_.size() > 0;
@@ -1337,8 +1303,7 @@ namespace caffe {
 	}
 
 	template<typename Dtype>
-	void DataTransformer<Dtype>::TransformInv(const Blob<Dtype>* blob,
-	vector<cv::Mat>* cv_imgs) {
+	void DataTransformer<Dtype>::TransformInv(const Blob<Dtype>* blob, vector<cv::Mat>* cv_imgs) {
 		const int channels = blob->channels();
 		const int height = blob->height();
 		const int width = blob->width();
@@ -1355,9 +1320,7 @@ namespace caffe {
 	}
 	
 	template <typename Dtype>
-	void DataTransformer<Dtype>::CropImage(const cv::Mat& img,
-	const NormalizedBBox& bbox,
-	cv::Mat* crop_img) {
+	void DataTransformer<Dtype>::CropImage(const cv::Mat& img, const NormalizedBBox& bbox, cv::Mat* crop_img) {
 		const int img_height = img.rows;
 		const int img_width = img.cols;
 
@@ -1378,10 +1341,7 @@ namespace caffe {
 	}
 
 	template <typename Dtype>
-	void DataTransformer<Dtype>::ExpandImage(const cv::Mat& img,
-	const float expand_ratio,
-	NormalizedBBox* expand_bbox,
-	cv::Mat* expand_img) {
+	void DataTransformer<Dtype>::ExpandImage(const cv::Mat& img, const float expand_ratio, NormalizedBBox* expand_bbox, cv::Mat* expand_img) {
 		const int img_height = img.rows;
 		const int img_width = img.cols;
 		const int img_channels = img.channels();

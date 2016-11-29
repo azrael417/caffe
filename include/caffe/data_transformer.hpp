@@ -138,7 +138,9 @@ namespace caffe {
 		*    set_cpu_data() is used. See data_layer.cpp for an example.
 		*/
 
-		void Transform(const Datum& datum, Blob<Dtype>* transformed_blob){Transform(datum, transformed_blob, rand_num_);}
+		void Transform(const Datum& datum, Blob<Dtype>* transformed_blob){
+			Transform(datum, transformed_blob, rand_num_);
+		}
 		void Transform(const Datum& datum, Blob<Dtype>* transformed_blob, RandNumbers& rand_num);
 
 		/**
@@ -244,7 +246,9 @@ namespace caffe {
 		*    set_cpu_data() is used. See image_data_layer.cpp for an example.
 		*/
 
-		void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob){Transform(cv_img, transformed_blob, rand_num_);}
+		void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob){
+			Transform(cv_img, transformed_blob, rand_num_);
+		}
 		void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob, RandNumbers& rand_num);
 														 
 														 
@@ -339,8 +343,7 @@ namespace caffe {
 	protected:
 		GenRandNumbers rand_num_;
 
-		void Transform(const Datum& datum, Dtype* transformed_data,
-		RandNumbers& rand_num);
+		void Transform(const Datum& datum, Dtype* transformed_data, RandNumbers& rand_num);
 		// Tranformation parameters
 		TransformationParameter param_;
 
@@ -355,25 +358,28 @@ namespace caffe {
 		//******************** START MODIFICATIONS FOR ANNOTATED DATA ******************
 		//******************************************************************************
 		// Transform and return the transformation information.
-		void Transform(const Datum& datum, Dtype* transformed_data, NormalizedBBox* crop_bbox, bool* do_mirror);
+		void Transform(const Datum& datum, Dtype* transformed_data, NormalizedBBox* crop_bbox, bool* do_mirror){
+			Transform(datum, transformed_data, crop_bbox, do_mirror, rand_num);
+		}
+		void Transform(const Datum& datum, Dtype* transformed_data, NormalizedBBox* crop_bbox, bool* do_mirror, RandNumbers& rand_num);
 		/**
 		* @brief Applies the transformation defined in the data layer's
 		* transform_param block to the data and return transform information.
 		*/
-		void Transform(const Datum& datum, Blob<Dtype>* transformed_blob, NormalizedBBox* crop_bbox, bool* do_mirror);
+		void Transform(const Datum& datum, Blob<Dtype>* transformed_blob, NormalizedBBox* crop_bbox, bool* do_mirror){
+			Transform(datum, transformed_blob, crop_bbox, do_mirror, rand_num_);
+		}
+		void Transform(const Datum& datum, Blob<Dtype>* transformed_blob, NormalizedBBox* crop_bbox, bool* do_mirror, RandNumbers& rand_num);
 		//******************************************************************************
 		//******************** END MODIFICATIONS FOR ANNOTATED DATA ********************
 		//******************************************************************************
 
 	private:
 		template<bool do_mirror, bool has_mean_file, bool has_mean_values>
-		void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob,
-		RandNumbers& rand_num);
+		void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob, RandNumbers& rand_num);
 
-		template<bool has_uint8,  bool do_mirror, bool has_mean_file,
-		bool has_mean_values>
-			void Transform(const Datum& datum, Dtype* transformed_data,
-		RandNumbers& rand_num);
+		template<bool has_uint8,  bool do_mirror, bool has_mean_file,bool has_mean_values>
+		void Transform(const Datum& datum, Dtype* transformed_data, RandNumbers& rand_num);
 	};
 
 }  // namespace caffe

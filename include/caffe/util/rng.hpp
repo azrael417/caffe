@@ -14,14 +14,14 @@ For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CON
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
-    * Redistributions of source code must retain the above copyright notice,
-      this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Intel Corporation nor the names of its contributors
-      may be used to endorse or promote products derived from this software
-      without specific prior written permission.
+* Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+* Neither the name of Intel Corporation nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -48,33 +48,33 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace caffe {
 
-typedef boost::mt19937 rng_t;
+	typedef boost::mt19937 rng_t;
 
-inline rng_t* caffe_rng() {
-  return static_cast<caffe::rng_t*>(Caffe::rng_stream().generator());
-}
+	inline rng_t* caffe_rng() {
+		return static_cast<caffe::rng_t*>(Caffe::rng_stream().generator());
+	}
 
-// Fisher–Yates algorithm
-template <class RandomAccessIterator, class RandomGenerator>
-inline void shuffle(RandomAccessIterator begin, RandomAccessIterator end,
-                    RandomGenerator* gen) {
-  typedef typename std::iterator_traits<RandomAccessIterator>::difference_type
-      difference_type;
-  typedef typename boost::uniform_int<difference_type> dist_type;
+	// Fisher–Yates algorithm
+	template <class RandomAccessIterator, class RandomGenerator>
+	inline void shuffle(RandomAccessIterator begin, RandomAccessIterator end,
+	RandomGenerator* gen) {
+		typedef typename std::iterator_traits<RandomAccessIterator>::difference_type
+			difference_type;
+		typedef typename boost::uniform_int<difference_type> dist_type;
 
-  difference_type length = std::distance(begin, end);
-  if (length <= 0) return;
+		difference_type length = std::distance(begin, end);
+		if (length <= 0) return;
 
-  for (difference_type i = length - 1; i > 0; --i) {
-    dist_type dist(0, i);
-    std::iter_swap(begin + i, begin + dist(*gen));
-  }
-}
+		for (difference_type i = length - 1; i > 0; --i) {
+			dist_type dist(0, i);
+			std::iter_swap(begin + i, begin + dist(*gen));
+		}
+	}
 
-template <class RandomAccessIterator>
-inline void shuffle(RandomAccessIterator begin, RandomAccessIterator end) {
-  shuffle(begin, end, caffe_rng());
-}
+	template <class RandomAccessIterator>
+	inline void shuffle(RandomAccessIterator begin, RandomAccessIterator end) {
+		shuffle(begin, end, caffe_rng());
+	}
 }  // namespace caffe
 
 #endif  // CAFFE_RNG_HPP_
