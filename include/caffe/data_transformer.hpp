@@ -359,7 +359,7 @@ namespace caffe {
 		//******************************************************************************
 		// Transform and return the transformation information.
 		void Transform(const Datum& datum, Dtype* transformed_data, NormalizedBBox* crop_bbox, bool* do_mirror){
-			Transform(datum, transformed_data, crop_bbox, do_mirror, rand_num);
+			Transform(datum, transformed_data, crop_bbox, do_mirror, rand_num_);
 		}
 		void Transform(const Datum& datum, Dtype* transformed_data, NormalizedBBox* crop_bbox, bool* do_mirror, RandNumbers& rand_num);
 		/**
