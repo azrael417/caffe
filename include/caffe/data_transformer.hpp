@@ -266,7 +266,10 @@ namespace caffe {
 		*    This is destination blob. It can be part of top blob's data if
 		*    set_cpu_data() is used. See image_data_layer.cpp for an example.
 		*/
-		void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob, NormalizedBBox* crop_bbox, bool* do_mirror);
+		void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob, NormalizedBBox* crop_bbox, bool* do_mirror){
+			void Transform(cv_img, transformed_blob, crop_bbox, do_mirror, rand_num_);
+		}
+		void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob, NormalizedBBox* crop_bbox, bool* do_mirror, RandNumbers& rand_num);
 		
 		
 		/**
