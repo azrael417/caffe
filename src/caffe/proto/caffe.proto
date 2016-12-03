@@ -599,7 +599,8 @@ message LayerParameter {
   optional NormalizeParameter norm_param = 206;
   optional PermuteParameter permute_param = 207;
   optional PriorBoxParameter prior_box_param = 208;
-  optional YoloLossParameter yolo_loss_param = 209;
+  optional VideoDataParameter video_data_param = 209;
+  optional YoloLossParameter yolo_loss_param = 210;
 }
 
 // Message that stores parameters used to apply transformation
