@@ -134,7 +134,7 @@ def plot_batch_scaling(df, threshold, threads=1, arch='', res_path=''):
     ax.set_ylim(ymin=0)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[::-1], labels[::-1], loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.savefig(os.path.join(res_path, arch+'_batch scaling_'+str(threads)+'th.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+    plt.savefig(os.path.join(res_path, arch+'_batch scaling_'+str(threads)+'th.jpg'), format='jpg',bbox_inches='tight', dpi=250)
     return ax
 
 def plot_thread_scaling(df, threshold, batch_size=1, arch='', res_path=''):
@@ -156,7 +156,7 @@ def plot_thread_scaling(df, threshold, batch_size=1, arch='', res_path=''):
     ax.set_title(arch+' thread scaling with '+str(batch_size)+' batch size')
     ax.set_ylim(ymin=0)
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.savefig(os.path.join(res_path, arch+'_thread_scaling_'+str(batch_size)+'_batch_size.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+    plt.savefig(os.path.join(res_path, arch+'_thread_scaling_'+str(batch_size)+'_batch_size.jpg'), format='jpg',bbox_inches='tight', dpi=250)
 
     return ax
 
@@ -198,8 +198,9 @@ def plot_comparative(files_loc, threshold, res_path='', title_postfix='', sort_d
         new_labels.append(l+' '+str(exp_time[l])+'s/iter (no data)')
     ax.legend(handles, new_labels)#, loc='center left', bbox_to_anchor=(1.15, 0.5))
 
-    plt.savefig(os.path.join(res_path,'comparative_layers_time'+title_postfix+'.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+    plt.savefig(os.path.join(res_path,'comparative_layers_time'+title_postfix+'.jpg'), format='jpg',bbox_inches='tight', dpi=250)
     return ax
+
 
 def plot_pie(files_loc, threshold, res_path='', title_postfix='', sort_data=True):
     """Plot a time breakdown pie chart from a data frame record"""
@@ -226,12 +227,14 @@ def plot_pie(files_loc, threshold, res_path='', title_postfix='', sort_data=True
     if(sort_data):
         plt_data= plt_data.sort_index()
         plt_data.sort_values(by=plt_data.columns.values[0], inplace=True, ascending=False)
-    ser = pd.Series(plt_data.iloc[:,0].values, index=plt_data.index.values)
-    ax = ser.plot.pie()
+    fig = plt.figure()
+    ax = fig.gca()
+    ax.pie(plt_data.iloc[:,0].values, labels=plt_data.index.values)
     ax.legend(loc='center left', bbox_to_anchor=(1.15, 0.5))
     ax.set_title('Time breakdown '+title_postfix)
-    plt.savefig(os.path.join(res_path,'time_breakdown'+title_postfix+'.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+    plt.savefig(os.path.join(res_path,'time_breakdown'+title_postfix+'.jpg'), format='jpg',bbox_inches='tight', dpi=250)
     return ax
+
 
 def plot_flops(sde_files_loc, time_file_loc, res_path='', title_postfix='', sort_data=False, threshold=1.0):
     """Plot the flop rate given a set of results from SDE for each layer and the time experiement"""
@@ -271,7 +274,7 @@ def plot_flops(sde_files_loc, time_file_loc, res_path='', title_postfix='', sort
     ax.set_title('Layers flop rate'+' (filtered layers <'+str(threshold)+'% time)')
     ax.set_ylabel('GFLOP/s')
     ax.set_xlabel('Layer')
-    plt.savefig(os.path.join(res_path,'flops_rate.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+    plt.savefig(os.path.join(res_path,'flops_rate.jpg'), format='jpg',bbox_inches='tight', dpi=250)
     return ax
 
 def plot_all(f_wildcard, threshold=1.0, res_path=''):
@@ -389,7 +392,7 @@ def plot_roofline_points(points_list,res_path='',title_prefix='', labels_markers
     ax.legend(scatterpoints=1, prop={'size':20}, loc='center left', bbox_to_anchor=(1, 0.5),title='layers end w/ time %')
     ax.get_legend().get_title().set_fontsize('20')
 
-    plt.savefig(os.path.join(res_path,'roofline.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+    plt.savefig(os.path.join(res_path,'roofline.jpg'), format='jpg',bbox_inches='tight', dpi=250)
     return ax
 
 
