@@ -308,6 +308,10 @@ def plot_roofline_points(points_list,res_path='',title_prefix='', labels_markers
         fma_fac=2 if fma else 1
         return cpu_speed*num_cores*vector_length*fma_fac
 
+    def get_rl_edges(x0,x1,p_flop,p_mem):
+        x = [x0, p_flop/p_mem, x1]
+        y = [x0*p_mem, p_flop, p_flop]
+        return x, y
     #Xeon Phi KNL, datasheet
     cpu_speed_ghz=1.4
     num_cores=68
@@ -319,14 +323,12 @@ def plot_roofline_points(points_list,res_path='',title_prefix='', labels_markers
     l3_cache_per_cpu_mb=0
     peak_gflops_ixeknl=get_gflops_per_core(cpu_speed_ghz,num_cores,vector_length,True)
 
-    xopt = np.arange(0.1,250,0.1)
-    yopt = [np.min([val*peak_bandwidth_hbm_gbs,peak_gflops_ixeknl]) for val in xopt]
-    ynohbm = [np.min([val*peak_bandwidth_gbs,peak_gflops_ixeknl]) for val in xopt]
-    #ytlponly = [np.min([val*peak_bandwidth_hbm_gbs,get_gflops_per_core(cpu_speed_ghz,num_cores,1,False)]) for val in xopt]
-    #ytlpilp = [np.min([val*peak_bandwidth_hbm_gbs,get_gflops_per_core(cpu_speed_ghz,num_cores,2,False)]) for val in xopt]
-    #ynofma = [np.min([val*peak_bandwidth_hbm_gbs,get_gflops_per_core(cpu_speed_ghz,num_cores,vector_length,False)]) for val in xopt]
-    yfmanosimd = [np.min([val*peak_bandwidth_hbm_gbs,get_gflops_per_core(cpu_speed_ghz,num_cores,2,True)]) for val in xopt]
-    yopt75p = [np.min([val*peak_bandwidth_hbm_gbs,peak_gflops_ixeknl*0.75]) for val in xopt]
+    x0=0.1
+    last_x = 250.
+    opt_x, opt_y = get_rl_edges(x0,last_x,peak_gflops_ixeknl,peak_bandwidth_hbm_gbs)
+    opt75p_x, opt75p_y = get_rl_edges(x0,last_x,peak_gflops_ixeknl*0.75,peak_bandwidth_hbm_gbs)
+    nohbm_x, nohbm_y = get_rl_edges(x0, last_x, peak_gflops_ixeknl, peak_bandwidth_gbs)
+    fmanosimd_x, fmanosimd_y = get_rl_edges(x0,last_x,get_gflops_per_core(cpu_speed_ghz,num_cores,2,True),peak_bandwidth_hbm_gbs)
 
     #removed malicious dpi=1024 argument
     plt.figure(num=None, figsize=(20, 27), facecolor='w', edgecolor='k')
@@ -346,7 +348,7 @@ def plot_roofline_points(points_list,res_path='',title_prefix='', labels_markers
         miny = min(miny, y)
         maxx = max(maxx, x)
         maxy = max(maxy, y)
-    plt.xlim(10**(-1),max(xopt))
+    plt.xlim(10**(-1),last_x)
     plt.ylim(min(10**(1),miny),10**4)
 
     ax.tick_params(axis='both', which='major', size=15)
@@ -354,13 +356,10 @@ def plot_roofline_points(points_list,res_path='',title_prefix='', labels_markers
     ax.tick_params(axis='both', which='major', labelsize=50)
 
     #lines
-    line0,=plt.plot(xopt, yopt75p, '-', linewidth=3,color='k',label='75% of optimal SP')
-    line1,=plt.plot(xopt, yopt, '-', linewidth=3,color='green',label='optimal SP (HBM)')
-    line2,=plt.plot(xopt, ynohbm, '-.', linewidth=5,color='k',label='optimal SP (DDR)')
-    #line3,=plt.plot(xopt, ynofma, '-', linewidth=3,color='orange',label='no FMA')
-    line3m,=plt.plot(xopt, yfmanosimd, '--', linewidth=3,color='blue',label='FMA no SIMD')
-    #line4,=plt.plot(xopt, ytlpilp, '-', linewidth=3,color='red',label='TLP with ILP')
-    #line4m,=plt.plot(xopt, ytlponly, '--', linewidth=3,color='red',label='TLP only')
+    line0,=plt.plot(opt75p_x, opt75p_y, '-', linewidth=3,color='k',label='75% of optimal SP')
+    line1,=plt.plot(opt_x, opt_y, '-', linewidth=3,color='green',label='optimal SP (HBM)')
+    line2,=plt.plot(nohbm_x, nohbm_y, '-.', linewidth=5,color='k',label='optimal SP (DDR)')
+    line3m,=plt.plot(fmanosimd_x, fmanosimd_y, '--', linewidth=3,color='blue',label='FMA no SIMD')
 
     banned_colors = ['yellow','gold','pink','mistyrose','navajowhite','palegreen','greenyellow',
                      'seashell','papayawhip','blanchedalmond','chartreuse','white', 'ivory', 'lawngreen',
@@ -468,7 +467,7 @@ def generate_roofline_sde(time_file_loc, sde_files_loc, likwid_file_loc, res_pat
 def generate_roofline_likwid(time_file_loc, likwid_file_loc, res_path=''
                       ,sort_data=False, title_prefix='', threshold=1.):
     df = get_df(glb(time_file_loc))
-    """Generate roofline figure from flops/mem events using LIKWID, and timing measurements"""
+    """Generate roofline figure from SDE, LIKWID, and timing measurements"""
 
     layers = list(df['layers'].tolist()[0])
     expanded_layers = []
