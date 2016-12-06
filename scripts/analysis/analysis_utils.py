@@ -206,10 +206,13 @@ def plot_pie(files_loc, threshold, res_path='', title_postfix='', sort_data=True
     """Plot a time breakdown pie chart from a data frame record"""
     df = get_df(glb(files_loc))
     
-    df['time per iteration'] = df['time per iteration'] - df['data forward avg time']
-    df['time per iteration'] = df['time per iteration'] - df['data backward avg time']
-    df.drop('data forward avg time', axis=1, inplace=True)
-    df.drop('data backward avg time', axis=1, inplace=True)
+    if 'data forward avg time' in df.columns.values:
+        df['time per iteration'] = df['time per iteration'] - df['data forward avg time']
+        df.drop('data forward avg time', axis=1, inplace=True)
+
+    if 'data backward avg time' in df.columns.values:
+        df['time per iteration'] = df['time per iteration'] - df['data backward avg time']
+        df.drop('data backward avg time', axis=1, inplace=True)
 
     df_filt = group_small_entries(df, threshold)
     df_filt = normalize_time(df_filt)
