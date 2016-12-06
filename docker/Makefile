@@ -1,6 +1,7 @@
 # A makefile to build the docker images for caffe.
-# Two caffe images will be built:
-#   caffe:cpu --> A CPU-only build of caffe.
+# Three caffe images can be built:
+#   caffe:cpu-centos --> A CPU-only build of caffe in CentOS-based image.
+#   caffe:cpu-ubuntu --> A CPU-only build of caffe in Ubuntu-based image.
 #   caffe:gpu --> A GPU-enabled build using the latest CUDA and CUDNN versions.
 
 DOCKER ?= docker
@@ -17,20 +18,22 @@ all: docker_files standalone
 
 .PHONY: standalone devel
 
-standalone: cpu_standalone gpu_standalone intel_standalone
+cpu_standalone: cpu-centos cpu-ubuntu
+standalone: cpu_standalone gpu_standalone
 
-cpu_standalone: standalone/cpu/Dockerfile
-	$(DOCKER) build $(DOCKER_BUILD_ARG) -t caffe:cpu standalone/cpu
+cpu-centos: standalone/cpu-centos/Dockerfile
+	$(DOCKER) build $(DOCKER_BUILD_ARG) -t caffe:cpu-centos standalone/cpu-centos
+
+cpu-ubuntu: standalone/cpu-ubuntu/Dockerfile
+	$(DOCKER) build $(DOCKER_BUILD_ARG) -t caffe:cpu-ubuntu standalone/cpu-ubuntu
 
 gpu_standalone: standalone/gpu/Dockerfile
 	$(DOCKER) build $(DOCKER_BUILD_ARG) -t caffe:gpu standalone/gpu
 
-intel_standalone: standalone/intel/Dockerfile
-	$(DOCKER) build $(DOCKER_BUILD_ARG) -t caffe:intel standalone/intel
 
 docker_files: standalone_files
 
-standalone_files: standalone/cpu/Dockerfile standalone/gpu/Dockerfile standalone/intel/Dockerfile
+standalone_files: standalone/cpu-centos/Dockerfile standalone/cpu-ubuntu/Dockerfile standalone/gpu/Dockerfile 
 
 FROM_GPU = "nvidia/cuda:7.5-cudnn5-devel-ubuntu14.04"
 FROM_CPU = "ubuntu:14.04"

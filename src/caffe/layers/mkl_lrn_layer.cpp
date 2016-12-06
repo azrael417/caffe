@@ -41,6 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "caffe/layer.hpp"
 #include "caffe/layers/mkl_layers.hpp"
 #include "caffe/util/math_functions.hpp"
+#include "caffe/util/performance.hpp"
 
 namespace caffe {
 
@@ -52,7 +53,7 @@ MKLLRNLayer<Dtype>::~MKLLRNLayer() {
 }
 
 template <typename Dtype>
-void MKLLRNLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+void MKLLRNLayer<Dtype>::Init(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   size_ = this->layer_param_.lrn_param().local_size();
   CHECK_EQ(size_ % 2, 1) << "LRN only supports odd values for local_size";
@@ -83,14 +84,24 @@ void MKLLRNLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   bwd_top_diff->name =    "bwd_top_diff      @ " + this->layer_param_.name();
   bwd_bottom_diff->name = "bwd_bottom_diff   @ " + this->layer_param_.name();
 
-  fwd_bottom_data->create_user_layout(dim, sizes, strides);
-  fwd_top_data   ->create_user_layout(dim, sizes, strides);
-  bwd_bottom_diff->create_user_layout(dim, sizes, strides);
-  bwd_top_diff   ->create_user_layout(dim, sizes, strides);
+  fwd_bottom_data->create_user_layout(dim, sizes, strides, false);
+  fwd_top_data   ->create_user_layout(dim, sizes, strides, false);
+  bwd_bottom_diff->create_user_layout(dim, sizes, strides, false);
+  bwd_top_diff   ->create_user_layout(dim, sizes, strides, false);
 
   // Fwd, Bwd primitives and lrn_buffer_ are allocated in  "Lazy"
   // mode, because here we don't know
   // what layout is used by neighbours.
+  dnnDelete<Dtype>(lrnFwd);
+  dnnDelete<Dtype>(lrnBwd);
+  dnnReleaseBuffer<Dtype>(lrn_buffer_);
+  lrn_buffer_ = NULL;
+}
+
+template <typename Dtype>
+void MKLLRNLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top) {
+  Init(bottom, top);
 }
 
 template <typename Dtype>
@@ -98,6 +109,15 @@ void MKLLRNLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   CHECK_EQ(4, bottom[0]->num_axes()) << "Input must have 4 axes, "
       << "corresponding to (num, channels, height, width)";
+
+  bool reshaping = true;
+  if ((num_ == bottom[0]->num()) &&
+      channels_ == bottom[0]->channels() &&
+      height_ == bottom[0]->height() &&
+      width_ == bottom[0]->width()) {
+    reshaping = false;
+  }
+
   channels_ = bottom[0]->channels();
   height_ = bottom[0]->height();
   width_ = bottom[0]->width();
@@ -111,6 +131,10 @@ void MKLLRNLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
     break;
   default:
     LOG(FATAL) << "Unknown normalization region.";
+  }
+
+  if (reshaping == true) {
+    Init(bottom, top);
   }
 }
 
@@ -213,7 +237,10 @@ void MKLLRNLayer<Dtype>::CrossChannelForward_cpu(
   }
   lrn_res[dnnResourceWorkspace] = lrn_buffer_;
 
+  PERFORMANCE_MEASUREMENT_BEGIN();
   e = dnnExecute<Dtype>(lrnFwd, lrn_res);
+  PERFORMANCE_MEASUREMENT_END_STATIC("FW_mkl_lrn");
+
   CHECK_EQ(e, E_SUCCESS);
 }
 
@@ -251,7 +278,11 @@ void MKLLRNLayer<Dtype>::CrossChannelBackward_cpu(
   } else {
     lrn_res[dnnResourceDiffSrc] = bottom[0]->mutable_cpu_diff();
   }
+
+  PERFORMANCE_MEASUREMENT_BEGIN();
   e = dnnExecute<Dtype>(lrnBwd, lrn_res);
+  PERFORMANCE_MEASUREMENT_END_STATIC("BW_mkl_lrn");
+
   CHECK_EQ(e, E_SUCCESS);
 }
 

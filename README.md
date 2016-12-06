@@ -20,7 +20,7 @@ Framework development discussions and thorough bug reports are collected on [Iss
 
 Happy brewing!
 
-# Intel Caffe
+# Intel® Distribution of Caffe*
 This fork is dedicated to improving Caffe performance when running on CPU, in particular Intel® Xeon processors (HSW, BDW, Xeon Phi)
 
 ## Building
@@ -40,31 +40,12 @@ to use more than one thread per core. When less than required cores are specifie
 limit execution of OpenMP threads to specified cores only.
 
 ## Best performance solution
-Please read [release notes](https://github.com/intel/caffe/blob/master/docs/release_notes.md) for our recommendations and configuration to achieve best performance on Intel CPUs. 
+Please read [our Wiki](https://github.com/intel/caffe/wiki/Recommendations-to-achieve-best-performance) for our recommendations and configuration to achieve best performance on Intel CPUs. 
 
 ## Multinode Training
-Intel Caffe multinode allows you to execute deep neural network training on multiple machines.
+Intel® Distribution of Caffe* multi-node allows you to execute deep neural network training on multiple machines.
 
-You should read our Wiki to understand how it works.
-For quick start read [Multinode quickstart guide](https://github.com/intelcaffe/caffe/wiki/Multinode-quickstart-guide), next [Multinode How to ...?](https://github.com/intelcaffe/caffe/wiki/Multinode---How-to-...%3F)
-
-Please see also prepared examples for cifar10 and Googlenet.
-
-For cifar10 example look at `examples/cifar10/train_full_multinode_mpi.sh` file. The script runs 4 processes on localhost. Prepared proto solvers should result in exactly the same behavior as single node full cifar training.
-It uses the MPI setup with an implicit parameter server (*all-reduce* approach). Each process is calculating its own gradients and sending them up through the binary tree structure. The intermediate nodes accumulate the received gradients with their own. The root node applies the weight updates and propagates them down the tree.
-
-A copy of the data has to be accessible from all of the nodes. Datasets can be either distributed to each node or on a parallel file system. The snapshots are saved only by the root process. The same applies to the test phase - it is carried out by the root process.
-
-For Googlenet example look at `models/bvlc_googlenet/solver_client.prototxt`. The solver tries to offset the bigger batch size with bigger learning rate. According to paper:
-
-    @article{
-      Author = {Forrest N. Iandola, Khalid Ashraf, Matthew W. Moskewicz, Kurt Keutzer},
-      Journal = {arXiv preprint arXiv:1511.00175},
-      Title = {FireCaffe: near-linear acceleration of deep neural network training on compute clusters},
-      Year = {2016}
-    }
-
-this should use 72 epochs to train Googlenet.
+To understand how it works and read some tutorials, go to our Wiki. Start from [Multinode guide](https://github.com/intel/caffe/wiki/Multinode-guide).
 
 ## License and Citation
 Caffe is released under the [BSD 2-Clause license](https://github.com/BVLC/caffe/blob/master/LICENSE).
@@ -78,3 +59,6 @@ Please cite Caffe in your publications if it helps your research:
       Title = {Caffe: Convolutional Architecture for Fast Feature Embedding},
       Year = {2014}
     }
+
+***
+ *Other names and brands may be claimed as the property of others

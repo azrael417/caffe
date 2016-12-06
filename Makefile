@@ -453,7 +453,7 @@ ifneq ("$(wildcard $(MKLDNN_INCLUDE)/mkldnn.hpp)","")
 	ifeq ($(USE_MKLDNN_AS_DEFAULT_ENGINE), 1)
 	CXXFLAGS += -DUSE_MKLDNN_AS_DEFAULT_ENGINE
 	endif
-	LIBRARIES += mkldnn
+	MKLDNN_LDFLAGS+=-lmkldnn
 	MKLDNN_LDFLAGS+=-L$(MKLDNNROOT)/lib -Wl,-rpath,$(MKLDNNROOT)/lib
 endif
 
@@ -463,11 +463,7 @@ MKL_EXTERNAL := 0
 BLAS ?= mkl
 ifeq ($(BLAS), mkl)
 	# MKL
-	ICC_ON=0
-	ifneq (,$(findstring icpc,$(CXX)))
-		ICC_ON=1
-	endif
-	RETURN_STRING=$(shell ./external/mkl/prepare_mkl.sh $(ICC_ON))
+	RETURN_STRING=$(shell ./external/mkl/prepare_mkl.sh)
 	MKLROOT=$(firstword $(RETURN_STRING))
 	MKL_LDFLAGS=-l$(word 2, $(RETURN_STRING))
 	MKL_EXTERNAL=$(lastword $(RETURN_STRING))
