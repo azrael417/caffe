@@ -41,6 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "caffe/layers/mkl_layers.hpp"
 #include "caffe/util/math_functions.hpp"
+#include "caffe/util/performance.hpp"
 
 namespace caffe {
 
@@ -50,19 +51,12 @@ MKLEltwiseLayer<Dtype>::~MKLEltwiseLayer() {
 }
 
 template <typename Dtype>
-void MKLEltwiseLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
-  CHECK(this->layer_param().eltwise_param().coeff_size() == 0
-      || this->layer_param().eltwise_param().coeff_size() == bottom.size()) <<
-      "MKLEltwise Layer takes one coefficient per bottom blob.";
-  CHECK(!(this->layer_param().eltwise_param().operation()
-      == EltwiseParameter_EltwiseOp_PROD
-      && this->layer_param().eltwise_param().coeff_size())) <<
-      "MKLEltwise layer only takes coefficients for summation.";
-
-  CHECK(this->layer_param().eltwise_param().operation() ==
-    EltwiseParameter_EltwiseOp_SUM)
-      << "MKLEltwise Layer only process summation.";
+void MKLEltwiseLayer<Dtype>::Init(const vector<Blob<Dtype>*>& bottom,
+             const vector<Blob<Dtype>*>& top) {
+  channels_ = bottom[0]->channels();
+  height_ = bottom[0]->height();
+  width_ = bottom[0]->width();
+  num_ = bottom[0]->num();
 
   op_ = this->layer_param_.eltwise_param().operation();
   // Blob-wise coefficients for the elementwise operation.
@@ -88,11 +82,38 @@ void MKLEltwiseLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       bwd_bottom_diff.push_back(
         shared_ptr<MKLDiff<Dtype> >(new MKLDiff<Dtype>));
       CHECK_EQ(dim_src, bottom[i]->shape().size());
-      fwd_bottom_data[i]->create_user_layout(dim_src, sizes_src, strides_src);
-      bwd_bottom_diff[i]->create_user_layout(dim_src, sizes_src, strides_src);
+      fwd_bottom_data[i]->create_user_layout(dim_src,
+                                             sizes_src,
+                                             strides_src,
+                                             false);
+      bwd_bottom_diff[i]->create_user_layout(dim_src,
+                                             sizes_src,
+                                             strides_src,
+                                             false);
   }
 
-  fwd_top_data->create_user_layout(dim_src, sizes_src, strides_src);
+  fwd_top_data->create_user_layout(dim_src, sizes_src, strides_src, false);
+
+  dnnDelete<Dtype>(sumPrimitive);
+}
+
+
+template <typename Dtype>
+void MKLEltwiseLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top) {
+  CHECK(this->layer_param().eltwise_param().coeff_size() == 0
+      || this->layer_param().eltwise_param().coeff_size() == bottom.size()) <<
+      "MKLEltwise Layer takes one coefficient per bottom blob.";
+  CHECK(!(this->layer_param().eltwise_param().operation()
+      == EltwiseParameter_EltwiseOp_PROD
+      && this->layer_param().eltwise_param().coeff_size())) <<
+      "MKLEltwise layer only takes coefficients for summation.";
+
+  CHECK(this->layer_param().eltwise_param().operation() ==
+    EltwiseParameter_EltwiseOp_SUM)
+      << "MKLEltwise Layer only process summation.";
+
+  Init(bottom, top);
 }
 
 template <typename Dtype>
@@ -107,6 +128,16 @@ void MKLEltwiseLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       EltwiseParameter_EltwiseOp_MAX && top.size() == 1) {
     max_idx_.Reshape(bottom[0]->shape());
   }
+
+  if (channels_ == bottom[0]->channels() &&
+      height_ == bottom[0]->height() &&
+      width_ == bottom[0]->width() &&
+      num_ == bottom[0]->num() &&
+      num_bottoms == bottom.size()) {
+    return;
+  }
+
+  Init(bottom, top);
 }
 
 template <typename Dtype>
@@ -186,7 +217,11 @@ void MKLEltwiseLayer<Dtype>::Forward_cpu(
         reinterpret_cast<void*>(const_cast<Dtype*>(top[0]->mutable_cpu_data()));
     }
 
-    e = dnnExecute<Dtype>(sumPrimitive, eltwise_res);
+    { // local scope needed since the macro below contains variable declaration
+      PERFORMANCE_MEASUREMENT_BEGIN();
+      e = dnnExecute<Dtype>(sumPrimitive, eltwise_res);
+      PERFORMANCE_MEASUREMENT_END_STATIC("FW_mkl_eltwise");
+    }
     CHECK_EQ(e, E_SUCCESS);
 
     break;

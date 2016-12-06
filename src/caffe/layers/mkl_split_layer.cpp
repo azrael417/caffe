@@ -40,6 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "caffe/layers/mkl_layers.hpp"
 #include "caffe/util/math_functions.hpp"
+#include "caffe/util/performance.hpp"
 
 namespace caffe {
 
@@ -49,26 +50,43 @@ MKLSplitLayer<Dtype>::~MKLSplitLayer() {
 }
 
 template <typename Dtype>
-void MKLSplitLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+void MKLSplitLayer<Dtype>::Init(
+      const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   num_tops = top.size();
   size_t dim_src = bottom[0]->shape().size();
-
-  size_t sizes_src[dim_src], strides_src[dim_src];
+  this->sizes_src_.resize(dim_src);
+  this->strides_src_.resize(dim_src);
   for (size_t d = 0; d < dim_src; ++d) {
-    sizes_src[d] = bottom[0]->shape()[dim_src - d - 1];
-    strides_src[d] = (d == 0) ? 1 : strides_src[d-1]*sizes_src[d-1];
+    this->sizes_src_[d] = bottom[0]->shape()[dim_src - d - 1];
+    this->strides_src_[d] = (d == 0) ?
+                1 : this->strides_src_[d-1]*this->sizes_src_[d-1];
   }
 
   for (size_t i = 0; i < num_tops; ++i) {
     bwd_top_diff.push_back(shared_ptr<MKLDiff<Dtype> >(new MKLDiff<Dtype>));
-    bwd_top_diff[i]->create_user_layout(dim_src, sizes_src, strides_src);
+    bwd_top_diff[i]->create_user_layout(dim_src,
+                                        &(this->sizes_src_[0]),
+                                        &(this->strides_src_[0]),
+                                        false);
   }
 
   // Blob-wise coefficients for the elementwise operation.
   coeffs_ = vector<Dtype>(top.size(), 1);
 
-  bwd_bottom_diff->create_user_layout(dim_src, sizes_src, strides_src);
+  bwd_bottom_diff->create_user_layout(dim_src,
+                                      &(this->sizes_src_[0]),
+                                      &(this->strides_src_[0]),
+                                      false);
+
+  // Primitive will be created at first time it is to be used
+  dnnDelete<Dtype>(sumPrimitive);
+}
+
+template <typename Dtype>
+void MKLSplitLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top) {
+  Init(bottom, top);
 }
 
 template <typename Dtype>
@@ -86,6 +104,34 @@ void MKLSplitLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
     top[i]->ReshapeLike(*bottom[0]);
     CHECK_EQ(count_, top[i]->count());
   }
+
+  // Here we check
+  // Here I check for sizes whther to destroy primitives
+  size_t dim_src = bottom[0]->shape().size();
+
+  // If dimensions of blobs are the same as they were then
+  // do not really destroy primitives
+  if (dim_src == this->sizes_src_.size()) {
+    // .. check for strides and size dims if they corresspond each other
+
+    // TODO: speedup comparison?
+    bool is_match = true;
+    for (size_t d = 0; d < dim_src; ++d) {
+        is_match = is_match && (this->sizes_src_[d] ==
+                                bottom[0]->shape()[dim_src - 1 - d]);
+        is_match = is_match && (this->strides_src_[d] == ((d == 0) ? 1 :
+                                this->strides_src_[d-1]*this->sizes_src_[d-1]));
+    }
+
+    // If no new modification was done to layout sizes,
+    // strides realtivly to previous iteration then
+    // no primitives recreation is needed
+    if (is_match) {
+      return;
+    }
+  }
+
+  Init(bottom, top);
 }
 
 template <typename Dtype>
@@ -172,7 +218,10 @@ void MKLSplitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         reinterpret_cast<void*>(bottom[0]->mutable_cpu_diff());
   }
 
+  PERFORMANCE_MEASUREMENT_BEGIN();
   e = dnnExecute<Dtype>(sumPrimitive, sum_res);
+  PERFORMANCE_MEASUREMENT_END_STATIC("BW_mkl_split");
+
   CHECK_EQ(e, E_SUCCESS);
 }
 
