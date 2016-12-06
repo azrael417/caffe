@@ -8,6 +8,15 @@ import matplotlib.pyplot as plt
 from glob import glob as glb
 from collections import OrderedDict
 
+def remove_data_layers(df):
+    possible_data_layers = ['data', 'DummyData1', 'DummyData1_DummyData1_0_split']
+    for l in possible_data_layers:
+        for d in ['forward', 'backward']:
+            layer = l+' '+d+' avg time'
+            if layer in df.columns.values:
+                df['time per iteration'] = df['time per iteration'] - df[layer]
+                df.drop(layer, axis=1, inplace=True)
+                
 def get_meta(l, d):
     """get meta data"""
     layer_re = re.compile('.+ Creating layer (.+)')
@@ -134,7 +143,7 @@ def plot_batch_scaling(df, threshold, threads=1, arch='', res_path=''):
     ax.set_ylim(ymin=0)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[::-1], labels[::-1], loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.savefig(os.path.join(res_path, arch+'_batch scaling_'+str(threads)+'th.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+    plt.savefig(os.path.join(res_path, arch+'_batch scaling_'+str(threads)+'th.jpg'), format='jpg',bbox_inches='tight', dpi=250)
     return ax
 
 def plot_thread_scaling(df, threshold, batch_size=1, arch='', res_path=''):
@@ -156,13 +165,20 @@ def plot_thread_scaling(df, threshold, batch_size=1, arch='', res_path=''):
     ax.set_title(arch+' thread scaling with '+str(batch_size)+' batch size')
     ax.set_ylim(ymin=0)
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.savefig(os.path.join(res_path, arch+'_thread_scaling_'+str(batch_size)+'_batch_size.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+    plt.savefig(os.path.join(res_path, arch+'_thread_scaling_'+str(batch_size)+'_batch_size.jpg'), format='jpg',bbox_inches='tight', dpi=250)
 
     return ax
 
 def plot_comparative(files_loc, threshold, res_path='', title_postfix='', sort_data=True):
     """Plot comparative results of the data frame records"""
     df = get_df(glb(files_loc))
+
+    df['time per iteration'] = df['time per iteration'] - df['data forward avg time']
+    df['time per iteration'] = df['time per iteration'] - df['data backward avg time']
+    df.drop('data forward avg time', axis=1, inplace=True)
+    df.drop('data backward avg time', axis=1, inplace=True)
+    
+    
     df_filt = group_small_entries(df, threshold)
     layers_cols = [s for s in df_filt.columns.values if('ward avg time' in s)]
     layers_cols = layers_cols + ['others time']    
@@ -178,31 +194,28 @@ def plot_comparative(files_loc, threshold, res_path='', title_postfix='', sort_d
     ax2 = scaling.plot(secondary_y=True, color='k', marker='o', rot=90)
     ax2.set_ylabel('Scaling factor from 1st to 2nd column')
     ax.set_ylabel('Time per iter. (seconds)')
-    ax.set_xlabel('File name')
+    ax.set_xlabel('Layer name')
     ax.set_title('Comparative layers time '+title_postfix)
     ax.set_ylim(ymin=0)
     ax.set_xlim(xmin=ax.get_xlim()[0]-0.25, xmax=ax.get_xlim()[1]+0.25)
 
     # add the total time in the legends
-    df['time per iteration no data'] =  df['time per iteration'] - df['data forward avg time'] - df['data backward avg time']
-    exp_time = dict(df[['file name', 'time per iteration no data']].values)
+    exp_time = dict(df[['file name', 'time per iteration']].values)
     handles, labels = ax.get_legend_handles_labels()
     new_labels = []
     for l in labels:
         new_labels.append(l+' '+str(exp_time[l])+'s/iter (no data)')
     ax.legend(handles, new_labels)#, loc='center left', bbox_to_anchor=(1.15, 0.5))
 
-    plt.savefig(os.path.join(res_path,'comparative_layers_time'+title_postfix+'.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+    plt.savefig(os.path.join(res_path,'comparative_layers_time'+title_postfix+'.jpg'), format='jpg',bbox_inches='tight', dpi=250)
     return ax
+
 
 def plot_pie(files_loc, threshold, res_path='', title_postfix='', sort_data=True):
     """Plot a time breakdown pie chart from a data frame record"""
     df = get_df(glb(files_loc))
     
-    df['time per iteration'] = df['time per iteration'] - df['data forward avg time']
-    df['time per iteration'] = df['time per iteration'] - df['data backward avg time']
-    df.drop('data forward avg time', axis=1, inplace=True)
-    df.drop('data backward avg time', axis=1, inplace=True)
+    remove_data_layers(df)
 
     df_filt = group_small_entries(df, threshold)
     df_filt = normalize_time(df_filt)
@@ -220,12 +233,14 @@ def plot_pie(files_loc, threshold, res_path='', title_postfix='', sort_data=True
     if(sort_data):
         plt_data= plt_data.sort_index()
         plt_data.sort_values(by=plt_data.columns.values[0], inplace=True, ascending=False)
-    ser = pd.Series(plt_data.iloc[:,0].values, index=plt_data.index.values)
-    ax = ser.plot.pie()
+    fig = plt.figure()
+    ax = fig.gca()
+    ax.pie(plt_data.iloc[:,0].values, labels=plt_data.index.values)
     ax.legend(loc='center left', bbox_to_anchor=(1.15, 0.5))
     ax.set_title('Time breakdown '+title_postfix)
-    plt.savefig(os.path.join(res_path,'time_breakdown'+title_postfix+'.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+    plt.savefig(os.path.join(res_path,'time_breakdown'+title_postfix+'.jpg'), format='jpg',bbox_inches='tight', dpi=250)
     return ax
+
 
 def plot_flops(sde_files_loc, time_file_loc, res_path='', title_postfix='', sort_data=False, threshold=1.0):
     """Plot the flop rate given a set of results from SDE for each layer and the time experiement"""
@@ -265,7 +280,7 @@ def plot_flops(sde_files_loc, time_file_loc, res_path='', title_postfix='', sort
     ax.set_title('Layers flop rate'+' (filtered layers <'+str(threshold)+'% time)')
     ax.set_ylabel('GFLOP/s')
     ax.set_xlabel('Layer')
-    plt.savefig(os.path.join(res_path,'flops_rate.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+    plt.savefig(os.path.join(res_path,'flops_rate.jpg'), format='jpg',bbox_inches='tight', dpi=250)
     return ax
 
 def plot_all(f_wildcard, threshold=1.0, res_path=''):
@@ -276,6 +291,7 @@ def plot_all(f_wildcard, threshold=1.0, res_path=''):
     for arch in ['hsw', 'knl']:
         axis_l[arch] = dict()
         flist_arch = [f for f in flist if arch in f]
+        if(flist_arch==[]): continue
         df = get_df(flist_arch)
         
         grps = df.groupby(['batch size']).groups
@@ -301,6 +317,10 @@ def plot_roofline_points(points_list,res_path='',title_prefix='', labels_markers
         fma_fac=2 if fma else 1
         return cpu_speed*num_cores*vector_length*fma_fac
 
+    def get_rl_edges(x0,x1,p_flop,p_mem):
+        x = [x0, p_flop/p_mem, x1]
+        y = [x0*p_mem, p_flop, p_flop]
+        return x, y
     #Xeon Phi KNL, datasheet
     cpu_speed_ghz=1.4
     num_cores=68
@@ -312,13 +332,12 @@ def plot_roofline_points(points_list,res_path='',title_prefix='', labels_markers
     l3_cache_per_cpu_mb=0
     peak_gflops_ixeknl=get_gflops_per_core(cpu_speed_ghz,num_cores,vector_length,True)
 
-    xopt = np.arange(0.1,300,0.01)
-    yopt = [np.min([val*peak_bandwidth_hbm_gbs,peak_gflops_ixeknl]) for val in xopt]
-    ynohbm = [np.min([val*peak_bandwidth_gbs,peak_gflops_ixeknl]) for val in xopt]
-    #ytlponly = [np.min([val*peak_bandwidth_hbm_gbs,get_gflops_per_core(cpu_speed_ghz,num_cores,1,False)]) for val in xopt]
-    #ytlpilp = [np.min([val*peak_bandwidth_hbm_gbs,get_gflops_per_core(cpu_speed_ghz,num_cores,2,False)]) for val in xopt]
-    #ynofma = [np.min([val*peak_bandwidth_hbm_gbs,get_gflops_per_core(cpu_speed_ghz,num_cores,vector_length,False)]) for val in xopt]
-    yfmanosimd = [np.min([val*peak_bandwidth_hbm_gbs,get_gflops_per_core(cpu_speed_ghz,num_cores,2,True)]) for val in xopt]
+    x0=0.1
+    last_x = 250.
+    opt_x, opt_y = get_rl_edges(x0,last_x,peak_gflops_ixeknl,peak_bandwidth_hbm_gbs)
+    opt75p_x, opt75p_y = get_rl_edges(x0,last_x,peak_gflops_ixeknl*0.75,peak_bandwidth_hbm_gbs)
+    nohbm_x, nohbm_y = get_rl_edges(x0, last_x, peak_gflops_ixeknl, peak_bandwidth_gbs)
+    fmanosimd_x, fmanosimd_y = get_rl_edges(x0,last_x,get_gflops_per_core(cpu_speed_ghz,num_cores,2,True),peak_bandwidth_hbm_gbs)
 
     #removed malicious dpi=1024 argument
     plt.figure(num=None, figsize=(20, 27), facecolor='w', edgecolor='k')
@@ -329,20 +348,27 @@ def plot_roofline_points(points_list,res_path='',title_prefix='', labels_markers
     area = np.pi * 17**2
 
     #ranges:
-    plt.xlim(10**(-1),max(xopt))
-    plt.ylim(10**1,10**4)
+    minx= float('inf')
+    miny= float('inf')
+    maxx= float('-inf')
+    maxy= float('-inf')
+    for label, x, y in points_list:
+        minx = min(minx, x)
+        miny = min(miny, y)
+        maxx = max(maxx, x)
+        maxy = max(maxy, y)
+    plt.xlim(10**(-1),last_x)
+    plt.ylim(min(10**(1),miny),10**4)
 
     ax.tick_params(axis='both', which='major', size=15)
     ax.tick_params(axis='both', which='minor', size=15)
     ax.tick_params(axis='both', which='major', labelsize=50)
 
     #lines
-    line1,=plt.plot(xopt, yopt, '-', linewidth=3,color='green',label='optimal SP (HBM)')
-    line2,=plt.plot(xopt, ynohbm, '-.', linewidth=5,color='k',label='optimal SP (DDR)')
-    #line3,=plt.plot(xopt, ynofma, '-', linewidth=3,color='orange',label='no FMA')
-    line3m,=plt.plot(xopt, yfmanosimd, '--', linewidth=3,color='blue',label='FMA no SIMD')
-    #line4,=plt.plot(xopt, ytlpilp, '-', linewidth=3,color='red',label='TLP with ILP')
-    #line4m,=plt.plot(xopt, ytlponly, '--', linewidth=3,color='red',label='TLP only')
+    line0,=plt.plot(opt75p_x, opt75p_y, '-', linewidth=3,color='k',label='75% of optimal SP')
+    line1,=plt.plot(opt_x, opt_y, '-', linewidth=3,color='green',label='optimal SP (HBM)')
+    line2,=plt.plot(nohbm_x, nohbm_y, '-.', linewidth=5,color='k',label='optimal SP (DDR)')
+    line3m,=plt.plot(fmanosimd_x, fmanosimd_y, '--', linewidth=3,color='blue',label='FMA no SIMD')
 
     banned_colors = ['yellow','gold','pink','mistyrose','navajowhite','palegreen','greenyellow',
                      'seashell','papayawhip','blanchedalmond','chartreuse','white', 'ivory', 'lawngreen',
@@ -372,13 +398,17 @@ def plot_roofline_points(points_list,res_path='',title_prefix='', labels_markers
     ax.legend(scatterpoints=1, prop={'size':20}, loc='center left', bbox_to_anchor=(1, 0.5),title='layers end w/ time %')
     ax.get_legend().get_title().set_fontsize('20')
 
-    plt.savefig(os.path.join(res_path,'roofline.jpg'), format='jpg',bbox_inches='tight', dpi=900)
+    plt.savefig(os.path.join(res_path,'roofline.jpg'), format='jpg',bbox_inches='tight', dpi=250)
     return ax
+
+
 
 def generate_roofline_sde(time_file_loc, sde_files_loc, likwid_file_loc, res_path=''
                       ,sort_data=False, title_prefix='', threshold=1.):
     df = get_df(glb(time_file_loc))
     """Generate roofline figure from SDE, LIKWID, and timing measurements"""
+
+    remove_data_layers(df)
 
     layers = list(df['layers'].tolist()[0])
     expanded_layers = []
@@ -426,8 +456,6 @@ def generate_roofline_sde(time_file_loc, sde_files_loc, likwid_file_loc, res_pat
 
     # Filter the data
     plt_df = plt_df[plt_df.GFlops != 0.0]
-    plt_df = plt_df[plt_df.index != 'data forward']
-    plt_df = plt_df[plt_df.index != 'data backward']
 
     # Add derived metrics of interest
     plt_df['AI'] = plt_df['GFlops']/plt_df['GB memory volume']
@@ -444,10 +472,13 @@ def generate_roofline_sde(time_file_loc, sde_files_loc, likwid_file_loc, res_pat
                        , labels_markers={'conv':'.', 'fc':'^', 'norm=':'x', 'pool':'*', 'loss':'v'})
     return ax, plt_df
 
+
 def generate_roofline_likwid(time_file_loc, likwid_file_loc, res_path=''
                       ,sort_data=False, title_prefix='', threshold=1.):
     df = get_df(glb(time_file_loc))
     """Generate roofline figure from SDE, LIKWID, and timing measurements"""
+
+    remove_data_layers(df)
 
     layers = list(df['layers'].tolist()[0])
     expanded_layers = []
@@ -475,20 +506,37 @@ def generate_roofline_likwid(time_file_loc, likwid_file_loc, res_path=''
         for layer in layers:
             for di in ['forward', 'backward']:
                 exp_layer = layer+' '+di
-                mem_vol_re = re.compile(layer+'_'+di+'.*?Memory data volume \[MBytes\],(\d+(.\d+)?)',re.DOTALL)
+
+                # Likwid formatted output
+                mem_vol_re = re.compile(layer+'_'+di+'.*?Memory data volume \[MBytes\] STAT\s+\|\s+([-+]?[0-9]*.?[0-9]+([eE][-+]?[0-9]+)?)',re.DOTALL)
                 m = mem_vol_re.search(txt)
                 if(m is not None):
                     plt_df.loc[exp_layer, 'GB memory volume'] = float(m.group(1))/likwid_entry['iterations']/1e3
+                else:
+                    # Likwid CSV output
+                    mem_vol_re = re.compile(layer+'_'+di+'.*?Memory data volume \[MBytes\],(\d+(.\d+)?)',re.DOTALL)
+                    m = mem_vol_re.search(txt)
+                    if(m is not None):
+                        plt_df.loc[exp_layer, 'GB memory volume'] = float(m.group(1))/likwid_entry['iterations']/1e3
+                    else:
+                        print "memory volume could not find ", exp_layer
 
-                flops_re = re.compile(layer+'_'+di+'.*?MFLOP \(SP AVX512 FMA assumed\) STAT,(\d+(.\d+)?)',re.DOTALL)
+                # Likwid formatted output
+                flops_re = re.compile(layer+'_'+di+'.*?MFLOP \(SP AVX512 FMA assumed\) STAT\s+\|\s+([-+]?[0-9]*.?[0-9]+([eE][-+]?[0-9]+)?)',re.DOTALL)
                 m = flops_re.search(txt)
                 if(m is not None):
                     plt_df.loc[exp_layer, 'GFlops'] = float(m.group(1))/likwid_entry['iterations']/1e3
+                else:
+                    # Likwid CSV output
+                    flops_re = re.compile(layer+'_'+di+'.*?MFLOP \(SP AVX512 FMA assumed\) STAT,(\d+(.\d+)?)',re.DOTALL)
+                    m = flops_re.search(txt)
+                    if(m is not None):
+                        plt_df.loc[exp_layer, 'GFlops'] = float(m.group(1))/likwid_entry['iterations']/1e3
+                    else:
+                        print "GFlops could not find ", exp_layer
 
     # Filter the data
     plt_df = plt_df[plt_df.GFlops != 0.0]
-    plt_df = plt_df[plt_df.index != 'data forward']
-    plt_df = plt_df[plt_df.index != 'data backward']
 
     # Add derived metrics of interest
     plt_df['AI'] = plt_df['GFlops']/plt_df['GB memory volume']
