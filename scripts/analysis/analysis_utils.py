@@ -8,6 +8,15 @@ import matplotlib.pyplot as plt
 from glob import glob as glb
 from collections import OrderedDict
 
+def remove_data_layers(df):
+    possible_data_layers = ['data', 'DummyData1', 'DummyData1_DummyData1_0_split']
+    for l in possible_data_layers:
+        for d in ['forward', 'backward']:
+            layer = l+' '+d+' avg time'
+            if layer in df.columns.values:
+                df['time per iteration'] = df['time per iteration'] - df[layer]
+                df.drop(layer, axis=1, inplace=True)
+                
 def get_meta(l, d):
     """get meta data"""
     layer_re = re.compile('.+ Creating layer (.+)')
@@ -206,13 +215,7 @@ def plot_pie(files_loc, threshold, res_path='', title_postfix='', sort_data=True
     """Plot a time breakdown pie chart from a data frame record"""
     df = get_df(glb(files_loc))
     
-    if 'data forward avg time' in df.columns.values:
-        df['time per iteration'] = df['time per iteration'] - df['data forward avg time']
-        df.drop('data forward avg time', axis=1, inplace=True)
-
-    if 'data backward avg time' in df.columns.values:
-        df['time per iteration'] = df['time per iteration'] - df['data backward avg time']
-        df.drop('data backward avg time', axis=1, inplace=True)
+    remove_data_layers(df)
 
     df_filt = group_small_entries(df, threshold)
     df_filt = normalize_time(df_filt)
@@ -405,6 +408,8 @@ def generate_roofline_sde(time_file_loc, sde_files_loc, likwid_file_loc, res_pat
     df = get_df(glb(time_file_loc))
     """Generate roofline figure from SDE, LIKWID, and timing measurements"""
 
+    remove_data_layers(df)
+
     layers = list(df['layers'].tolist()[0])
     expanded_layers = []
     for l in layers:
@@ -451,8 +456,6 @@ def generate_roofline_sde(time_file_loc, sde_files_loc, likwid_file_loc, res_pat
 
     # Filter the data
     plt_df = plt_df[plt_df.GFlops != 0.0]
-    plt_df = plt_df[plt_df.index != 'data forward']
-    plt_df = plt_df[plt_df.index != 'data backward']
 
     # Add derived metrics of interest
     plt_df['AI'] = plt_df['GFlops']/plt_df['GB memory volume']
@@ -474,6 +477,8 @@ def generate_roofline_likwid(time_file_loc, likwid_file_loc, res_path=''
                       ,sort_data=False, title_prefix='', threshold=1.):
     df = get_df(glb(time_file_loc))
     """Generate roofline figure from SDE, LIKWID, and timing measurements"""
+
+    remove_data_layers(df)
 
     layers = list(df['layers'].tolist()[0])
     expanded_layers = []
@@ -532,8 +537,6 @@ def generate_roofline_likwid(time_file_loc, likwid_file_loc, res_path=''
 
     # Filter the data
     plt_df = plt_df[plt_df.GFlops != 0.0]
-    plt_df = plt_df[plt_df.index != 'data forward']
-    plt_df = plt_df[plt_df.index != 'data backward']
 
     # Add derived metrics of interest
     plt_df['AI'] = plt_df['GFlops']/plt_df['GB memory volume']
