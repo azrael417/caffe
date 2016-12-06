@@ -101,7 +101,7 @@ int multiphase_train(caffe::MultiPhaseSolverParameter* multi_solver_params,
       }
     }
 
-    solver_param.set_allocated_net_param(&topology_net_param);
+    //solver_param.set_allocated_net_param(&topology_net_param);
     solver_param.clear_net();
 
     use_flags(
