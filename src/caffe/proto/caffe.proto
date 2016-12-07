@@ -289,7 +289,7 @@ message SolverBatchSizePair {
 // NOTE
 // Update the next available ID when you add a new SolverParameter field.
 //
-// SolverParameter next available ID: 47 (last added: show_per_class_result)
+// SolverParameter next available ID: 49 (last added: plateau_winsize)
 message SolverParameter {
   //////////////////////////////////////////////////////////////////////////////
   // Specifying the train and test networks
@@ -327,15 +327,15 @@ message SolverParameter {
   repeated NetState test_state = 27;
 	
   // Evaluation type.
-  optional string eval_type = 41 [default = "classification"];
+  optional string eval_type = 45 [default = "classification"];
   // ap_version: different ways of computing Average Precision.
   //    Check https://sanchom.wordpress.com/tag/average-precision/ for details.
   //    11point: the 11-point interpolated average precision. Used in VOC2007.
   //    MaxIntegral: maximally interpolated AP. Used in VOC2012/ILSVRC.
   //    Integral: the natural integral of the precision-recall curve.
-  optional string ap_version = 45 [default = "Integral"];
+  optional string ap_version = 46 [default = "Integral"];
   // If true, display per class result.
-  optional bool show_per_class_result = 46 [default = false];
+  optional bool show_per_class_result = 47 [default = false];
 	
 	
   // The number of iterations for each test net.
@@ -389,7 +389,7 @@ message SolverParameter {
   // whenever their actual L2 norm is larger.
   optional float clip_gradients = 35 [default = -1];
   // the stepsize for learning rate policy "plateau"
-  repeated int32 plateau_winsize = 44;
+  repeated int32 plateau_winsize = 48;
   
   
   optional int32 snapshot = 14 [default = 0]; // The snapshot interval
