@@ -225,7 +225,7 @@ def VGGNetBody(net, from_layer, need_fc=True, fully_conv=False, reduced=False,
             'weight_filler': dict(type='xavier'),
             'bias_filler': dict(type='constant', value=0)}
 
-    assert from_layer in net.keys()
+    assert from_layer in net.tops.keys()
     net.conv1_1 = L.Convolution(net[from_layer], num_output=64, pad=1, kernel_size=3, **kwargs)
 
     net.relu1_1 = L.ReLU(net.conv1_1, in_place=True)
@@ -353,7 +353,7 @@ def VGGNetBody(net, from_layer, need_fc=True, fully_conv=False, reduced=False,
 
     # Update freeze layers.
     kwargs['param'] = [dict(lr_mult=0, decay_mult=0), dict(lr_mult=0, decay_mult=0)]
-    layers = net.keys()
+    layers = net.tops.keys()
     for freeze_layer in freeze_layers:
         if freeze_layer in layers:
             net.update(freeze_layer, kwargs)
@@ -719,7 +719,7 @@ def CreateMultiBoxHead(net, data_layer="data", num_classes=[], from_layers=[],
         assert len(from_layers) == len(aspect_ratios), "from_layers and aspect_ratios should have same length"
     if steps:
         assert len(from_layers) == len(steps), "from_layers and steps should have same length"
-    net_layers = net.keys()
+    net_layers = net.tops.keys()
     assert data_layer in net_layers, "data_layer is not in net's layers"
     if inter_layer_depth:
         assert len(from_layers) == len(inter_layer_depth), "from_layers and inter_layer_depth should have same length"
