@@ -830,10 +830,10 @@ def CreateMultiBoxHead(net, data_layer="data", num_classes=[], from_layers=[],
     # Concatenate priorbox, loc, and conf layers.
     mbox_layers = []
     name = "mbox_loc"
-    net[name] = L.Concat(*loc_layers, axis=1)
+    net[name] = L.Concat(*loc_layers, axis=1, engine=1)
     mbox_layers.append(net[name])
     name = "mbox_conf"
-    net[name] = L.Concat(*conf_layers, axis=1)
+    net[name] = L.Concat(*conf_layers, axis=1, engine=1)
     mbox_layers.append(net[name])
     name = "mbox_priorbox"
     net[name] = L.Concat(*priorbox_layers, axis=2)
