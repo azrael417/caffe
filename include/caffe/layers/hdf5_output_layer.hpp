@@ -1,19 +1,14 @@
 /*
 All modification made by Intel Corporation: © 2016 Intel Corporation
-
 All contributions by the University of California:
 Copyright (c) 2014, 2015, The Regents of the University of California (Regents)
 All rights reserved.
-
 All other contributions:
 Copyright (c) 2014, 2015, the respective contributors
 All rights reserved.
 For the list of contributors go to https://github.com/BVLC/caffe/blob/master/CONTRIBUTORS.md
-
-
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
     * Redistributions in binary form must reproduce the above copyright
@@ -22,7 +17,6 @@ modification, are permitted provided that the following conditions are met:
     * Neither the name of Intel Corporation nor the names of its contributors
       may be used to endorse or promote products derived from this software
       without specific prior written permission.
-
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -73,8 +67,11 @@ class HDF5OutputLayer : public Layer<Dtype> {
 
   virtual inline const char* type() const { return "HDF5Output"; }
   // TODO: no limit on the number of blobs
-  virtual inline int ExactNumBottomBlobs() const { return 2; }
+  //virtual inline int ExactNumBottomBlobs() const { return 2; }
   virtual inline int ExactNumTopBlobs() const { return 0; }
+  
+  //fixes
+  virtual inline int MinBottomBlobs() const { return 1; }
 
   inline std::string file_name() const { return file_name_; }
 
@@ -87,13 +84,14 @@ class HDF5OutputLayer : public Layer<Dtype> {
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void SaveBlobs();
+  //virtual void SaveBlobs();
 
   bool file_opened_;
   std::string file_name_;
   hid_t file_id_;
   Blob<Dtype> data_blob_;
   Blob<Dtype> label_blob_;
+  int current_batch_;
 };
 
 }  // namespace caffe
