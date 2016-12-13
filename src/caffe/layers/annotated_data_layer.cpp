@@ -29,8 +29,7 @@ namespace caffe {
 	void AnnotatedDataLayer<Dtype>::DataLayerSetUp(
 	const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
 		const int batch_size = this->layer_param_.data_param().batch_size();
-		const AnnotatedDataParameter& anno_data_param =
-			this->layer_param_.annotated_data_param();
+		const AnnotatedDataParameter& anno_data_param = this->layer_param_.annotated_data_param();
 		for (int i = 0; i < anno_data_param.batch_sampler_size(); ++i) {
 			batch_samplers_.push_back(anno_data_param.batch_sampler(i));
 		}
@@ -41,17 +40,15 @@ namespace caffe {
 		if (transform_param.has_resize_param()) {
 			if (transform_param.resize_param().resize_mode() ==
 			ResizeParameter_Resize_mode_FIT_SMALL_SIZE) {
-				CHECK_EQ(batch_size, 1)
-					<< "Only support batch size of 1 for FIT_SMALL_SIZE.";
+				CHECK_EQ(batch_size, 1) << "Only support batch size of 1 for FIT_SMALL_SIZE.";
 			}
 		}
 
 		// Read a data point, and use it to initialize the top blob.
 		AnnotatedDatum& anno_datum = *(reader_.full().peek());
-
+		
 		// Use data_transformer to infer the expected blob shape from anno_datum.
-		vector<int> top_shape =
-			this->data_transformer_->InferBlobShape(anno_datum.datum());
+		vector<int> top_shape = this->data_transformer_->InferBlobShape(anno_datum.datum());
 		this->transformed_data_.Reshape(top_shape);
 		// Reshape top[0] and prefetch_data according to the batch_size.
 		top_shape[0] = batch_size;
@@ -147,11 +144,15 @@ namespace caffe {
 			timer.Start();
 			// get a anno_datum
 			AnnotatedDatum& anno_datum = *(reader_.full().pop("Waiting for data"));
+			
+			//Distort image first:
 			AnnotatedDatum distort_datum(anno_datum);
-			this->data_transformer_->DistortImage(anno_datum.datum(),
-			distort_datum.mutable_datum());
+			this->data_transformer_->DistortImage(anno_datum.datum(), distort_datum.mutable_datum());
+			
+			//Expand image next:
 			AnnotatedDatum expand_datum;
 			this->data_transformer_->ExpandImage(distort_datum, &expand_datum);
+			
 			read_time += timer.MicroSeconds();
 			timer.Start();
 			AnnotatedDatum sampled_datum;
@@ -169,8 +170,9 @@ namespace caffe {
 			} else {
 				sampled_datum.CopyFrom(expand_datum);
 			}
-			vector<int> shape =
-				this->data_transformer_->InferBlobShape(sampled_datum.datum());
+			vector<int> shape = this->data_transformer_->InferBlobShape(sampled_datum.datum());
+						
+			//do a resize step if necessary (if FIT_SMALL_SIZE is selected. Not needed for WARP and others)
 			if (transform_param.has_resize_param()) {
 				if (transform_param.resize_param().resize_mode() == ResizeParameter_Resize_mode_FIT_SMALL_SIZE) {
 					this->transformed_data_.Reshape(shape);
@@ -182,6 +184,7 @@ namespace caffe {
 			} else {
 				CHECK(std::equal(top_shape.begin() + 1, top_shape.begin() + 4, shape.begin() + 1));
 			}
+			
 			// Apply data transformations (mirror, scale, crop...)
 			int offset = batch->data_.offset(item_id);
 			this->transformed_data_.set_cpu_data(top_data + offset);
@@ -198,9 +201,7 @@ namespace caffe {
 					}
 					// Transform datum and annotation_group at the same time
 					transformed_anno_vec.clear();
-					this->data_transformer_->Transform(sampled_datum,
-					&(this->transformed_data_),
-					&transformed_anno_vec);
+					this->data_transformer_->Transform(sampled_datum, &(this->transformed_data_), &transformed_anno_vec);
 					if (anno_type_ == AnnotatedDatum_AnnotationType_BBOX) {
 						// Count the number of bboxes.
 						for (int g = 0; g < transformed_anno_vec.size(); ++g) {
@@ -211,18 +212,17 @@ namespace caffe {
 					}
 					all_anno[item_id] = transformed_anno_vec;
 				} else {
-					this->data_transformer_->Transform(sampled_datum.datum(),
-					&(this->transformed_data_));
+					this->data_transformer_->Transform(sampled_datum.datum(), &(this->transformed_data_));
 					// Otherwise, store the label from datum.
 					CHECK(sampled_datum.datum().has_label()) << "Cannot find any label.";
 					top_label[item_id] = sampled_datum.datum().label();
 				}
 			} else {
-				this->data_transformer_->Transform(sampled_datum.datum(),
-				&(this->transformed_data_));
+				this->data_transformer_->Transform(sampled_datum.datum(), &(this->transformed_data_));
 			}
 			trans_time += timer.MicroSeconds();
-
+			
+			//push result to reader
 			reader_.free().push(const_cast<AnnotatedDatum*>(&anno_datum));
 		}
 

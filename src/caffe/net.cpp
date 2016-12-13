@@ -730,6 +730,9 @@ namespace caffe {
 		CHECK_LT(end, layers_.size());
 		Dtype loss = 0;
 		for (int i = start; i <= end; ++i) {
+#ifdef DEBUG
+			LOG(INFO) << "Performing forward pass on " << layer_names_[i] << std::endl;
+#endif
 			PERFORMANCE_MEASUREMENT_BEGIN();
 
 			// LOG(ERROR) << "Forwarding " << layer_names_[i];
@@ -781,6 +784,9 @@ namespace caffe {
 		CHECK_LT(start, layers_.size());
 		for (int i = start; i >= end; --i) {
 			if (layer_need_backward_[i]) {
+#ifdef DEBUG
+			LOG(INFO) << "Performing backward pass on " << layer_names_[i] << std::endl;
+#endif
 				PERFORMANCE_MEASUREMENT_BEGIN();
 
 				layers_[i]->Backward(

@@ -229,7 +229,7 @@ def VGGNetBody(net, from_layer, need_fc=True, fully_conv=False, reduced=False,
     net.conv1_1 = L.Convolution(net[from_layer], num_output=64, pad=1, kernel_size=3, **kwargs)
 
     net.relu1_1 = L.ReLU(net.conv1_1, in_place=True)
-    net.conv1_2 = L.Convolution(net.relu1_1, num_output=64, pad=1, kernel_size=3, **kwargs)
+    net.conv1_2 = L.Convolution(net.relu1_1, num_output=64, pad=1, kernel_size=3, engine=1, **kwargs)
     net.relu1_2 = L.ReLU(net.conv1_2, in_place=True)
 
     if nopool:

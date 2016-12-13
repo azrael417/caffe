@@ -584,25 +584,35 @@ namespace caffe {
 #endif  // USE_OPENCV
 		}
 		const int crop_size = param_.crop_size();
+		int crop_h = param_.crop_h();
+		int crop_w = param_.crop_w();
+		if (crop_size) {
+			crop_h = crop_size;
+			crop_w = crop_size;
+		}
 		const int datum_channels = datum.channels();
-		const int datum_height = datum.height();
-		const int datum_width = datum.width();
+		int datum_height = datum.height();
+		int datum_width = datum.width();
+		
 		// Check dimensions.
 		CHECK_GT(datum_channels, 0);
-		CHECK_GE(datum_height, crop_size);
-		CHECK_GE(datum_width, crop_size);
+		if (param_.has_resize_param()) {
+			InferNewSize(param_.resize_param(), datum_width, datum_height,
+			&datum_width, &datum_height);
+		}
+		CHECK_GE(datum_height, crop_h);
+		CHECK_GE(datum_width, crop_w);
 		// Build BlobShape.
 		vector<int> shape(4);
 		shape[0] = 1;
 		shape[1] = datum_channels;
-		shape[2] = (crop_size)? crop_size: datum_height;
-		shape[3] = (crop_size)? crop_size: datum_width;
+		shape[2] = (crop_h)? crop_h: datum_height;
+		shape[3] = (crop_w)? crop_w: datum_width;
 		return shape;
 	}
 
 	template<typename Dtype>
-	vector<int> DataTransformer<Dtype>::InferBlobShape(
-	const vector<Datum> & datum_vector) {
+	vector<int> DataTransformer<Dtype>::InferBlobShape(const vector<Datum> & datum_vector) {
 		const int num = datum_vector.size();
 		CHECK_GT(num, 0) << "There is no datum to in the vector";
 		// Use first datum in the vector to InferBlobShape.
@@ -616,19 +626,31 @@ namespace caffe {
 	template<typename Dtype>
 	vector<int> DataTransformer<Dtype>::InferBlobShape(const cv::Mat& cv_img) {
 		const int crop_size = param_.crop_size();
+		int crop_h = param_.crop_h();
+		int crop_w = param_.crop_w();
+		if (crop_size) {
+			crop_h = crop_size;
+			crop_w = crop_size;
+		}
 		const int img_channels = cv_img.channels();
-		const int img_height = cv_img.rows;
-		const int img_width = cv_img.cols;
+		int img_height = cv_img.rows;
+		int img_width = cv_img.cols;
+		
 		// Check dimensions.
 		CHECK_GT(img_channels, 0);
-		CHECK_GE(img_height, crop_size);
-		CHECK_GE(img_width, crop_size);
+		if (param_.has_resize_param()) {
+			InferNewSize(param_.resize_param(), img_width, img_height,
+			&img_width, &img_height);
+		}
+		CHECK_GE(img_height, crop_h);
+		CHECK_GE(img_width, crop_w);
+		
 		// Build BlobShape.
 		vector<int> shape(4);
 		shape[0] = 1;
 		shape[1] = img_channels;
-		shape[2] = (crop_size)? crop_size: img_height;
-		shape[3] = (crop_size)? crop_size: img_width;
+		shape[2] = (crop_h)? crop_h: img_height;
+		shape[3] = (crop_w)? crop_w: img_width;
 		return shape;
 	}
 
@@ -662,7 +684,7 @@ namespace caffe {
 	//******************** START MODIFICATIONS FOR ANNOTATED DATA ******************
 	//******************************************************************************
 	template<typename Dtype>
-	void DataTransformer<Dtype>::Transform(const Datum& datum,Dtype* transformed_data, NormalizedBBox* crop_bbox, bool* do_mirror, RandNumbers& rand_num) {
+	void DataTransformer<Dtype>::Transform(const Datum& datum, Dtype* transformed_data, NormalizedBBox* crop_bbox, bool* do_mirror, RandNumbers& rand_num) {
 		const string& data = datum.data();
 		const int datum_channels = datum.channels();
 		const int datum_height = datum.height();
@@ -981,8 +1003,7 @@ namespace caffe {
 		const bool do_mirror = false;
 		NormalizedBBox crop_bbox;
 		ClipBBox(bbox, &crop_bbox);
-		TransformAnnotation(anno_datum, do_resize, crop_bbox, do_mirror,
-		cropped_anno_datum->mutable_annotation_group());
+		TransformAnnotation(anno_datum, do_resize, crop_bbox, do_mirror, cropped_anno_datum->mutable_annotation_group());
 	}
 
 	template<typename Dtype>

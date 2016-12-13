@@ -118,6 +118,11 @@ namespace caffe {
 
 	template <typename Dtype>
 	void PriorBoxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+		
+		//DEBUG
+		LOG(INFO) << "priorbox: entering forward";
+		//DEBUG
+		
 		const int layer_width = bottom[0]->width();
 		const int layer_height = bottom[0]->height();
 		int img_width, img_height;
@@ -136,6 +141,11 @@ namespace caffe {
 			step_w = step_w_;
 			step_h = step_h_;
 		}
+		
+		//DEBUG
+		LOG(INFO) << "priorbox: before filling vector";
+		//DEBUG
+		
 		Dtype* top_data = top[0]->mutable_cpu_data();
 		int dim = layer_height * layer_width * num_priors_ * 4;
 		int idx = 0;
@@ -192,6 +202,11 @@ namespace caffe {
 				}
 			}
 		}
+		
+		//DEBUG
+		LOG(INFO) << "priorbox: before clipping";
+		//DEBUG
+		
 		// clip the prior's coordidate such that it is within [0, 1]
 		if (clip_) {
 			for (int d = 0; d < dim; ++d) {

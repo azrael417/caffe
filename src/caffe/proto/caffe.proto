@@ -877,6 +877,8 @@ message ConcatParameter {
 
   // DEPRECATED: alias for "axis" -- does not support negative indexing.
   optional uint32 concat_dim = 1 [default = 1];
+  
+  //determine engine
   enum Engine {
     DEFAULT = 0;
     CAFFE = 1;

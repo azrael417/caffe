@@ -56,9 +56,8 @@ namespace caffe {
 		softmax_top_vec_.clear();
 		softmax_top_vec_.push_back(&prob_);
 		softmax_layer_->SetUp(softmax_bottom_vec_, softmax_top_vec_);
-
-		has_ignore_label_ =
-			this->layer_param_.loss_param().has_ignore_label();
+		
+		has_ignore_label_ = this->layer_param_.loss_param().has_ignore_label();
 		if (has_ignore_label_) {
 			ignore_label_ = this->layer_param_.loss_param().ignore_label();
 		}
@@ -70,6 +69,9 @@ namespace caffe {
 		} else {
 			normalization_ = this->layer_param_.loss_param().normalization();
 		}
+		
+		//check if softmax is weighted:
+		is_weighted_ = (bottom.size()==3 ? true : false );
 	}
 
 	template <typename Dtype>
@@ -77,8 +79,7 @@ namespace caffe {
 	const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
 		LossLayer<Dtype>::Reshape(bottom, top);
 		softmax_layer_->Reshape(softmax_bottom_vec_, softmax_top_vec_);
-		softmax_axis_ =
-			bottom[0]->CanonicalAxisIndex(this->layer_param_.softmax_param().axis());
+		softmax_axis_ = bottom[0]->CanonicalAxisIndex(this->layer_param_.softmax_param().axis());
 		outer_num_ = bottom[0]->count(0, softmax_axis_);
 		inner_num_ = bottom[0]->count(softmax_axis_ + 1);
 		CHECK_EQ(outer_num_ * inner_num_, bottom[1]->count())
@@ -86,6 +87,13 @@ namespace caffe {
 				<< "e.g., if softmax axis == 1 and prediction shape is (N, C, H, W), "
 					<< "label count (number of labels) must be N*H*W, "
 						<< "with integer values in {0, 1, ..., C-1}.";
+		
+		//if the softmax is weighted, check if the sizes match:
+		if(is_weighted_){
+			//we will have as many weights as labels:
+			CHECK_EQ(outer_num_ * inner_num_, bottom[2]->count());
+		}
+		
 		if (top.size() >= 2) {
 			// softmax output
 			top[1]->ReshapeLike(*bottom[0]);
@@ -129,18 +137,25 @@ namespace caffe {
 		softmax_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
 		const Dtype* prob_data = prob_.cpu_data();
 		const Dtype* label = bottom[1]->cpu_data();
+		
+		//if the softmax is weighted, we need more input:
+		const Dtype* weight = (is_weighted_ ? bottom[2]->cpu_data() : NULL);
+		
+		//normalize dimension:
 		int dim = prob_.count() / outer_num_;
 		int count = 0;
-		Dtype loss = 0;
+		Dtype loss = 0.;
 		for (int i = 0; i < outer_num_; ++i) {
 			for (int j = 0; j < inner_num_; j++) {
 				const int label_value = static_cast<int>(label[i * inner_num_ + j]);
+				const Dtype weight_value=(is_weighted_ ? static_cast<Dtype>(weight[i * inner_num_ + j]) : 1.);
+				
 				if (has_ignore_label_ && label_value == ignore_label_) {
 					continue;
 				}
 				DCHECK_GE(label_value, 0);
 				DCHECK_LT(label_value, prob_.shape(softmax_axis_));
-				loss -= log(std::max(prob_data[i * dim + label_value * inner_num_ + j],Dtype(FLT_MIN)));
+				loss -= weight_value * log(std::max(prob_data[i * dim + label_value * inner_num_ + j],Dtype(FLT_MIN)));
 				++count;
 			}
 		}
@@ -163,17 +178,24 @@ namespace caffe {
 			const Dtype* prob_data = prob_.cpu_data();
 			caffe_copy(prob_.count(), prob_data, bottom_diff);
 			const Dtype* label = bottom[1]->cpu_data();
+			
+			//if the softmax is weighted, we need more input:
+			const Dtype* weight = (is_weighted_ ? bottom[2]->cpu_data() : NULL);
+			
 			int dim = prob_.count() / outer_num_;
 			int count = 0;
 			for (int i = 0; i < outer_num_; ++i) {
 				for (int j = 0; j < inner_num_; ++j) {
 					const int label_value = static_cast<int>(label[i * inner_num_ + j]);
+					const Dtype weight_value=(is_weighted_ ? static_cast<Dtype>(weight[i * inner_num_ + j]) : 1.);
+					
 					if (has_ignore_label_ && label_value == ignore_label_) {
 						for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {
 							bottom_diff[i * dim + c * inner_num_ + j] = 0;
 						}
 					} else {
-						bottom_diff[i * dim + label_value * inner_num_ + j] -= 1;
+						bottom_diff[i * dim + label_value * inner_num_ + j] -= 1.;
+						bottom_diff[i * dim + label_value * inner_num_ + j] *= weight_value;
 						++count;
 					}
 				}

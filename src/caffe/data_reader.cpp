@@ -106,8 +106,6 @@ namespace caffe {
 		}
 	}
 
-	//
-
 	template <typename T>
 	DataReader<T>::Body::Body(const LayerParameter& param)
 		: param_(param),
@@ -119,13 +117,13 @@ namespace caffe {
 	DataReader<T>::Body::~Body() {
 		StopInternalThread();
 	}
-
-	template <typename T>
+	
+	template<class T>
 	void DataReader<T>::Body::InternalThreadEntry() {
-		const caffe::DataParameter *data_param = &param_.data_param();
-		CHECK(data_param) << "Failed to obtain data_param";
+		//const caffe::AnnotatedDataParameter *data_param = &param_.data_param();
+		CHECK(&param_.data_param()) << "Failed to obtain data_param";
 
-		shared_ptr<DBWrapper> dbw(data_param->shuffle() ?
+		shared_ptr<DBWrapper> dbw(param_.data_param().shuffle() ?
 			static_cast<DBWrapper*>(new DBShuffle(param_)):
 		static_cast<DBWrapper*>(new DBSequential(param_)));
 
