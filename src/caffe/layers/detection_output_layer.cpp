@@ -41,13 +41,17 @@ void DetectionOutputLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   const SaveOutputParameter& save_output_param =
       detection_output_param.save_output_param();
   output_directory_ = save_output_param.output_directory();
-  if (!output_directory_.empty()) {
+  //that crashes with multiple MPI ranks. Better error out if not exists: 
+  /*if (!output_directory_.empty()) {
     if (boost::filesystem::is_directory(output_directory_)) {
       boost::filesystem::remove_all(output_directory_);
     }
     if (!boost::filesystem::create_directories(output_directory_)) {
         LOG(FATAL) << "Failed to create directory: " << output_directory_;
     }
+    }*/
+  if (!output_directory_.empty() && !boost::filesystem::is_directory(output_directory_)) {
+    LOG(FATAL) << "Error, directory " << output_directory_ << " does not exist.";
   }
   output_name_prefix_ = save_output_param.output_name_prefix();
   need_save_ = output_directory_ == "" ? false : true;

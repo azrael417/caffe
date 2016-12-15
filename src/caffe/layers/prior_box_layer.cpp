@@ -8,10 +8,8 @@
 namespace caffe {
 
 	template <typename Dtype>
-	void PriorBoxLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-	const vector<Blob<Dtype>*>& top) {
-		const PriorBoxParameter& prior_box_param =
-			this->layer_param_.prior_box_param();
+	void PriorBoxLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+		const PriorBoxParameter& prior_box_param = this->layer_param_.prior_box_param();
 		CHECK_GT(prior_box_param.min_size_size(), 0) << "must provide min_size.";
 		for (int i = 0; i < prior_box_param.min_size_size(); ++i) {
 			min_sizes_.push_back(prior_box_param.min_size(i));
@@ -117,12 +115,7 @@ namespace caffe {
 	}
 
 	template <typename Dtype>
-	void PriorBoxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-		
-		//DEBUG
-		LOG(INFO) << "priorbox: entering forward";
-		//DEBUG
-		
+	void PriorBoxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {		
 		const int layer_width = bottom[0]->width();
 		const int layer_height = bottom[0]->height();
 		int img_width, img_height;
@@ -142,10 +135,7 @@ namespace caffe {
 			step_h = step_h_;
 		}
 		
-		//DEBUG
-		LOG(INFO) << "priorbox: before filling vector";
-		//DEBUG
-		
+		//create prior boxes
 		Dtype* top_data = top[0]->mutable_cpu_data();
 		int dim = layer_height * layer_width * num_priors_ * 4;
 		int idx = 0;
@@ -202,10 +192,6 @@ namespace caffe {
 				}
 			}
 		}
-		
-		//DEBUG
-		LOG(INFO) << "priorbox: before clipping";
-		//DEBUG
 		
 		// clip the prior's coordidate such that it is within [0, 1]
 		if (clip_) {

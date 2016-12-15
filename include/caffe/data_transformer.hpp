@@ -94,11 +94,10 @@ namespace caffe {
 	class PreclcRandomNumbers: public RandNumbers {
 	public:
 		void FillRandomNumbers(int num_count, RandNumbers& rand_gen) {
-			for (int i = 0; i < num_count; i++)
-				random_numbers.push(rand_gen.GetNextNumber());
+			for (int i = 0; i < num_count; i++) random_numbers.push(rand_gen.GetNextNumber());
 		}
 
-		virtual uint32_t GetNextNumber() {
+		virtual uint32_t GetNextNumber(){
 			CHECK(!random_numbers.empty());
 			uint32_t num = random_numbers.front();
 			random_numbers.pop();
