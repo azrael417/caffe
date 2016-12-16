@@ -610,10 +610,6 @@ bool NetNeedsUpgrade(const NetParameter& net_param) {
 		} else if (type == "netcdf_data") {
 			return V1LayerParameter_LayerType_NETCDF_DATA;
 #endif
-		} else if (type == "boxtoyolo") {
-			return V1LayerParameter_LayerType_BOXTOYOLO;
-		} else if (type == "yololoss") {
-			return V1LayerParameter_LayerType_YOLOLOSS;
 		} else if (type == "hdf5_output") {
 			return V1LayerParameter_LayerType_HDF5_OUTPUT;
 		} else if (type == "im2col") {
@@ -841,14 +837,6 @@ bool UpgradeV1Net(const NetParameter& v1_net_param, NetParameter* net_param) {
 			v1_layer_param.netcdf_data_param());
 		}
 #endif
-		if (v1_layer_param.has_box_to_yolo_param()) {
-			layer_param->mutable_box_to_yolo_param()->CopyFrom(
-			v1_layer_param.box_to_yolo_param());
-		}
-		if (v1_layer_param.has_yolo_loss_param()) {
-			layer_param->mutable_yolo_loss_param()->CopyFrom(
-			v1_layer_param.yolo_loss_param());
-		}
 		if (v1_layer_param.has_hdf5_output_param()) {
 			layer_param->mutable_hdf5_output_param()->CopyFrom(
 				v1_layer_param.hdf5_output_param());
@@ -972,10 +960,6 @@ bool UpgradeV1Net(const NetParameter& v1_net_param, NetParameter* net_param) {
 			case V1LayerParameter_LayerType_NETCDF_DATA:
 			return "NetCDFData";
 #endif
-			case V1LayerParameter_LayerType_BOXTOYOLO:
-			return "BoxToYolo";
-			case V1LayerParameter_LayerType_YOLOLOSS:
-			return "YoloLoss";
 			case V1LayerParameter_LayerType_HDF5_OUTPUT:
 			return "HDF5Output";
 			case V1LayerParameter_LayerType_HINGE_LOSS:
