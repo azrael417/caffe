@@ -619,7 +619,6 @@ message LayerParameter {
   
   // custom stuff
   optional AnnotatedDataParameter annotated_data_param = 200;
-  optional BoxToYoloParameter box_to_yolo_param = 201;
   optional DetectionEvaluateParameter detection_evaluate_param = 202;
   optional DetectionOutputParameter detection_output_param = 203;
   optional MultiBoxLossParameter multibox_loss_param = 204;
@@ -628,7 +627,6 @@ message LayerParameter {
   optional PermuteParameter permute_param = 207;
   optional PriorBoxParameter prior_box_param = 208;
   optional VideoDataParameter video_data_param = 209;
-  optional YoloLossParameter yolo_loss_param = 210;
 }
 
 // Message that stores parameters used to apply transformation
@@ -1260,30 +1258,6 @@ message NetCDFDataParameter {
   // data are output (in a random order) before moving onto another file.
   optional bool shuffle = 5 [default = false];
   optional bool first_dim_is_batched = 6 [default = false];
-}
-
-// Message that stores parameters used by box->YOLO label converter
-message BoxToYoloParameter {
-	//number of images, as a label batch can have more than one image (for sequences)
-	optional bool masked =  1 [default = false];
-	required int32 orig_dimx = 2;
-	required int32 orig_dimy = 3;
-	required int32 reduced_dimx = 4;
-	required int32 reduced_dimy = 5;
-	optional int32 max_labels_per_segment = 6 [default = 1];
-	optional bool one_hot = 7 [default = false];
-	repeated int32 class_label = 8;
-}
-
-// Message that stores parameters used by Yolo Loss
-message YoloLossParameter {
-	//number of images, as a label batch can have more than one image (for sequences)
-	required int32 ground_truth_id = 1;
-	optional float weight_center_loss = 2 [default = 1.];
-	optional float weight_size_loss = 3 [default = 1.];
-	optional float weight_confidence_loss = 4 [default = 1.];
-	optional float weight_classification_loss = 5 [default = 1.];
-	optional float box_regularization = 6 [default = 0.0001];
 }
 
 
@@ -1977,8 +1951,6 @@ message V1LayerParameter {
     WINDOW_DATA = 24;
     THRESHOLD = 31;
 	NETCDF_DATA = 200;
-	BOXTOYOLO = 210;
-	YOLOLOSS = 211;
   }
   optional LayerType type = 5;
   repeated BlobProto blobs = 6;
@@ -2023,8 +1995,6 @@ message V1LayerParameter {
   optional LossParameter loss_param = 42;
   optional V0LayerParameter layer = 1;
   optional NetCDFDataParameter netcdf_data_param = 100;
-  optional BoxToYoloParameter box_to_yolo_param = 110;
-  optional YoloLossParameter yolo_loss_param = 111;
 }
 
 // DEPRECATED: V0LayerParameter is the old way of specifying layer parameters
