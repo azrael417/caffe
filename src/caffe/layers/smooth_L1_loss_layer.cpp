@@ -44,18 +44,23 @@ namespace caffe {
 		int count = bottom[0]->count();
 		caffe_sub(
 			count,
-		bottom[0]->cpu_data(),
-		bottom[1]->cpu_data(),
-		diff_.mutable_cpu_data());
+			bottom[0]->cpu_data(),
+			bottom[1]->cpu_data(),
+			diff_.mutable_cpu_data());
+			
 		if (has_weights_) {
 			caffe_mul(
 				count,
-			bottom[2]->cpu_data(),
-			diff_.cpu_data(),
-			diff_.mutable_cpu_data());  // d := w * (b0 - b1)
+				bottom[2]->cpu_data(),
+				diff_.cpu_data(),
+				diff_.mutable_cpu_data());  // d := w * (b0 - b1)
 		}
+		
 		const Dtype* diff_data = diff_.cpu_data();
 		Dtype* error_data = errors_.mutable_cpu_data();
+#ifdef _OPENMP
+#pragma omp parallel for shared(error_data,diff_data)
+#endif
 		for (int i = 0; i < count; ++i) {
 			Dtype val = diff_data[i];
 			Dtype abs_val = fabs(val);
@@ -74,6 +79,9 @@ namespace caffe {
 	const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
 		int count = diff_.count();
 		Dtype* diff_data = diff_.mutable_cpu_data();
+#ifdef _OPENMP
+#pragma omp parallel for shared(diff_data)
+#endif
 		for (int i = 0; i < count; ++i) {
 			Dtype val = diff_data[i];
 			// f'(x) = x         if |x| < 1
@@ -90,10 +98,10 @@ namespace caffe {
 				const Dtype alpha = sign * top[0]->cpu_diff()[0] / bottom[i]->num();
 				caffe_cpu_axpby(
 					bottom[i]->count(),               // count
-				alpha,                            // alpha
-				diff_.cpu_data(),                 // a
-				Dtype(0),                         // beta
-				bottom[i]->mutable_cpu_diff());   // b
+					alpha,                            // alpha
+					diff_.cpu_data(),                 // a
+					Dtype(0),                         // beta
+					bottom[i]->mutable_cpu_diff());   // b
 			}
 		}
 	}

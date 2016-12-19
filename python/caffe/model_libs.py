@@ -28,7 +28,7 @@ def UnpackVariable(var, num):
     return ret
 
 def ConvBNLayer(net, from_layer, out_layer, use_bn, use_relu, num_output,
-    kernel_size, pad, stride, dilation=1, use_scale=True, lr_mult=1,
+    kernel_size, pad, stride, dilation=1, use_scale=True, lr_mult=1, engine=1,
     conv_prefix='', conv_postfix='', bn_prefix='', bn_postfix='_bn',
     scale_prefix='', scale_postfix='_scale', bias_prefix='', bias_postfix='_bias',
     **bn_params):
@@ -95,11 +95,11 @@ def ConvBNLayer(net, from_layer, out_layer, use_bn, use_relu, num_output,
   [stride_h, stride_w] = UnpackVariable(stride, 2)
   if kernel_h == kernel_w:
     net[conv_name] = L.Convolution(net[from_layer], num_output=num_output,
-        kernel_size=kernel_h, pad=pad_h, stride=stride_h, **kwargs)
+        kernel_size=kernel_h, pad=pad_h, stride=stride_h, engine=engine, **kwargs)
   else:
     net[conv_name] = L.Convolution(net[from_layer], num_output=num_output,
         kernel_h=kernel_h, kernel_w=kernel_w, pad_h=pad_h, pad_w=pad_w,
-        stride_h=stride_h, stride_w=stride_w, **kwargs)
+        stride_h=stride_h, stride_w=stride_w, engine=engine, **kwargs)
   if dilation > 1:
     net.update(conv_name, {'dilation': dilation})
   if use_bn:
@@ -226,7 +226,7 @@ def VGGNetBody(net, from_layer, need_fc=True, fully_conv=False, reduced=False,
             'bias_filler': dict(type='constant', value=0)}
 
     assert from_layer in net.keys()
-    net.conv1_1 = L.Convolution(net[from_layer], num_output=64, pad=1, kernel_size=3, **kwargs)
+    net.conv1_1 = L.Convolution(net[from_layer], num_output=64, pad=1, kernel_size=3, engine=1, **kwargs)
 
     net.relu1_1 = L.ReLU(net.conv1_1, in_place=True)
     net.conv1_2 = L.Convolution(net.relu1_1, num_output=64, pad=1, kernel_size=3, engine=1, **kwargs)
@@ -234,80 +234,80 @@ def VGGNetBody(net, from_layer, need_fc=True, fully_conv=False, reduced=False,
 
     if nopool:
         name = 'conv1_3'
-        net[name] = L.Convolution(net.relu1_2, num_output=64, pad=1, kernel_size=3, stride=2, **kwargs)
+        net[name] = L.Convolution(net.relu1_2, num_output=64, pad=1, kernel_size=3, engine=1, stride=2, **kwargs)
     else:
         name = 'pool1'
-        net.pool1 = L.Pooling(net.relu1_2, pool=P.Pooling.MAX, kernel_size=2, stride=2)
+        net.pool1 = L.Pooling(net.relu1_2, pool=P.Pooling.MAX, kernel_size=2, engine=1, stride=2)
 
-    net.conv2_1 = L.Convolution(net[name], num_output=128, pad=1, kernel_size=3, **kwargs)
+    net.conv2_1 = L.Convolution(net[name], num_output=128, pad=1, kernel_size=3, engine=1, **kwargs)
     net.relu2_1 = L.ReLU(net.conv2_1, in_place=True)
-    net.conv2_2 = L.Convolution(net.relu2_1, num_output=128, pad=1, kernel_size=3, **kwargs)
+    net.conv2_2 = L.Convolution(net.relu2_1, num_output=128, pad=1, kernel_size=3, engine=1, **kwargs)
     net.relu2_2 = L.ReLU(net.conv2_2, in_place=True)
 
     if nopool:
         name = 'conv2_3'
-        net[name] = L.Convolution(net.relu2_2, num_output=128, pad=1, kernel_size=3, stride=2, **kwargs)
+        net[name] = L.Convolution(net.relu2_2, num_output=128, pad=1, kernel_size=3, stride=2, engine=1, **kwargs)
     else:
         name = 'pool2'
-        net[name] = L.Pooling(net.relu2_2, pool=P.Pooling.MAX, kernel_size=2, stride=2)
+        net[name] = L.Pooling(net.relu2_2, pool=P.Pooling.MAX, kernel_size=2, engine=1, stride=2)
 
-    net.conv3_1 = L.Convolution(net[name], num_output=256, pad=1, kernel_size=3, **kwargs)
+    net.conv3_1 = L.Convolution(net[name], num_output=256, pad=1, kernel_size=3, engine=1, **kwargs)
     net.relu3_1 = L.ReLU(net.conv3_1, in_place=True)
-    net.conv3_2 = L.Convolution(net.relu3_1, num_output=256, pad=1, kernel_size=3, **kwargs)
+    net.conv3_2 = L.Convolution(net.relu3_1, num_output=256, pad=1, kernel_size=3, engine=1, **kwargs)
     net.relu3_2 = L.ReLU(net.conv3_2, in_place=True)
-    net.conv3_3 = L.Convolution(net.relu3_2, num_output=256, pad=1, kernel_size=3, **kwargs)
+    net.conv3_3 = L.Convolution(net.relu3_2, num_output=256, pad=1, kernel_size=3, engine=1, **kwargs)
     net.relu3_3 = L.ReLU(net.conv3_3, in_place=True)
 
     if nopool:
         name = 'conv3_4'
-        net[name] = L.Convolution(net.relu3_3, num_output=256, pad=1, kernel_size=3, stride=2, **kwargs)
+        net[name] = L.Convolution(net.relu3_3, num_output=256, pad=1, kernel_size=3, stride=2, engine=1, **kwargs)
     else:
         name = 'pool3'
-        net[name] = L.Pooling(net.relu3_3, pool=P.Pooling.MAX, kernel_size=2, stride=2)
+        net[name] = L.Pooling(net.relu3_3, pool=P.Pooling.MAX, kernel_size=2, stride=2, engine=1)
 
-    net.conv4_1 = L.Convolution(net[name], num_output=512, pad=1, kernel_size=3, **kwargs)
+    net.conv4_1 = L.Convolution(net[name], num_output=512, pad=1, kernel_size=3, engine=1, **kwargs)
     net.relu4_1 = L.ReLU(net.conv4_1, in_place=True)
-    net.conv4_2 = L.Convolution(net.relu4_1, num_output=512, pad=1, kernel_size=3, **kwargs)
+    net.conv4_2 = L.Convolution(net.relu4_1, num_output=512, pad=1, kernel_size=3, engine=1, **kwargs)
     net.relu4_2 = L.ReLU(net.conv4_2, in_place=True)
-    net.conv4_3 = L.Convolution(net.relu4_2, num_output=512, pad=1, kernel_size=3, **kwargs)
+    net.conv4_3 = L.Convolution(net.relu4_2, num_output=512, pad=1, kernel_size=3, engine=1, **kwargs)
     net.relu4_3 = L.ReLU(net.conv4_3, in_place=True)
 
     if nopool:
         name = 'conv4_4'
-        net[name] = L.Convolution(net.relu4_3, num_output=512, pad=1, kernel_size=3, stride=2, **kwargs)
+        net[name] = L.Convolution(net.relu4_3, num_output=512, pad=1, kernel_size=3, stride=2, engine=1, **kwargs)
     else:
         name = 'pool4'
         if dilate_pool4:
-            net[name] = L.Pooling(net.relu4_3, pool=P.Pooling.MAX, kernel_size=3, stride=1, pad=1)
+            net[name] = L.Pooling(net.relu4_3, pool=P.Pooling.MAX, kernel_size=3, stride=1, pad=1, engine=1)
             dilation = 2
         else:
-            net[name] = L.Pooling(net.relu4_3, pool=P.Pooling.MAX, kernel_size=2, stride=2)
+            net[name] = L.Pooling(net.relu4_3, pool=P.Pooling.MAX, kernel_size=2, stride=2, engine=1)
             dilation = 1
 
     kernel_size = 3
     pad = int((kernel_size + (dilation - 1) * (kernel_size - 1)) - 1) / 2
-    net.conv5_1 = L.Convolution(net[name], num_output=512, pad=pad, kernel_size=kernel_size, dilation=dilation, **kwargs)
+    net.conv5_1 = L.Convolution(net[name], num_output=512, pad=pad, kernel_size=kernel_size, dilation=dilation, engine=1, **kwargs)
     net.relu5_1 = L.ReLU(net.conv5_1, in_place=True)
-    net.conv5_2 = L.Convolution(net.relu5_1, num_output=512, pad=pad, kernel_size=kernel_size, dilation=dilation, **kwargs)
+    net.conv5_2 = L.Convolution(net.relu5_1, num_output=512, pad=pad, kernel_size=kernel_size, dilation=dilation, engine=1, **kwargs)
     net.relu5_2 = L.ReLU(net.conv5_2, in_place=True)
-    net.conv5_3 = L.Convolution(net.relu5_2, num_output=512, pad=pad, kernel_size=kernel_size, dilation=dilation, **kwargs)
+    net.conv5_3 = L.Convolution(net.relu5_2, num_output=512, pad=pad, kernel_size=kernel_size, dilation=dilation, engine=1, **kwargs)
     net.relu5_3 = L.ReLU(net.conv5_3, in_place=True)
 
     if need_fc:
         if dilated:
             if nopool:
                 name = 'conv5_4'
-                net[name] = L.Convolution(net.relu5_3, num_output=512, pad=1, kernel_size=3, stride=1, **kwargs)
+                net[name] = L.Convolution(net.relu5_3, num_output=512, pad=1, kernel_size=3, stride=1, engine=1, **kwargs)
             else:
                 name = 'pool5'
-                net[name] = L.Pooling(net.relu5_3, pool=P.Pooling.MAX, pad=1, kernel_size=3, stride=1)
+                net[name] = L.Pooling(net.relu5_3, pool=P.Pooling.MAX, pad=1, kernel_size=3, stride=1, engine=1)
         else:
             if nopool:
                 name = 'conv5_4'
-                net[name] = L.Convolution(net.relu5_3, num_output=512, pad=1, kernel_size=3, stride=2, **kwargs)
+                net[name] = L.Convolution(net.relu5_3, num_output=512, pad=1, kernel_size=3, stride=2, engine=1, **kwargs)
             else:
                 name = 'pool5'
-                net[name] = L.Pooling(net.relu5_3, pool=P.Pooling.MAX, kernel_size=2, stride=2)
+                net[name] = L.Pooling(net.relu5_3, pool=P.Pooling.MAX, kernel_size=2, stride=2, engine=1)
 
         if fully_conv:
             if dilated:
@@ -328,16 +328,16 @@ def VGGNetBody(net, from_layer, need_fc=True, fully_conv=False, reduced=False,
                     kernel_size = 7
                     num_output = 4096
             pad = int((kernel_size + (dilation - 1) * (kernel_size - 1)) - 1) / 2
-            net.fc6 = L.Convolution(net[name], num_output=num_output, pad=pad, kernel_size=kernel_size, dilation=dilation, **kwargs)
+            net.fc6 = L.Convolution(net[name], num_output=num_output, pad=pad, kernel_size=kernel_size, dilation=dilation, engine=1, **kwargs)
 
             net.relu6 = L.ReLU(net.fc6, in_place=True)
             if dropout:
                 net.drop6 = L.Dropout(net.relu6, dropout_ratio=0.5, in_place=True)
 
             if reduced:
-                net.fc7 = L.Convolution(net.relu6, num_output=1024, kernel_size=1, **kwargs)
+                net.fc7 = L.Convolution(net.relu6, num_output=1024, kernel_size=1, engine=1, **kwargs)
             else:
-                net.fc7 = L.Convolution(net.relu6, num_output=4096, kernel_size=1, **kwargs)
+                net.fc7 = L.Convolution(net.relu6, num_output=4096, kernel_size=1, engine=1, **kwargs)
             net.relu7 = L.ReLU(net.fc7, in_place=True)
             if dropout:
                 net.drop7 = L.Dropout(net.relu7, dropout_ratio=0.5, in_place=True)

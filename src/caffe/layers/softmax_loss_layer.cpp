@@ -144,23 +144,23 @@ namespace caffe {
 		//normalize dimension:
 		int dim = prob_.count() / outer_num_;
 		int count = 0;
-		Dtype loss = 0.;
+		double loss = 0.;
 		for (int i = 0; i < outer_num_; ++i) {
 			for (int j = 0; j < inner_num_; j++) {
 				const int label_value = static_cast<int>(label[i * inner_num_ + j]);
-				const Dtype weight_value=(is_weighted_ ? static_cast<Dtype>(weight[i * inner_num_ + j]) : 1.);
+				const double weight_value=(is_weighted_ ? static_cast<double>(weight[i * inner_num_ + j]) : 1.);
 				
 				if (has_ignore_label_ && label_value == ignore_label_) {
 					continue;
 				}
 				DCHECK_GE(label_value, 0);
 				DCHECK_LT(label_value, prob_.shape(softmax_axis_));
-				loss -= weight_value * log(std::max(prob_data[i * dim + label_value * inner_num_ + j],Dtype(FLT_MIN)));
+				loss -= weight_value * log(std::max(static_cast<double>(prob_data[i * dim + label_value * inner_num_ + j]),static_cast<double>(FLT_MIN)));
 				++count;
 			}
 		}
 		Dtype normalizer = LossLayer<Dtype>::GetNormalizer(normalization_, outer_num_, inner_num_, count);
-		top[0]->mutable_cpu_data()[0] = loss / normalizer;
+		top[0]->mutable_cpu_data()[0] = static_cast<Dtype>(loss) / normalizer;
 		if (top.size() == 2) {
 			top[1]->ShareData(prob_);
 		}
