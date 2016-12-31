@@ -160,6 +160,7 @@ namespace caffe {
 				if (this->output_labels_) {
 					top_label[item_id] = datum.label();
 				}
+				
 #ifdef _OPENMP
 				Blob<Dtype> tmp_data;
 				tmp_data.Reshape(top_shape);

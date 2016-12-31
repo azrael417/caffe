@@ -375,6 +375,8 @@ namespace caffe {
 						string name = pt2.data();
 						if (name_to_label.find(name) == name_to_label.end()) {
 							LOG(FATAL) << "Unknown name: " << name;
+							//LOG(INFO) << "Unknown name: " << name << ", skipping.";
+							//continue;
 						}
 						int label = name_to_label.find(name)->second;
 						bool found_group = false;

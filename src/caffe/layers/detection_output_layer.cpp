@@ -139,7 +139,7 @@ namespace caffe {
 					boost::filesystem::path output_directory(output_directory_);
 					for (map<int, string>::iterator it = label_to_name_.begin();
 					it != label_to_name_.end(); ++it) {
-						if (it->first == background_label_id_) {
+						if ( (it->first == background_label_id_) ) {
 							continue;
 						}
 						std::ofstream outfile;
@@ -220,7 +220,7 @@ namespace caffe {
 			map<int, vector<int> > indices;
 			int num_det = 0;
 			for (int c = 0; c < num_classes_; ++c) {
-				if (c == background_label_id_) {
+				if ( (c == background_label_id_) ){
 					// Ignore background class.
 					continue;
 				}
@@ -378,7 +378,7 @@ namespace caffe {
 					if (output_format_ == "VOC") {
 						map<string, std::ofstream*> outfiles;
 						for (int c = 0; c < num_classes_; ++c) {
-							if (c == background_label_id_) {
+							if ( (c == background_label_id_) ) {
 								continue;
 							}
 							string label_name = label_to_name_[c];
@@ -409,7 +409,7 @@ namespace caffe {
 							*(outfiles[label_name]) << std::endl;
 						}
 						for (int c = 0; c < num_classes_; ++c) {
-							if (c == background_label_id_) {
+							if ( (c == background_label_id_) ) {
 								continue;
 							}
 							string label_name = label_to_name_[c];

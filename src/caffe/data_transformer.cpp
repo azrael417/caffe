@@ -116,6 +116,8 @@ namespace caffe {
 				rand_num); break;
 				case 7: Transform<false, true , true , true >(datum, transformed_data,
 				rand_num); break;
+				default: Transform<false, false, false, false>(datum, transformed_data,
+				rand_num); break;
 			}
 		} else {
 			switch (transform_func_id) {
@@ -134,6 +136,8 @@ namespace caffe {
 				case 6: Transform<true, true , true , false>(datum, transformed_data,
 				rand_num); break;
 				case 7: Transform<true, true , true , true >(datum, transformed_data,
+				rand_num); break;
+				default: Transform<false, false, false, false>(datum, transformed_data,
 				rand_num); break;
 			}
 		}
@@ -225,8 +229,18 @@ namespace caffe {
 
 	template<typename Dtype>
 	void DataTransformer<Dtype>::GenerateRandNumbers(PreclcRandomNumbers& rn) {
-		int count = (param_.mirror()? 1:0) +
-			((phase_ == TRAIN && param_.crop_size())? 2 : 0);
+		int count = 0;
+		//mirror?
+		count+=(param_.mirror()? 1:0);
+		//crop?
+		count+=((phase_ == TRAIN && param_.crop_size())? 2 : 0);
+		//resize?
+		count+=((param_.has_resize_param())? 2 : 0);
+		//expand?
+		count+=((param_.has_expand_param())? 1 : 0);
+		//distort?
+		count+=((param_.has_distort_param())? 5 : 0);
+		//fill:
 		rn.FillRandomNumbers(count, rand_num_);
 	}
 
@@ -348,6 +362,8 @@ namespace caffe {
 			case 6: Transform<true , true , false>(cv_img, transformed_blob, rand_num);
 			break;
 			case 7: Transform<true , true , true >(cv_img, transformed_blob, rand_num);
+			break;
+			default: Transform<false, false, false>(cv_img, transformed_blob, rand_num);
 			break;
 		}
 	}

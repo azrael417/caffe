@@ -937,8 +937,7 @@ namespace caffe {
 			// Pick negatives or hard examples based on loss.
 			set<int> sel_indices;
 			vector<int> neg_indices;
-			for (map<int, vector<int> >::iterator it = match_indices.begin();
-			it != match_indices.end(); ++it) {
+			for (map<int, vector<int> >::iterator it = match_indices.begin(); it != match_indices.end(); ++it) {
 				const int label = it->first;
 				int num_sel = 0;
 				// Get potential indices and loss pairs.

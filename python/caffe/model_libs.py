@@ -702,7 +702,7 @@ def InceptionV3Body(net, from_layer, output_pred=False, **bn_param):
 
   return net
 
-def CreateMultiBoxHead(net, data_layer="data", num_classes=[], from_layers=[],
+def CreateMultiBoxHead(net, data_layer="data", num_classes=[], from_layers=[], layer_suffix='',
         use_objectness=False, normalizations=[], use_batchnorm=True, lr_mult=1,
         use_scale=True, min_sizes=[], max_sizes=[], prior_variance = [0.1],
         aspect_ratios=[], steps=[], img_height=0, img_width=0, share_location=True,
@@ -735,7 +735,7 @@ def CreateMultiBoxHead(net, data_layer="data", num_classes=[], from_layers=[],
         # Get the normalize value.
         if normalizations:
             if normalizations[i] != -1:
-                norm_name = "{}_norm".format(from_layer)
+                norm_name = "{}_norm{}".format(from_layer,layer_suffix)
                 net[norm_name] = L.Normalize(net[from_layer], scale_filler=dict(type="constant", value=normalizations[i]),
                     across_spatial=False, channel_shared=False)
                 from_layer = norm_name
@@ -743,7 +743,7 @@ def CreateMultiBoxHead(net, data_layer="data", num_classes=[], from_layers=[],
         # Add intermediate layers.
         if inter_layer_depth:
             if inter_layer_depth[i] > 0:
-                inter_name = "{}_inter".format(from_layer)
+                inter_name = "{}_inter{}".format(from_layer,layer_suffix)
                 ConvBNLayer(net, from_layer, inter_name, use_bn=use_batchnorm, use_relu=True, lr_mult=lr_mult,
                       num_output=inter_layer_depth[i], kernel_size=3, pad=1, stride=1, **bn_param)
                 from_layer = inter_name
@@ -775,31 +775,31 @@ def CreateMultiBoxHead(net, data_layer="data", num_classes=[], from_layers=[],
             step = steps[i]
 
         # Create location prediction layer.
-        name = "{}_mbox_loc{}".format(from_layer, loc_postfix)
+        name = "{}_mbox_loc{}{}".format(from_layer, loc_postfix,layer_suffix)
         num_loc_output = num_priors_per_location * 4;
         if not share_location:
             num_loc_output *= num_classes
         ConvBNLayer(net, from_layer, name, use_bn=use_batchnorm, use_relu=False, lr_mult=lr_mult,
             num_output=num_loc_output, kernel_size=kernel_size, pad=pad, stride=1, **bn_param)
-        permute_name = "{}_perm".format(name)
+        permute_name = "{}_perm{}".format(name,layer_suffix)
         net[permute_name] = L.Permute(net[name], order=[0, 2, 3, 1])
-        flatten_name = "{}_flat".format(name)
+        flatten_name = "{}_flat{}".format(name,layer_suffix)
         net[flatten_name] = L.Flatten(net[permute_name], axis=1)
         loc_layers.append(net[flatten_name])
 
         # Create confidence prediction layer.
-        name = "{}_mbox_conf{}".format(from_layer, conf_postfix)
+        name = "{}_mbox_conf{}{}".format(from_layer, conf_postfix,layer_suffix)
         num_conf_output = num_priors_per_location * num_classes;
         ConvBNLayer(net, from_layer, name, use_bn=use_batchnorm, use_relu=False, lr_mult=lr_mult,
             num_output=num_conf_output, kernel_size=kernel_size, pad=pad, stride=1, **bn_param)
-        permute_name = "{}_perm".format(name)
+        permute_name = "{}_perm{}".format(name,layer_suffix)
         net[permute_name] = L.Permute(net[name], order=[0, 2, 3, 1])
-        flatten_name = "{}_flat".format(name)
+        flatten_name = "{}_flat{}".format(name,layer_suffix)
         net[flatten_name] = L.Flatten(net[permute_name], axis=1)
         conf_layers.append(net[flatten_name])
 
         # Create prior generation layer.
-        name = "{}_mbox_priorbox".format(from_layer)
+        name = "{}_mbox_priorbox{}".format(from_layer,layer_suffix)
         net[name] = L.PriorBox(net[from_layer], net[data_layer], min_size=min_size,
                 clip=clip, variance=prior_variance, offset=offset)
         if max_size:
@@ -817,13 +817,13 @@ def CreateMultiBoxHead(net, data_layer="data", num_classes=[], from_layers=[],
 
         # Create objectness prediction layer.
         if use_objectness:
-            name = "{}_mbox_objectness".format(from_layer)
+            name = "{}_mbox_objectness{}".format(from_layer,layer_suffix)
             num_obj_output = num_priors_per_location * 2;
             ConvBNLayer(net, from_layer, name, use_bn=use_batchnorm, use_relu=False, lr_mult=lr_mult,
                 num_output=num_obj_output, kernel_size=kernel_size, pad=pad, stride=1, **bn_param)
-            permute_name = "{}_perm".format(name)
+            permute_name = "{}_perm{}".format(name,layer_suffix)
             net[permute_name] = L.Permute(net[name], order=[0, 2, 3, 1])
-            flatten_name = "{}_flat".format(name)
+            flatten_name = "{}_flat{}".format(name,layer_suffix)
             net[flatten_name] = L.Flatten(net[permute_name], axis=1)
             objectness_layers.append(net[flatten_name])
 
