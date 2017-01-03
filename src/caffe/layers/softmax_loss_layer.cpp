@@ -187,16 +187,22 @@ namespace caffe {
 			for (int i = 0; i < outer_num_; ++i) {
 				for (int j = 0; j < inner_num_; ++j) {
 					const int label_value = static_cast<int>(label[i * inner_num_ + j]);
-					const Dtype weight_value=(is_weighted_ ? static_cast<Dtype>(weight[i * inner_num_ + j]) : 1.);
 					
-					if (has_ignore_label_ && label_value == ignore_label_) {
+					if ( has_ignore_label_ && (label_value == ignore_label_) ) {
 						for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {
 							bottom_diff[i * dim + c * inner_num_ + j] = 0;
 						}
 					} else {
 						bottom_diff[i * dim + label_value * inner_num_ + j] -= 1.;
-						bottom_diff[i * dim + label_value * inner_num_ + j] *= weight_value;
 						++count;
+					}
+					
+					//multiply the weights
+					if( is_weighted_ ){
+						const Dtype weight_value=weight[i * inner_num_ + j];
+						for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {
+							bottom_diff[i * dim + c * inner_num_ + j] *= weight_value;
+						}
 					}
 				}
 			}
