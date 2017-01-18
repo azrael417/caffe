@@ -141,6 +141,12 @@ namespace caffe {
 		//if the softmax is weighted, we need more input:
 		const Dtype* weight = (is_weighted_ ? bottom[2]->cpu_data() : NULL);
 		
+		
+		////DEBUG
+		//LOG(INFO) << "START FORWARD" << std::endl;
+		////DEBUG
+		
+		
 		//normalize dimension:
 		int dim = prob_.count() / outer_num_;
 		int count = 0;
@@ -153,6 +159,14 @@ namespace caffe {
 				if (has_ignore_label_ && label_value == ignore_label_) {
 					continue;
 				}
+				
+				
+				////DEBUG
+				//LOG(INFO) << "weight(" << i <<  "," << j << ") = " << weight_value << std::endl;
+				//LOG(INFO) << "prob(" << i << "," << j << "," << label_value << ") = " << prob_data[i * dim + label_value * inner_num_ + j] << std::endl;
+				////DEBUG
+				
+				
 				DCHECK_GE(label_value, 0);
 				DCHECK_LT(label_value, prob_.shape(softmax_axis_));
 				loss -= weight_value * log(std::max(static_cast<double>(prob_data[i * dim + label_value * inner_num_ + j]),static_cast<double>(FLT_MIN)));
@@ -164,6 +178,11 @@ namespace caffe {
 		if (top.size() == 2) {
 			top[1]->ShareData(prob_);
 		}
+		
+		////DEBUG
+		//LOG(INFO) << "loss = " << loss << std::endl;
+		//LOG(INFO) << "END FORWARD" << std::endl;
+		////DEBUG
 	}
 
 	template <typename Dtype>
@@ -173,6 +192,17 @@ namespace caffe {
 			LOG(FATAL) << this->type()
 				<< " Layer cannot backpropagate to label inputs.";
 		}
+		if(is_weighted_){
+			if (propagate_down[2]) {
+				LOG(FATAL) << this->type()
+					<< " Layer cannot backpropagate to weight inputs.";
+			}
+		}
+		
+		////DEBUG
+		//LOG(INFO) << "START BACKWARD" << std::endl;
+		////DEBUG
+		
 		if (propagate_down[0]) {
 			Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
 			const Dtype* prob_data = prob_.cpu_data();
@@ -197,6 +227,14 @@ namespace caffe {
 						++count;
 					}
 					
+					////DEBUG
+					//LOG(INFO) << "label(" << i <<  "," << j << ") = " << label_value << std::endl;
+					//for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {
+					//	LOG(INFO) << "prob(" << i << "," << j << "," << c << ") = " << bottom_diff[i * dim + c * inner_num_ + j] << std::endl;
+					//}
+					////DEBUG
+					
+					
 					//multiply the weights
 					if( is_weighted_ ){
 						const Dtype weight_value=weight[i * inner_num_ + j];
@@ -204,8 +242,22 @@ namespace caffe {
 							bottom_diff[i * dim + c * inner_num_ + j] *= weight_value;
 						}
 					}
+					
+					
+					////DEBUG
+					//LOG(INFO) << "weight(" << i <<  "," << j << ") = " << weight[i * inner_num_ + j] << std::endl;
+					//for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {
+					//	LOG(INFO) << "diff(" << i << "," << j << "," << c << ") = " << bottom_diff[i * dim + c * inner_num_ + j] << std::endl;
+					//}
+					////DEBUG
 				}
 			}
+			
+			////DEBUG
+			//LOG(INFO) << "END BACKWARD" << std::endl;
+			//exit(0);
+			////DEBUG
+			
 			// Scale gradient
 		    Dtype normalizer = LossLayer<Dtype>::GetNormalizer(normalization_, outer_num_, inner_num_, count);
 			Dtype loss_weight = top[0]->cpu_diff()[0] / normalizer;
